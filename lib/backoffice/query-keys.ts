@@ -15,7 +15,6 @@ export const backofficeKeys = {
   // ── Symbols ────────────────────────────────────────────────
   characters: {
     all: () => [...backofficeKeys.all, 'characters'] as const,
-    list: () => [...backofficeKeys.characters.all(), 'list'] as const,
     detail: (id: number) => [...backofficeKeys.characters.all(), 'detail', id] as const,
   },
   components: {
@@ -149,23 +148,17 @@ export const backofficeKeys = {
     all: () => [...backofficeKeys.all, 'graphs'] as const,
     list: (filters?: Record<string, unknown>) =>
       [...backofficeKeys.all, 'graphs', 'list', filters] as const,
-    detail: (id: number) => [...backofficeKeys.all, 'graphs', 'detail', id] as const,
     trashActors: () => [...backofficeKeys.all, 'graphs', 'trash-actors'] as const,
   },
 
   // ── Users ────────────────────────────────────────────────────
   users: {
     all: () => [...backofficeKeys.all, 'users'] as const,
-    list: (filters?: Record<string, unknown>) =>
-      [...backofficeKeys.users.all(), 'list', filters] as const,
-    detail: (id: number) => [...backofficeKeys.users.all(), 'detail', id] as const,
   },
 
   // ── Indexing ────────────────────────────────────────────────
   searchEngine: {
-    all: () => [...backofficeKeys.all, 'searchEngine'] as const,
     stats: () => [...backofficeKeys.all, 'searchEngine', 'stats'] as const,
-    task: (taskId: string) => [...backofficeKeys.all, 'searchEngine', 'task', taskId] as const,
   },
 
   // ── Health ──────────────────────────────────────────────────

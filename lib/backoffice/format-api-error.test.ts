@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { BackofficeApiError } from '@/services/backoffice/api-client';
-import { formatApiError } from './format-api-error';
+import { formatApiError, toastApiError } from './format-api-error';
+
+vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
 
 describe('formatApiError', () => {
   it('returns the `detail` field directly when present', () => {
@@ -69,5 +71,18 @@ describe('formatApiError', () => {
       title: ['ignored'],
     });
     expect(formatApiError(err)).toBe('Cross-field rule failed.');
+  });
+});
+
+describe('toastApiError', () => {
+  it('shows the title with the formatted API message as the description', async () => {
+    const { toast } = await import('sonner');
+    const err = new BackofficeApiError(400, { name: ['This field is required.'] });
+
+    toastApiError('Could not save', err);
+
+    expect(toast.error).toHaveBeenCalledWith('Could not save', {
+      description: 'name: This field is required.',
+    });
   });
 });

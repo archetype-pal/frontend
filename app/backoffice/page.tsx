@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getCharacters } from '@/services/backoffice/symbols';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
 import { getPublications, getComments } from '@/services/backoffice/publications';
 import { getScribes } from '@/services/backoffice/scribes';
@@ -30,6 +29,7 @@ import { getSearchEngineStats } from '@/services/backoffice/search-engine';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useCharacters } from '@/hooks/backoffice/use-lookups';
 
 // ---------------------------------------------------------------------------
 // Greeting helpers
@@ -144,11 +144,7 @@ export default function BackofficeDashboardPage() {
   const historicalItemLabel = getLabel('historicalItem');
 
   // Data queries
-  const characters = useQuery({
-    queryKey: backofficeKeys.characters.all(),
-    queryFn: () => getCharacters(),
-    enabled: isAuthenticated,
-  });
+  const characters = useCharacters();
 
   const manuscripts = useQuery({
     queryKey: backofficeKeys.manuscripts.list({ limit: 1 }),

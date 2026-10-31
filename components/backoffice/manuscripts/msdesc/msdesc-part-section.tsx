@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth-context';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import {
   buildMsDescSeedPayload,
   buildMsDescSeedPayloads,
@@ -57,7 +57,7 @@ export function MsDescPartSection({
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('msdesc.section.toastSeedFailed'), { description: formatApiError(err) });
+      toastApiError(t('msdesc.section.toastSeedFailed'), err);
     },
   });
 
@@ -70,7 +70,7 @@ export function MsDescPartSection({
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('msdesc.section.toastSeedFailed'), { description: formatApiError(err) });
+      toastApiError(t('msdesc.section.toastSeedFailed'), err);
     },
   });
 

@@ -13,6 +13,7 @@ import {
   type ImagePyramidLevel,
   type LegacyPyramidTileSource,
 } from '@/lib/osd-iiif-tile-source';
+import { errorMessage } from '@/lib/error-message';
 
 // ---- Annotation data model ----
 export interface Annotation {
@@ -464,7 +465,7 @@ export default function ManuscriptAnnotorious({
         if (isMounted) {
           setState({
             hasError: true,
-            errorMessage: `Failed to load viewer libraries: ${err instanceof Error ? err.message : String(err)}`,
+            errorMessage: `Failed to load viewer libraries: ${errorMessage(err)}`,
             isLoading: false,
           });
         }
@@ -492,7 +493,7 @@ export default function ManuscriptAnnotorious({
         if (isMounted) {
           setState({
             hasError: true,
-            errorMessage: `Failed to load IIIF info: ${err instanceof Error ? err.message : String(err)}`,
+            errorMessage: `Failed to load IIIF info: ${errorMessage(err)}`,
             isLoading: false,
           });
         }

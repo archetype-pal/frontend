@@ -12,7 +12,7 @@ import { InlineEdit } from '@/components/backoffice/common/inline-edit';
 import { NamedEntityManager } from '@/components/backoffice/common/named-entity-manager';
 import { useEntityCrud } from '@/hooks/backoffice/use-entity-crud';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { createComponent, updateComponent, deleteComponent } from '@/services/backoffice/symbols';
 import { cn } from '@/lib/utils';
 import type { Component, Feature } from '@/types/backoffice';
@@ -44,9 +44,7 @@ export function ComponentManager({ components, allFeatures }: ComponentManagerPr
       toast.success(t('symbols.componentFeaturesUpdated'));
     },
     onError: (err) => {
-      toast.error(t('symbols.componentFeaturesUpdateFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('symbols.componentFeaturesUpdateFailed'), err);
     },
   });
 

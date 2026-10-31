@@ -13,7 +13,7 @@ import { Segmented } from '@/components/ui/segmented';
 import { useAuth } from '@/contexts/auth-context';
 import { useMsDescArea, type MsDescValidation } from '@/hooks/backoffice/use-msdesc-area';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { MsDescAreaStates } from '@/lib/msdesc-form';
 import type { MsDescAreaId } from '@/lib/msdesc-vocab';
 import { renderMsDescArea } from '@/lib/tei-msdesc-render';
@@ -73,7 +73,7 @@ export function MsDescAreaPanel({ historicalItemId, area, row }: MsDescAreaPanel
       });
     },
     onError: (err) => {
-      toast.error(t('msdesc.editor.toastSaveFailed'), { description: formatApiError(err) });
+      toastApiError(t('msdesc.editor.toastSaveFailed'), err);
     },
   });
 

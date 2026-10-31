@@ -1,99 +1,79 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
-const saveWorkspaceMock = vi.fn();
-const saveImageMock = vi.fn();
-const replaceWorkingSetMock = vi.fn();
-// loadWorksetPayload dynamically imports these only on the persist path; mock so
-// we can assert the read-only path never touches Dexie. The persist path
-// replaces the whole working set atomically via replaceWorkingSet (clear +
-// bulkPut) rather than looping saveWorkspace/saveImage.
-vi.mock('@/lib/lightbox-db', () => ({
-  saveWorkspace: (...args: unknown[]) => saveWorkspaceMock(...args),
-  saveImage: (...args: unknown[]) => saveImageMock(...args),
-  replaceWorkingSet: (...args: unknown[]) => replaceWorkingSetMock(...args),
-}));
-
+import type { LightboxImage } from '@/lib/lightbox-db';
 import { useLightboxStore } from './lightbox-store';
-import type { WorksetPayload } from '@/types/workset';
 
-function makePayload(): WorksetPayload {
+function image(id: string, zIndex: number): LightboxImage {
   return {
-    schema_version: 2,
-    workspaces: [
-      {
-        id: 'ws-1',
-        name: 'Charters',
-        images: ['img-1'],
-        createdAt: 1,
-        updatedAt: 1,
-      },
-    ],
-    images: [
-      {
-        id: 'img-1',
-        originalId: 42,
-        type: 'image',
-        imageUrl: 'http://x/full/max/0/default.jpg',
-        metadata: {},
-        workspaceId: 'ws-1',
-        position: { x: 0, y: 0, zIndex: 1 },
-        size: { width: 100, height: 100 },
-        transform: {
-          opacity: 1,
-          brightness: 100,
-          contrast: 100,
-          rotation: 0,
-          flipX: false,
-          flipY: false,
-          grayscale: false,
-        },
-        createdAt: 1,
-        updatedAt: 1,
-      },
-    ],
-  };
+    id,
+    originalId: 1,
+    type: 'image',
+    imageUrl: `https://example.test/${id}`,
+    metadata: {},
+    workspaceId: 'ws',
+    position: { x: 0, y: 0, zIndex },
+    size: { width: 100, height: 100 },
+    transform: {
+      opacity: 1,
+      brightness: 100,
+      contrast: 100,
+      rotation: 0,
+      flipX: false,
+      flipY: false,
+      grayscale: false,
+    },
+    createdAt: 0,
+    updatedAt: 0,
+  } as LightboxImage;
+}
+
+function zOrder(): Record<string, number> {
+  const out: Record<string, number> = {};
+  useLightboxStore.getState().images.forEach((img, id) => {
+    out[id] = img.position.zIndex;
+  });
+  return out;
 }
 
 beforeEach(() => {
-  saveWorkspaceMock.mockReset();
-  saveImageMock.mockReset();
-  replaceWorkingSetMock.mockReset();
-  useLightboxStore.setState({ workspaces: [], images: new Map(), currentWorkspaceId: null });
+  useLightboxStore.setState({
+    images: new Map([
+      ['a', image('a', 1)],
+      ['b', image('b', 5)],
+      ['c', image('c', 9)],
+    ]),
+    history: [],
+    // The real updateImage also writes the row to IndexedDB, which Node has no
+    // window for; the swap under test only needs the in-memory half.
+    updateImage: async (imageId, updates) => {
+      useLightboxStore.setState((state) => {
+        const images = new Map(state.images);
+        images.set(imageId, { ...images.get(imageId)!, ...updates });
+        return { images };
+      });
+    },
+  });
 });
 
-describe('loadWorksetPayload', () => {
-  it('hydrates workspaces/images/currentWorkspaceId from the payload', async () => {
-    await useLightboxStore.getState().loadWorksetPayload(makePayload());
-    const state = useLightboxStore.getState();
-    expect(state.workspaces).toHaveLength(1);
-    expect(state.currentWorkspaceId).toBe('ws-1');
-    expect(state.images.get('img-1')?.originalId).toBe(42);
-    expect(state.isLoading).toBe(false);
+describe('moveUp / moveDown', () => {
+  it('moveUp swaps an image with the one directly above it', () => {
+    useLightboxStore.getState().moveUp('a');
+    expect(zOrder()).toEqual({ a: 5, b: 1, c: 9 });
   });
 
-  it('does NOT write Dexie on the default (read-only) path', async () => {
-    await useLightboxStore.getState().loadWorksetPayload(makePayload());
-    expect(replaceWorkingSetMock).not.toHaveBeenCalled();
-    expect(saveWorkspaceMock).not.toHaveBeenCalled();
-    expect(saveImageMock).not.toHaveBeenCalled();
+  it('moveDown swaps an image with the one directly below it', () => {
+    useLightboxStore.getState().moveDown('c');
+    expect(zOrder()).toEqual({ a: 1, b: 9, c: 5 });
   });
 
-  it('persists to Dexie when persist: true', async () => {
-    await useLightboxStore.getState().loadWorksetPayload(makePayload(), { persist: true });
-    // Replaces the working set atomically (clear + bulkPut) so a loaded workset
-    // fully replaces persisted state rather than merging into prior sessions.
-    expect(replaceWorkingSetMock).toHaveBeenCalledTimes(1);
-    const [workspaces, images] = replaceWorkingSetMock.mock.calls[0];
-    expect(workspaces).toHaveLength(1);
-    expect(images).toHaveLength(1);
+  it('leaves the stack alone at the top and at the bottom', () => {
+    useLightboxStore.getState().moveUp('c');
+    useLightboxStore.getState().moveDown('a');
+    expect(zOrder()).toEqual({ a: 1, b: 5, c: 9 });
   });
 
-  it('handles an empty payload without throwing', async () => {
-    await useLightboxStore
-      .getState()
-      .loadWorksetPayload({ schema_version: 2, workspaces: [], images: [] });
-    const state = useLightboxStore.getState();
-    expect(state.workspaces).toEqual([]);
-    expect(state.currentWorkspaceId).toBeNull();
+  it('ignores an unknown image', () => {
+    useLightboxStore.getState().moveUp('nope');
+    expect(zOrder()).toEqual({ a: 1, b: 5, c: 9 });
   });
 });

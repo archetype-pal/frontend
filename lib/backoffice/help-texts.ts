@@ -72,84 +72,11 @@ export const helpTexts: Record<string, HelpEntry> = {
     example: 'Charter of King William (original)',
   },
 
-  // -- Catalogue Numbers --
-  'catalogueNumber.source': {
-    description:
-      'The bibliographic reference that assigned this catalogue number (e.g. Ker, Gneuss).',
-  },
-  'catalogueNumber.number': {
-    description: 'The identifier assigned by the bibliographic reference.',
-    example: '001, 345a',
-  },
-  'catalogueNumber.url': {
-    description: 'An optional URL linking to the catalogue entry online.',
-  },
-
   // -- Images --
-  'image.locus': {
-    description: 'The specific folio or page this image depicts.',
-    example: 'f.2r, p.15',
-  },
-
-  // -- Image Texts --
-  'imageText.type': {
-    description:
-      'Whether this text is a transcription (original script) or translation (modern language rendering).',
-  },
-  'imageText.status': {
-    description: 'The editorial status of this text: Draft, Review, Live, or Reviewed.',
-  },
 
   // -- Symbols / Palaeography --
-  'character.type': {
-    description: 'The category of this character, e.g. Letter, Punctuation, or Abbreviation.',
-  },
-  'allograph.name': {
-    description: 'A human-readable name for this allograph, typically describing its form.',
-    example: 'b (minuscule), B (majuscule)',
-  },
-  'feature.set_by_default': {
-    description:
-      'When checked, this feature is pre-selected for new annotations using this allograph + component combination. Useful for the most common variant.',
-  },
-
-  // -- Scribes --
-  'scribe.scriptorium': {
-    description: 'The writing centre or monastery associated with this scribe, if known.',
-  },
-  'scribe.period': {
-    description: 'The date range in which this scribe was active.',
-  },
 
   // -- Hands --
-  'hand.script': {
-    description: 'The script type used by this hand, e.g. Caroline Minuscule, Insular.',
-  },
-  'hand.itemPart': {
-    description:
-      'The specific part of a manuscript this hand is associated with. Changing this will update the available images.',
-  },
-
-  // -- Posts --
-  'publication.status': {
-    description:
-      'Draft posts are only visible to staff. Published items appear on the public site.',
-  },
-  'publication.keywords': {
-    description: 'Comma-separated tags used for filtering and related post suggestions.',
-    example: 'palaeography, charter, twelfth-century',
-  },
-  'publication.published_at': {
-    description: 'The date this post goes live. Can be set in the future for scheduled publishing.',
-  },
 
   // -- Common --
-  'date.minWeight': {
-    description: 'The earliest year in the date range, used for sorting and filtering.',
-    example: '1100',
-  },
-  'date.maxWeight': {
-    description: 'The latest year in the date range.',
-    example: '1250',
-  },
 };

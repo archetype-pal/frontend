@@ -25,7 +25,7 @@ import {
   updateMenuHeading,
 } from '@/services/backoffice/pages';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import {
   isReservedHeadingSlug,
   resolvePageText,
@@ -85,7 +85,7 @@ export function MenuHeadingsPanel({ enabled }: { enabled: boolean }) {
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('pages.headingToastFailedSave'), { description: formatApiError(err) });
+      toastApiError(t('pages.headingToastFailedSave'), err);
     },
   });
 
@@ -97,7 +97,7 @@ export function MenuHeadingsPanel({ enabled }: { enabled: boolean }) {
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('pages.headingToastFailedDelete'), { description: formatApiError(err) });
+      toastApiError(t('pages.headingToastFailedDelete'), err);
     },
   });
 

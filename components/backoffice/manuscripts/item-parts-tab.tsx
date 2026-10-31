@@ -27,7 +27,7 @@ import { CurrentItemCombobox } from './current-item-combobox';
 import { ItemPartHandsSection } from './item-part-hands-section';
 import { createItemPart, updateItemPart, deleteItemPart } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { ItemPartImage, ItemPartNested } from '@/types/backoffice';
 
 interface ItemPartsTabProps {
@@ -48,9 +48,7 @@ export function ItemPartsTab({ historicalItemId, itemParts }: ItemPartsTabProps)
       });
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.partAddFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.partAddFailed'), err);
     },
   });
 
@@ -127,9 +125,7 @@ function ItemPartCard({
       setDirty(false);
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.partUpdateFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.partUpdateFailed'), err);
     },
   });
 
@@ -140,9 +136,7 @@ function ItemPartCard({
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.partRemoveFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.partRemoveFailed'), err);
     },
   });
 

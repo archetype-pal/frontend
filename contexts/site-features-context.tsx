@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import {
   getEnabledSearchCategories,
   getDefaultConfig,
@@ -31,14 +31,7 @@ export function SiteFeaturesProvider({
   const defaults = useMemo(() => getDefaultConfig(), []);
   // Config is provided by the server (SSR) in production; the bare-provider
   // fallback to defaults keeps the provider usable standalone (e.g. in tests).
-  const [config, setConfig] = useState<SiteFeaturesConfig>(initialConfig ?? defaults);
-
-  // Sync with server-provided config (e.g. after router.refresh())
-  const [prevInitialConfig, setPrevInitialConfig] = useState(initialConfig);
-  if (initialConfig && initialConfig !== prevInitialConfig) {
-    setPrevInitialConfig(initialConfig);
-    setConfig(initialConfig);
-  }
+  const config = initialConfig ?? defaults;
 
   const isSectionEnabled = useCallback(
     (key: SectionKey) => config.sections[key] !== false,

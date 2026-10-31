@@ -1,9 +1,5 @@
 import type { DraftSharePayload } from '@/types/annotation-viewer';
 
-export const metaKeyFor = (iiif: string) => `annotations:meta:${iiif}`;
-
-export const cacheKeyFor = (iiif: string) => `annotations:${iiif}`;
-
 export const isDbId = (id?: string) => typeof id === 'string' && id.startsWith('db:');
 
 export function toggleNumericId(list: number[], id: number): number[] {

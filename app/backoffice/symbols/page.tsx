@@ -2,56 +2,38 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/auth-context';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Type, Layers, Tag, ChevronRight } from 'lucide-react';
 import { SymbolTreeSidebar } from '@/components/backoffice/symbols/symbol-tree-sidebar';
 import { CharacterDetail } from '@/components/backoffice/symbols/character-detail';
-import {
-  getCharacters,
-  getComponents,
-  getFeatures,
-  getPositions,
-  createCharacter,
-} from '@/services/backoffice/symbols';
+import { createCharacter } from '@/services/backoffice/symbols';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import {
   BackofficeErrorState,
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
+import {
+  useCharacters,
+  useComponents,
+  useFeatures,
+  usePositions,
+} from '@/hooks/backoffice/use-lookups';
 
 export default function SymbolsPage() {
   const t = useTranslations('backoffice');
-  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sidebarTab, setSidebarTab] = useState('characters');
 
-  const characters = useQuery({
-    queryKey: backofficeKeys.characters.all(),
-    queryFn: () => getCharacters(),
-    enabled: isAuthenticated,
-  });
+  const characters = useCharacters();
 
-  const components = useQuery({
-    queryKey: backofficeKeys.components.all(),
-    queryFn: () => getComponents(),
-    enabled: isAuthenticated,
-  });
+  const components = useComponents();
 
-  const features = useQuery({
-    queryKey: backofficeKeys.features.all(),
-    queryFn: () => getFeatures(),
-    enabled: isAuthenticated,
-  });
+  const features = useFeatures();
 
-  const positions = useQuery({
-    queryKey: backofficeKeys.positions.all(),
-    queryFn: () => getPositions(),
-    enabled: isAuthenticated,
-  });
+  const positions = usePositions();
 
   const createMut = useMutation({
     mutationFn: (data: { name: string; type: string | null }) => createCharacter(data),
@@ -61,9 +43,7 @@ export default function SymbolsPage() {
       setSelectedId(newChar.id);
     },
     onError: (err) => {
-      toast.error(t('symbols.toastFailedCreate'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('symbols.toastFailedCreate'), err);
     },
   });
 

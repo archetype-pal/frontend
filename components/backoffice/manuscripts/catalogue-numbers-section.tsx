@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/auth-context';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Plus, Trash2, ExternalLink } from 'lucide-react';
@@ -16,16 +15,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { InlineEdit } from '@/components/backoffice/common/inline-edit';
-import { getSources } from '@/services/backoffice/manuscripts';
 import {
   createCatalogueNumber,
   updateCatalogueNumber,
   deleteCatalogueNumber,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { CatalogueNumber } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useSources } from '@/hooks/backoffice/use-lookups';
 
 interface CatalogueNumbersSectionProps {
   historicalItemId: number;
@@ -36,7 +35,6 @@ export function CatalogueNumbersSection({
   historicalItemId,
   catalogueNumbers,
 }: CatalogueNumbersSectionProps) {
-  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const { getLabel, getPluralLabel } = useModelLabels();
@@ -50,11 +48,7 @@ export function CatalogueNumbersSection({
   const [editingSourceId, setEditingSourceId] = useState<number | null>(null);
   const [editSourceValue, setEditSourceValue] = useState('');
 
-  const { data: sources } = useQuery({
-    queryKey: backofficeKeys.sources.all(),
-    queryFn: () => getSources(),
-    enabled: isAuthenticated,
-  });
+  const { data: sources } = useSources();
 
   const invalidate = () =>
     queryClient.invalidateQueries({
@@ -78,9 +72,10 @@ export function CatalogueNumbersSection({
       setNewUrl('');
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.labelAddFailed', { label: catalogueLabel.toLowerCase() }), {
-        description: formatApiError(err),
-      });
+      toastApiError(
+        t('manuscriptsDetail.labelAddFailed', { label: catalogueLabel.toLowerCase() }),
+        err
+      );
     },
   });
 
@@ -93,11 +88,9 @@ export function CatalogueNumbersSection({
       setEditingSourceId(null);
     },
     onError: (err) => {
-      toast.error(
+      toastApiError(
         t('manuscriptsDetail.labelUpdateFailed', { label: catalogueLabel.toLowerCase() }),
-        {
-          description: formatApiError(err),
-        }
+        err
       );
     },
   });
@@ -109,11 +102,9 @@ export function CatalogueNumbersSection({
       invalidate();
     },
     onError: (err) => {
-      toast.error(
+      toastApiError(
         t('manuscriptsDetail.labelRemoveFailed', { label: catalogueLabel.toLowerCase() }),
-        {
-          description: formatApiError(err),
-        }
+        err
       );
     },
   });

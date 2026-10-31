@@ -36,7 +36,7 @@ import {
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { cn } from '@/lib/utils';
@@ -96,9 +96,7 @@ function CommentsPageContent() {
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('comments.toastFailedApprove'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('comments.toastFailedApprove'), err);
     },
   });
 
@@ -109,9 +107,7 @@ function CommentsPageContent() {
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('comments.toastFailedReject'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('comments.toastFailedReject'), err);
     },
   });
 
@@ -123,9 +119,7 @@ function CommentsPageContent() {
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(t('comments.toastFailedDelete'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('comments.toastFailedDelete'), err);
     },
   });
 

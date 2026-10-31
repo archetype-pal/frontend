@@ -21,7 +21,6 @@ export default function DatesPage() {
     <SimpleCrudPage<BackofficeDate>
       queryKey={backofficeKeys.dates.all()}
       queryFn={() => getDates()}
-      getRows={(data) => (Array.isArray(data) ? (data as BackofficeDate[]) : [])}
       createFn={(payload) =>
         createDate({
           date: String(payload.date ?? ''),

@@ -33,7 +33,7 @@ import { BackofficeErrorState } from '@/components/backoffice/common/query-state
 import { PreviewAsPublicDialog } from '@/components/backoffice/preview-as-public-dialog';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { invalidateAfterImageTextDelete } from '@/lib/backoffice/image-text-cache';
 import {
   deleteImageText,
@@ -122,7 +122,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       setDirty(false);
     },
     onError: (err) => {
-      toast.error(t('imageTexts.toastFailedSave'), { description: formatApiError(err) });
+      toastApiError(t('imageTexts.toastFailedSave'), err);
     },
   });
 
@@ -137,8 +137,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       queryClient.invalidateQueries({ queryKey: backofficeKeys.reviewQueue.all() });
       setStatus(saved.status);
     },
-    onError: (err) =>
-      toast.error(t('imageTexts.toastTransitionFailed'), { description: formatApiError(err) }),
+    onError: (err) => toastApiError(t('imageTexts.toastTransitionFailed'), err),
   });
 
   const deleteMut = useMutation({
@@ -150,8 +149,7 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
       queryClient.removeQueries({ queryKey: backofficeKeys.imageTexts.detail(textId) });
       router.push('/backoffice/texts');
     },
-    onError: (err) =>
-      toast.error(t('imageTexts.toastDeleteFailed'), { description: formatApiError(err) }),
+    onError: (err) => toastApiError(t('imageTexts.toastDeleteFailed'), err),
   });
 
   useKeyboardShortcut(

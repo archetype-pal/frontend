@@ -35,7 +35,7 @@ import {
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toOrdering } from '@/lib/backoffice/ordering';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { formatAge } from '@/lib/backoffice/format-age';
 import {
@@ -144,8 +144,7 @@ export default function TrashPage() {
       invalidateGraphs();
       setTableEpoch((n) => n + 1);
     },
-    onError: (err) =>
-      toast.error(t('trash.toastRestoreFailed'), { description: formatApiError(err) }),
+    onError: (err) => toastApiError(t('trash.toastRestoreFailed'), err),
   });
 
   const purgeMut = useMutation({
@@ -156,8 +155,7 @@ export default function TrashPage() {
       setPurgeTarget(null);
       setTableEpoch((n) => n + 1);
     },
-    onError: (err) =>
-      toast.error(t('trash.toastPurgeFailed'), { description: formatApiError(err) }),
+    onError: (err) => toastApiError(t('trash.toastPurgeFailed'), err),
   });
 
   // Bound out of the mutation object, which useMutation rebuilds every render:

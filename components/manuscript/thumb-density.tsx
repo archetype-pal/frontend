@@ -1,7 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import { useTranslations } from 'next-intl';
+
+import { useStoredPreference } from '@/hooks/use-stored-preference';
 
 import { Segmented, type SegmentedOption } from '@/components/ui/segmented';
 
@@ -21,20 +22,13 @@ export const DENSITY_THUMB_PX: Record<ThumbDensity, number> = {
 };
 
 const STORAGE_KEY = 'annotation-gallery-density';
+const parseDensity = (raw: string | null): ThumbDensity =>
+  raw === 'compact' || raw === 'comfortable' || raw === 'large' ? raw : 'comfortable';
+const serializeDensity = (density: ThumbDensity) => density;
 
 /** Graph thumbnail density, persisted across sessions and shared by every graph gallery. */
-export function useThumbDensity(): [ThumbDensity, (next: ThumbDensity) => void] {
-  const [density, setDensity] = React.useState<ThumbDensity>('comfortable');
-  React.useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    // oxlint-disable-next-line react-hooks/set-state-in-effect -- seed locally-owned state from localStorage after mount; deferring to an effect (vs. a lazy useState initializer) is required to avoid an SSR/client hydration mismatch, since `window` is unavailable during server render.
-    if (saved === 'compact' || saved === 'comfortable' || saved === 'large') setDensity(saved);
-  }, []);
-  const changeDensity = React.useCallback((next: ThumbDensity) => {
-    setDensity(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
-  }, []);
-  return [density, changeDensity];
+export function useThumbDensity() {
+  return useStoredPreference(STORAGE_KEY, parseDensity, serializeDensity, 'comfortable');
 }
 
 // Thumbnail-size segmented control (G6.4). Arrow keys move between sizes.

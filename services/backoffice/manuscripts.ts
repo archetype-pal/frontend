@@ -163,13 +163,11 @@ export const deleteRepository = repositoriesCrud.remove;
 
 // ── Bibliographic Sources ───────────────────────────────────────────────
 
-const sourcesCrud = createCrudService<BibliographicSource>(
+const sourcesCrud = createCrudService<BibliographicSource[], BibliographicSource>(
   '/api/v1/manuscripts/management/sources/'
 );
 
-export function getSources() {
-  return backofficeGet<BibliographicSource[]>('/api/v1/manuscripts/management/sources/');
-}
+export const getSources = () => sourcesCrud.list();
 
 export const createSource = sourcesCrud.create;
 export const updateSource = sourcesCrud.update;
@@ -177,11 +175,11 @@ export const deleteSource = sourcesCrud.remove;
 
 // ── Item Formats ────────────────────────────────────────────────────────
 
-const formatsCrud = createCrudService<ItemFormat>('/api/v1/manuscripts/management/formats/');
+const formatsCrud = createCrudService<ItemFormat[], ItemFormat>(
+  '/api/v1/manuscripts/management/formats/'
+);
 
-export function getFormats() {
-  return backofficeGet<ItemFormat[]>('/api/v1/manuscripts/management/formats/');
-}
+export const getFormats = () => formatsCrud.list();
 
 export const createFormat = formatsCrud.create;
 export const updateFormat = formatsCrud.update;
@@ -189,11 +187,11 @@ export const deleteFormat = formatsCrud.remove;
 
 // ── Dates ───────────────────────────────────────────────────────────────
 
-const datesCrud = createCrudService<BackofficeDate>('/api/v1/management/common/dates/');
+const datesCrud = createCrudService<BackofficeDate[], BackofficeDate>(
+  '/api/v1/management/common/dates/'
+);
 
-export function getDates() {
-  return backofficeGet<BackofficeDate[]>('/api/v1/management/common/dates/');
-}
+export const getDates = () => datesCrud.list();
 
 export const createDate = datesCrud.create;
 export const updateDate = datesCrud.update;
@@ -201,10 +199,10 @@ export const deleteDate = datesCrud.remove;
 
 // ── Places ──────────────────────────────────────────────────────────────
 
-const placesCrud = createCrudService<BackofficePlace>('/api/v1/management/common/places/');
+const placesCrud = createCrudService<BackofficePlace[], BackofficePlace>(
+  '/api/v1/management/common/places/'
+);
 
-export function getPlaces() {
-  return backofficeGet<BackofficePlace[]>('/api/v1/management/common/places/');
-}
+export const getPlaces = () => placesCrud.list();
 
 export const createPlace = placesCrud.create;

@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 
@@ -101,9 +101,7 @@ export function useEntityEditor<TDetail, TForm extends object>(
       setDirty(false);
     },
     onError: (err) => {
-      toast.error(`Failed to save ${config.label.toLowerCase()}`, {
-        description: formatApiError(err),
-      });
+      toastApiError(`Failed to save ${config.label.toLowerCase()}`, err);
     },
   });
 
@@ -123,9 +121,7 @@ export function useEntityEditor<TDetail, TForm extends object>(
       router.push(config.listRoute);
     },
     onError: (err) => {
-      toast.error(`Failed to delete ${config.label.toLowerCase()}`, {
-        description: formatApiError(err),
-      });
+      toastApiError(`Failed to delete ${config.label.toLowerCase()}`, err);
     },
   });
 

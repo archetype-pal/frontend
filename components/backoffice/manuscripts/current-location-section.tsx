@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -22,13 +22,13 @@ import {
   createItemPart,
   updateItemPart,
   createCurrentItem,
-  getRepositories,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { CurrentItemOption, ItemPartNested, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useRepositories } from '@/hooks/backoffice/use-lookups';
 
 interface CurrentLocationSectionProps {
   historicalItemId: number;
@@ -70,11 +70,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
     isError: repositoriesFailed,
     isFetching: repositoriesFetching,
     refetch: refetchRepositories,
-  } = useQuery({
-    queryKey: backofficeKeys.repositories.all(),
-    queryFn: () => getRepositories(),
-    enabled: isAuthenticated,
-  });
+  } = useRepositories();
 
   const repositories: Repository[] = repositoriesData ?? [];
 
@@ -117,9 +113,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
         queryKey: backofficeKeys.currentItems.all(),
       });
     } catch (err) {
-      toast.error(t('manuscriptsDetail.locationSetFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.locationSetFailed'), err);
     } finally {
       setSaving(false);
     }
@@ -237,9 +231,7 @@ function SinglePartLocation({
       setDirty(false);
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.locationUpdateFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.locationUpdateFailed'), err);
     },
   });
 

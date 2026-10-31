@@ -18,7 +18,6 @@ export default function FormatsPage() {
     <SimpleCrudPage<ItemFormat>
       queryKey={backofficeKeys.formats.all()}
       queryFn={() => getFormats()}
-      getRows={(data) => (Array.isArray(data) ? (data as ItemFormat[]) : [])}
       createFn={(payload) => createFormat(payload as Partial<ItemFormat>)}
       updateFn={(id, payload) => updateFormat(id, payload as Partial<ItemFormat>)}
       deleteFn={(id) => deleteFormat(id)}

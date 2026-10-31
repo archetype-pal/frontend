@@ -12,6 +12,7 @@ import type { GraphListItem, ImageListItem } from '@/types/search';
 import type { CollectionItem } from '@/contexts/collection-context';
 import type { WorksetPayload } from '@/types/workset';
 import { getCollectionItemTypeLabel, getCollectionManuscriptLabel } from '@/lib/collection-display';
+import { errorMessage } from '@/lib/error-message';
 
 export interface LightboxState {
   // Current workspace
@@ -56,7 +57,6 @@ export interface LightboxState {
   setZoom: (zoom: number) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  clearError: () => void;
   loadSession: (sessionId: string) => Promise<void>;
   /**
    * Hydrate the store from a server workset payload. `persist` writes the
@@ -157,6 +157,32 @@ async function initializeStore(): Promise<{
   return { workspaces, images: imagesMap };
 }
 
+/**
+ * Swap `imageId`'s z-index with its nearest neighbour above (`direction` 1) or
+ * below (`direction` -1); a no-op at the top or bottom of the stack.
+ */
+function swapZIndex(get: () => LightboxState, imageId: string, direction: 1 | -1): void {
+  get().saveHistory();
+  const state = get();
+  const image = state.images.get(imageId);
+  if (!image) return;
+  let bestZ = direction > 0 ? Infinity : -Infinity;
+  let swapId: string | null = null;
+  state.images.forEach((img, id) => {
+    const z = img.position.zIndex;
+    const beyond = direction > 0 ? z > image.position.zIndex : z < image.position.zIndex;
+    const closer = direction > 0 ? z < bestZ : z > bestZ;
+    if (beyond && closer) {
+      bestZ = z;
+      swapId = id;
+    }
+  });
+  if (!swapId) return;
+  const swapImg = state.images.get(swapId)!;
+  state.updateImage(imageId, { position: { ...image.position, zIndex: swapImg.position.zIndex } });
+  state.updateImage(swapId, { position: { ...swapImg.position, zIndex: image.position.zIndex } });
+}
+
 export const useLightboxStore = create<LightboxState>((set, get) => ({
   currentWorkspaceId: null,
   workspaces: [],
@@ -183,7 +209,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to initialize',
+        error: errorMessage(error, 'Failed to initialize'),
         isLoading: false,
       });
     }
@@ -546,10 +572,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     set({ error });
   },
 
-  clearError: () => {
-    set({ error: null });
-  },
-
   loadSession: async (sessionId) => {
     set({ isLoading: true });
     try {
@@ -583,7 +605,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to load session',
+        error: errorMessage(error, 'Failed to load session'),
         isLoading: false,
       });
     }
@@ -617,7 +639,7 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : 'Failed to load workset',
+        error: errorMessage(error, 'Failed to load workset'),
         isLoading: false,
       });
     }
@@ -659,55 +681,9 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
     }
   },
 
-  moveUp: (imageId) => {
-    get().saveHistory();
-    const state = get();
-    const image = state.images.get(imageId);
-    if (!image) return;
-    // Find the next higher zIndex
-    let nextZ = Infinity;
-    let swapId: string | null = null;
-    state.images.forEach((img, id) => {
-      if (img.position.zIndex > image.position.zIndex && img.position.zIndex < nextZ) {
-        nextZ = img.position.zIndex;
-        swapId = id;
-      }
-    });
-    if (swapId) {
-      const swapImg = state.images.get(swapId)!;
-      get().updateImage(imageId, {
-        position: { ...image.position, zIndex: swapImg.position.zIndex },
-      });
-      get().updateImage(swapId, {
-        position: { ...swapImg.position, zIndex: image.position.zIndex },
-      });
-    }
-  },
+  moveUp: (imageId) => swapZIndex(get, imageId, 1),
 
-  moveDown: (imageId) => {
-    get().saveHistory();
-    const state = get();
-    const image = state.images.get(imageId);
-    if (!image) return;
-    // Find the next lower zIndex
-    let prevZ = -Infinity;
-    let swapId: string | null = null;
-    state.images.forEach((img, id) => {
-      if (img.position.zIndex < image.position.zIndex && img.position.zIndex > prevZ) {
-        prevZ = img.position.zIndex;
-        swapId = id;
-      }
-    });
-    if (swapId) {
-      const swapImg = state.images.get(swapId)!;
-      get().updateImage(imageId, {
-        position: { ...image.position, zIndex: swapImg.position.zIndex },
-      });
-      get().updateImage(swapId, {
-        position: { ...swapImg.position, zIndex: image.position.zIndex },
-      });
-    }
-  },
+  moveDown: (imageId) => swapZIndex(get, imageId, -1),
 
   saveHistory: () => {
     const state = get();

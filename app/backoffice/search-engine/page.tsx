@@ -49,6 +49,7 @@ import {
   type TaskStatus,
   type TaskAction,
 } from '@/services/backoffice/search-engine';
+import { errorMessage } from '@/lib/error-message';
 
 /* ------------------------------------------------------------------ */
 /*  Types for local task tracking                                      */
@@ -125,7 +126,7 @@ export default function SearchEnginePage() {
     },
     onError: (err) => {
       toast.error(t('searchEngine.failedStartTask'), {
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description: errorMessage(err, 'Unknown error'),
       });
     },
   });

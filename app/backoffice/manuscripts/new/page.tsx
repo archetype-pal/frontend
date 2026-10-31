@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
@@ -24,15 +24,13 @@ import {
   createCurrentItem,
   deleteHistoricalItem,
   deleteCurrentItem,
-  getRepositories,
-  getDates,
 } from '@/services/backoffice/manuscripts';
-import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { formatApiError, toastApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { toast } from 'sonner';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useDates, useRepositories } from '@/hooks/backoffice/use-lookups';
 
 export default function NewManuscriptPage() {
   const t = useTranslations('backoffice');
@@ -66,17 +64,9 @@ export default function NewManuscriptPage() {
     isError: repositoriesFailed,
     isFetching: repositoriesFetching,
     refetch: refetchRepositories,
-  } = useQuery({
-    queryKey: backofficeKeys.repositories.all(),
-    queryFn: () => getRepositories(),
-    enabled: isAuthenticated,
-  });
+  } = useRepositories();
 
-  const { data: datesData } = useQuery({
-    queryKey: backofficeKeys.dates.all(),
-    queryFn: () => getDates(),
-    enabled: isAuthenticated,
-  });
+  const { data: datesData } = useDates();
 
   const repositories: Repository[] = repositoriesData ?? [];
   const dates = datesData ?? [];
@@ -171,11 +161,9 @@ export default function NewManuscriptPage() {
       router.push(`/backoffice/manuscripts/${data.id}`);
     },
     onError: (err) => {
-      toast.error(
+      toastApiError(
         t('manuscriptsNew.toastFailedCreate', { label: historicalItemLabel.toLowerCase() }),
-        {
-          description: formatApiError(err),
-        }
+        err
       );
     },
   });

@@ -28,11 +28,11 @@ import {
   BackofficeInlineError,
 } from '@/components/backoffice/common/query-state';
 import { getHand, updateHand, deleteHand } from '@/services/backoffice/scribes';
-import { getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { AdminItemImage } from '@/services/backoffice/manuscripts';
+import { useDates } from '@/hooks/backoffice/use-lookups';
 
 export default function HandDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslations('backoffice');
@@ -81,11 +81,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
 
   const availableImages = useMemo(() => imagesData ?? [], [imagesData]);
 
-  const { data: dates } = useQuery({
-    queryKey: backofficeKeys.dates.all(),
-    queryFn: () => getDates(),
-    enabled: isAuthenticated,
-  });
+  const { data: dates } = useDates();
 
   if (editor.isError) {
     return (

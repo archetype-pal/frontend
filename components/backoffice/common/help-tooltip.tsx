@@ -3,14 +3,12 @@
 import { HelpCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { helpTexts, type HelpEntry } from '@/lib/backoffice/help-texts';
+import { helpTexts } from '@/lib/backoffice/help-texts';
 import { cn } from '@/lib/utils';
 
 interface HelpTooltipProps {
   /** Dot-notation key into the help-texts dictionary, e.g. "manuscript.hair_type" */
   field: string;
-  /** Override the dictionary entry with a custom entry */
-  entry?: HelpEntry;
   className?: string;
 }
 
@@ -22,9 +20,9 @@ interface HelpTooltipProps {
  * <Label>Hair type <HelpTooltip field="manuscript.hair_type" /></Label>
  * ```
  */
-function HelpTooltip({ field, entry, className }: HelpTooltipProps) {
+function HelpTooltip({ field, className }: HelpTooltipProps) {
   const t = useTranslations('backoffice');
-  const help = entry ?? helpTexts[field];
+  const help = helpTexts[field];
   if (!help) return null;
 
   return (
@@ -68,20 +66,11 @@ interface FieldLabelProps {
   required?: boolean;
   /** Key into help-texts dictionary */
   helpField?: string;
-  /** Custom help entry (overrides dictionary lookup) */
-  helpEntry?: HelpEntry;
   htmlFor?: string;
   className?: string;
 }
 
-export function FieldLabel({
-  children,
-  required,
-  helpField,
-  helpEntry,
-  htmlFor,
-  className,
-}: FieldLabelProps) {
+export function FieldLabel({ children, required, helpField, htmlFor, className }: FieldLabelProps) {
   const t = useTranslations('backoffice');
   return (
     <label
@@ -104,7 +93,7 @@ export function FieldLabel({
           <span className="sr-only">{t('helpTooltip.required')}</span>
         </>
       )}
-      {helpField && <HelpTooltip field={helpField} entry={helpEntry} />}
+      {helpField && <HelpTooltip field={helpField} />}
     </label>
   );
 }

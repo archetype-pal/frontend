@@ -23,10 +23,8 @@ export interface HandDetail {
   priority?: number | null;
   is_default?: boolean | null;
   // Additional fields that may come from the API
-  script?: string | null;
   repository_name?: string;
   repository_city?: string;
-  shelfmark?: string;
   catalogue_numbers?: string;
 }
 

@@ -43,13 +43,7 @@ export function useKeyboardShortcut(combo: string, handler: ShortcutHandler, ena
 
       // Match the key
       const eventKey = e.key.toLowerCase();
-      const matched =
-        eventKey === key ||
-        (key === 'backspace' && eventKey === 'backspace') ||
-        (key === 'escape' && eventKey === 'escape') ||
-        (key === 'enter' && eventKey === 'enter');
-
-      if (matched) {
+      if (eventKey === key) {
         e.preventDefault();
         handlerRef.current(e);
       }

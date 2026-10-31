@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { saveRegion, type LightboxRegion } from '@/lib/lightbox-db';
+import { errorMessage } from '@/lib/error-message';
 
 /**
  * Load an image, draw the crop region to an offscreen canvas, and return a
@@ -239,7 +240,7 @@ function LightboxPageContent() {
           setError(failures.join('. '));
         }
       } catch (error) {
-        if (!cancelled) setError(error instanceof Error ? error.message : 'Failed to load images');
+        if (!cancelled) setError(errorMessage(error, 'Failed to load images'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -309,7 +310,7 @@ function LightboxPageContent() {
       await saveRegion(region);
       setCropImageId(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       toast.error(`Failed to save crop: ${msg}`);
       if (process.env.NODE_ENV === 'development') {
         console.error('[Lightbox] saveRegion failed:', err);

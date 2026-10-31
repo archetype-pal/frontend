@@ -22,20 +22,17 @@ import {
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { DataPagination } from '@/components/ui/data-pagination';
-import {
-  deleteCurrentItem,
-  getCurrentItems,
-  getRepositories,
-} from '@/services/backoffice/manuscripts';
+import { deleteCurrentItem, getCurrentItems } from '@/services/backoffice/manuscripts';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { listAllPages } from '@/lib/backoffice/list-all-pages';
 import { toOrdering } from '@/lib/backoffice/ordering';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+import { useRepositories } from '@/hooks/backoffice/use-lookups';
 
 const ORDERING_FIELDS = {
   repository_name: 'repository__label',
@@ -123,11 +120,7 @@ export default function PhysicalVolumesPage() {
     isError: repositoriesFailed,
     isFetching: repositoriesFetching,
     refetch: refetchRepositories,
-  } = useQuery({
-    queryKey: backofficeKeys.repositories.all(),
-    queryFn: () => getRepositories(),
-    enabled: isAuthenticated,
-  });
+  } = useRepositories();
 
   const repositories: Repository[] = repositoriesData ?? [];
 
@@ -153,9 +146,7 @@ export default function PhysicalVolumesPage() {
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(t('physicalVolumes.toastFailedDelete'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('physicalVolumes.toastFailedDelete'), err);
     },
   });
 
