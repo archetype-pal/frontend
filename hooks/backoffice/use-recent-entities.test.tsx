@@ -2,30 +2,6 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 // jsdom in this project doesn't ship Storage; install a shim.
-function installStorageShim() {
-  const store = new Map<string, string>();
-  const shim: Storage = {
-    get length() {
-      return store.size;
-    },
-    clear: () => store.clear(),
-    getItem: (k) => (store.has(k) ? (store.get(k) as string) : null),
-    key: (i) => Array.from(store.keys())[i] ?? null,
-    removeItem: (k) => {
-      store.delete(k);
-    },
-    setItem: (k, v) => {
-      store.set(k, String(v));
-    },
-  };
-  Object.defineProperty(window, 'localStorage', {
-    value: shim,
-    configurable: true,
-    writable: true,
-  });
-}
-
-installStorageShim();
 
 import { useRecentEntities } from './use-recent-entities';
 

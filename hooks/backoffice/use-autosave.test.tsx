@@ -2,30 +2,6 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // jsdom in this project doesn't ship Storage; install a shim.
-function installStorageShim() {
-  const store = new Map<string, string>();
-  const shim: Storage = {
-    get length() {
-      return store.size;
-    },
-    clear: () => store.clear(),
-    getItem: (k) => (store.has(k) ? (store.get(k) as string) : null),
-    key: (i) => Array.from(store.keys())[i] ?? null,
-    removeItem: (k) => {
-      store.delete(k);
-    },
-    setItem: (k, v) => {
-      store.set(k, String(v));
-    },
-  };
-  Object.defineProperty(window, 'localStorage', {
-    value: shim,
-    configurable: true,
-    writable: true,
-  });
-}
-
-installStorageShim();
 
 import { useAutosave } from './use-autosave';
 
@@ -194,17 +170,13 @@ describe('useAutosave', () => {
   });
 
   it('save() silently absorbs localStorage failures (quota / private mode)', () => {
-    const originalSet = window.localStorage.setItem.bind(window.localStorage);
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('QuotaExceededError', 'QuotaExceededError');
     });
     const { result } = renderHook(() => useAutosave(KEY, { v: 'x' }, false));
     expect(() => act(() => result.current.save())).not.toThrow();
     // Status stays at idle because the catch swallowed before setStatus('saved').
     expect(result.current.status).toBe('idle');
-
-    // Restore for cleanup.
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(originalSet);
   });
 
   it('unmount cancels the interval — no further writes happen', () => {
