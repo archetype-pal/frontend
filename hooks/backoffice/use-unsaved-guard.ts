@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 /**
  * Warns the user before leaving the page when there are unsaved changes.
@@ -14,8 +13,6 @@ import { useRouter } from 'next/navigation';
  * @param dirty – whether the form has unsaved changes.
  */
 export function useUnsavedGuard(dirty: boolean) {
-  const router = useRouter();
-
   useEffect(() => {
     if (!dirty) return;
 
@@ -68,5 +65,5 @@ export function useUnsavedGuard(dirty: boolean) {
       window.removeEventListener('popstate', onPopState);
       document.removeEventListener('click', onClickCapture, true);
     };
-  }, [dirty, router]);
+  }, [dirty]);
 }
