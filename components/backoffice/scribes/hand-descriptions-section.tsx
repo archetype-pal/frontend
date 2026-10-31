@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/auth-context';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Plus, Trash2 } from 'lucide-react';
@@ -22,10 +21,10 @@ import {
   updateHandDescription,
   deleteHandDescription,
 } from '@/services/backoffice/scribes';
-import { getSources } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import type { AdminHandListItem, HandDescription } from '@/types/backoffice';
+import { useSources } from '@/hooks/backoffice/use-lookups';
 
 const RichTextEditor = dynamic(
   () => import('@/components/backoffice/common/rich-text-editor').then((m) => m.RichTextEditor),
@@ -68,7 +67,6 @@ export function HandDescriptionsSection({
   descriptions,
   onDirtyChange,
 }: HandDescriptionsSectionProps) {
-  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
@@ -93,11 +91,7 @@ export function HandDescriptionsSection({
     onDirtyChange?.(anyDirty);
   }, [anyDirty, onDirtyChange]);
 
-  const { data: sources } = useQuery({
-    queryKey: backofficeKeys.sources.all(),
-    queryFn: () => getSources(),
-    enabled: isAuthenticated,
-  });
+  const { data: sources } = useSources();
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.detail(handId) });

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/auth-context';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Plus, Trash2, Pencil, Check, X } from 'lucide-react';
@@ -22,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getSources } from '@/services/backoffice/manuscripts';
 import {
   createDescription,
   updateDescription,
@@ -41,6 +39,7 @@ import {
 } from '@/lib/tei-description';
 import { DescriptionTeiEditor } from './description-tei-editor';
 import type { HistoricalItemDescription } from '@/types/backoffice';
+import { useSources } from '@/hooks/backoffice/use-lookups';
 
 /**
  * Legacy HTML → plain text, entities decoded.
@@ -71,7 +70,6 @@ interface DescriptionsSectionProps {
  * data model are deliberately untouched.
  */
 export function DescriptionsSection({ historicalItemId, descriptions }: DescriptionsSectionProps) {
-  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
@@ -87,11 +85,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
   const [editingSourceId, setEditingSourceId] = useState<number | null>(null);
   const [editSourceValue, setEditSourceValue] = useState('');
 
-  const { data: sources } = useQuery({
-    queryKey: backofficeKeys.sources.all(),
-    queryFn: () => getSources(),
-    enabled: isAuthenticated,
-  });
+  const { data: sources } = useSources();
 
   const invalidate = () =>
     queryClient.invalidateQueries({

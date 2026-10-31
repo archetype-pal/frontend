@@ -34,7 +34,6 @@ import {
   updateHistoricalItem,
   deleteHistoricalItem,
 } from '@/services/backoffice/manuscripts';
-import { getFormats, getDates } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
@@ -42,6 +41,7 @@ import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
 import type { HistoricalItemDetail } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useDates, useFormats } from '@/hooks/backoffice/use-lookups';
 
 interface ManuscriptWorkspaceProps {
   itemId: number;
@@ -85,17 +85,9 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
     enabled: isAuthenticated,
   });
 
-  const { data: formats } = useQuery({
-    queryKey: backofficeKeys.formats.all(),
-    queryFn: () => getFormats(),
-    enabled: isAuthenticated,
-  });
+  const { data: formats } = useFormats();
 
-  const { data: dates } = useQuery({
-    queryKey: backofficeKeys.dates.all(),
-    queryFn: () => getDates(),
-    enabled: isAuthenticated,
-  });
+  const { data: dates } = useDates();
 
   const { track } = useRecentEntities();
 
