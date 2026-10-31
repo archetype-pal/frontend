@@ -45,8 +45,7 @@ interface UseDraftSaveFlowArgs {
 }
 
 /**
- * The annotation create + draft-save flow, extracted from manuscript-viewer.tsx
- * (Track D1). Owns: decorating a freshly-drawn annotation with the active
+ * The annotation create + draft-save flow. Owns: decorating a freshly-drawn annotation with the active
  * allograph/hand/kind, the Annotorious create/update event handlers, and the
  * draft save/confirm handlers (incl. the load-bearing id-reconciliation after
  * Annotorious replaces a draft id, and bulk-apply across a multi-select).
@@ -71,8 +70,7 @@ export function useDraftSaveFlow({
   activeAssignmentHandId,
   currentCreationKind,
 }: UseDraftSaveFlowArgs) {
-  // Build an Annotorious payload from a popup record (merged in from the former
-  // useDraftPopupBuilders — these were thin wrappers consumed only here).
+  // Build an Annotorious payload from a popup record.
   const buildStandardAnnotationFromPopup = React.useCallback(
     (popupId: string): A9sAnnotation | null => {
       const popup = getPopupById(popupId);

@@ -655,13 +655,6 @@ function withAnchorScope<T>(active: boolean, render: () => T): T {
 }
 
 /**
- * The ref's identity, echoed onto the anchor as data attributes.
- *
- * Emitted so an entity hover card (docs/tei.md §4.5 phase 5) is later a purely
- * client-side addition — it can read kind and key off the DOM instead of the
- * corpus needing a re-render. Nothing consumes these today.
- */
-/**
  * Entity elements whose NAME implies the ref kind. A stamped
  * `<persName key="person_42" target="…">` carries no `@type` — deliberately, or
  * the hover pill would caption every person "name" — so the kind is recovered

@@ -36,9 +36,8 @@ interface UseShareTargetArgs {
 }
 
 /**
- * Citable-annotation share + deep-link, extracted from manuscript-viewer.tsx
- * (Track D1): building/copying a ?graph=… or ?draft=… share URL for a popup, and
- * the first-load effect that opens + centres the annotation named in the URL.
+ * Citable-annotation share + deep-link: building/copying a ?graph=… or ?draft=…
+ * share URL for a popup, and the first-load effect that opens + centres the annotation named in the URL.
  * Owns the once-per-image "handled" guard and its imageId-keyed reset.
  */
 export function useShareTarget({

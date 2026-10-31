@@ -335,7 +335,6 @@ export function linkTargetAt(editor: Editor): EditorLinkSelection | null {
   return { target: ancestors[ancestors.length - 1], ancestors };
 }
 
-/** Change the @type of the innermost element covering the selection. */
 /**
  * Merge attributes onto the innermost element covering the selection, across
  * every run it spans. A `null` value REMOVES that attribute.

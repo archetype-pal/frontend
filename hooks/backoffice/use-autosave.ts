@@ -26,18 +26,9 @@ function isAutosavePayload(value: unknown): value is { data: unknown; savedAt: n
 }
 
 /**
- * Autosave hook that periodically saves form data to localStorage.
- *
- * Features:
- * - Saves dirty form data every `intervalMs` milliseconds
- * - Recovers data when the component mounts if a draft exists
- * - Shows "Saving..." / "Saved" / "Unsaved changes" status
- * - Clears the draft when the user explicitly saves or discards
- *
- * @param key      Unique key for this form (e.g. `publication:my-slug`)
- * @param data     Current form data to save
- * @param dirty    Whether the form has unsaved changes
- * @param intervalMs  Autosave interval (default: 30 seconds)
+ * Keeps a localStorage draft of a form while it is dirty, saving every
+ * `intervalMs`, and reports a saving/saved status for the editor chrome.
+ * `key` names the form, e.g. `publication:my-slug`.
  */
 export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs = 30_000) {
   const storageKey = `${AUTOSAVE_PREFIX}${key}`;
@@ -50,7 +41,6 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  // Save to localStorage
   const save = useCallback(() => {
     try {
       const payload: AutosaveData<T> = {
@@ -65,7 +55,6 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
     }
   }, [storageKey]);
 
-  // Periodic autosave when dirty
   useEffect(() => {
     if (!dirty) {
       setStatus('idle'); // oxlint-disable-line react-hooks/set-state-in-effect
@@ -93,7 +82,6 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
     };
   }, [dirty, intervalMs, save]);
 
-  // Recover saved draft
   const recover = useCallback((): T | null => {
     try {
       const raw = localStorage.getItem(storageKey);
@@ -105,7 +93,6 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
     }
   }, [storageKey]);
 
-  // Check if a draft exists and how old it is
   const getDraftInfo = useCallback((): { exists: boolean; savedAt: number | null } => {
     try {
       const raw = localStorage.getItem(storageKey);
@@ -118,7 +105,7 @@ export function useAutosave<T>(key: string, data: T, dirty: boolean, intervalMs 
     }
   }, [storageKey]);
 
-  // Clear the autosaved draft (call after successful server save)
+  // Call after a successful server save.
   const discard = useCallback(() => {
     localStorage.removeItem(storageKey);
     setLastSavedAt(null);

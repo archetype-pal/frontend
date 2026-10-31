@@ -14,8 +14,8 @@ interface UseAnnotationNotificationsArgs {
 }
 
 /**
- * Toast helpers for local annotation create/update/delete, extracted from
- * manuscript-viewer.tsx (Track D1). Pure presentation — no viewer state.
+ * Toast helpers for local annotation create/update/delete. Pure presentation —
+ * no viewer state.
  */
 export function useAnnotationNotifications({
   canPersistAnyAnnotations,

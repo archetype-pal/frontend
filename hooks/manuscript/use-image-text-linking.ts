@@ -49,8 +49,7 @@ export function toTextRegionDraft(annotation: A9sAnnotation): A9sAnnotation {
 }
 
 /**
- * Track A/B — the transcription side panel + text↔region linking, extracted from
- * manuscript-viewer.tsx (Track D1). Owns the image-texts list, the panel
+ * The transcription side panel + text↔region linking. Owns the image-texts list, the panel
  * open/linked-span/selected-region state (incl. its own imageId-keyed reset), and
  * the link/unlink paths: the drawn-region create flow (startPendingLink →
  * linkPendingToPhrase) and the explicit Link Bar path (linkExistingRegionToElement).

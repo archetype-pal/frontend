@@ -72,8 +72,7 @@ interface UsePopupSelectionArgs {
 }
 
 /**
- * Popup selection + lifecycle, extracted from manuscript-viewer.tsx (Track D1).
- * Owns the open/clear/close path for the annotation popup collection, the
+ * Popup selection + lifecycle. Owns the open/clear/close path for the annotation popup collection, the
  * Annotorious select handler (incl. the region→text highlight and the
  * "selection updated" toast), the multi-select id sync, and the trivial
  * draft-field cascades (tab/allograph/hand). Internally owns the debounced

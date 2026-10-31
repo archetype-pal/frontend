@@ -38,26 +38,17 @@ async function extractCroppedPixels(
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      // The crop tool container is 100% width x 400px with background-size:contain.
-      // We need the same contain-fit math to map crop coords → image pixels.
-      // Assume container is roughly 800x400 (the crop tool max-w-4xl with p-4).
-      // Instead of guessing, compute the contain-fit for the actual image aspect ratio
-      // against the container the crop tool used (we know height=400).
+      // The crop tool contain-fits the image in a box 400px tall whose width is
+      // not known here. The widest it can have rendered is the larger of the
+      // crop's right edge and the aspect-correct width at full height; fitting
+      // the image into that box the same way maps crop coordinates back to
+      // image pixels.
       const containerH = 400;
-      // The crop tool container fills available width in a max-w-4xl (≈896px) modal minus padding.
-      // We can't know the exact width, but the crop coordinates already encode the
-      // container dimensions implicitly. Use the image aspect ratio to find the
-      // rendered size within a contain-fit box.
       const imgAspect = img.naturalWidth / img.naturalHeight;
-      // For background-size:contain in a box of (containerW x containerH), the
-      // rendered image size depends on the container width. Since we don't have
-      // the exact container width, compute it from the crop coordinates: the
-      // image was rendered at most containerH pixels tall.
       let renderedW: number;
       let renderedH: number;
       let offsetX = 0;
       let offsetY = 0;
-      // Approximate the container width as the max the modal could be
       const containerW = Math.max(crop.x + crop.width, imgAspect * containerH);
       if (imgAspect > containerW / containerH) {
         renderedW = containerW;

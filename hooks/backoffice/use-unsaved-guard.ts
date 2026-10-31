@@ -3,14 +3,9 @@
 import { useEffect } from 'react';
 
 /**
- * Warns the user before leaving the page when there are unsaved changes.
- *
- * Intercepts both:
- * - Browser/tab navigation via `beforeunload`
- * - Next.js client-side navigation via `window.onbeforeunload` confirmation
- *   and history/popstate interception
- *
- * @param dirty – whether the form has unsaved changes.
+ * Warns before leaving a page with unsaved changes: the browser's own
+ * beforeunload prompt for reloads and closed tabs, and a confirm() for
+ * back/forward (via a pushed duplicate history entry) and in-page link clicks.
  */
 export function useUnsavedGuard(dirty: boolean) {
   useEffect(() => {

@@ -265,9 +265,6 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
     });
   }, []);
 
-  // Search is refreshed manually in this system (see the search-engine page,
-  // which flags out-of-sync segments). Nudge once per batch so a newly
-  // uploaded image isn't silently missing from search.
   // Search is refreshed manually here (the search-engine page flags out-of-sync
   // segments), so a finished batch gets one reminder. Only the queue runner
   // sends it: it is the one path that can count honestly. A crumb is deleted

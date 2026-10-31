@@ -196,7 +196,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
   history: [],
   historyIndex: -1,
 
-  // Initialize function to load from IndexedDB
   initialize: async () => {
     set({ isLoading: true });
     try {
@@ -236,7 +235,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       currentWorkspaceId: workspaceId,
     }));
 
-    // Save to IndexedDB
     const { saveWorkspace } = await import('@/lib/lightbox-db');
     await saveWorkspace(workspace);
 
@@ -251,7 +249,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       const workspaces = state.workspaces.filter((w) => w.id !== workspaceId);
       const images = new Map(state.images);
 
-      // Remove images from this workspace
       state.images.forEach((img, id) => {
         if (img.workspaceId === workspaceId) {
           images.delete(id);
@@ -270,7 +267,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
   loadImage: async (item, batchOffset = 0) => {
     let workspaceId = get().currentWorkspaceId;
 
-    // Create workspace if none exists
     if (!workspaceId) {
       workspaceId = await get().createWorkspace();
     }
@@ -325,7 +321,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
             getIiifImageUrlWithBounds(infoUrl, { ...full, thumbnail: true }),
           ]);
         }
-        // Use coordinate dimensions for graphs
         if (coords) {
           naturalWidth = coords.w;
           naturalHeight = coords.h;
@@ -340,7 +335,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
       );
     }
 
-    // Compute aspect-correct default size
     const MAX_DEFAULT_DIM = 400;
     let width = MAX_DEFAULT_DIM;
     let height = MAX_DEFAULT_DIM;

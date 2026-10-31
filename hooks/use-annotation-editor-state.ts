@@ -310,8 +310,7 @@ export function useAnnotationEditorState(
     // Build per-task promises. We drop records that can't produce a task
     // (e.g. persisted-but-missing-id, shouldn't happen) so partition
     // indices stay 1:1 with the records arrays. Pre-flight validation
-    // is the caller's responsibility — see ROADMAP-EDITORS Phase 0.1
-    // for the surface contract.
+    // is the caller's responsibility.
     const upsertTasks: Promise<unknown>[] = [];
     const upsertRecords: AnnotationEditorRecord[] = [];
     for (const record of upsertCandidates) {

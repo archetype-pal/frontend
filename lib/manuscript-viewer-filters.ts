@@ -1,6 +1,5 @@
 /**
- * Pure annotation-visibility filter logic, extracted from manuscript-viewer.tsx
- * (Track D1). The viewer's `annotationVisibilityFilter` predicate and its
+ * Pure annotation-visibility filter logic. The viewer's `annotationVisibilityFilter` predicate and its
  * "is the filter doing anything?" flag are the trickiest branch of the viewer,
  * so the decision logic lives here, closure-free and unit-tested. The component
  * (and the filters hook) supply the canonical annotation's meta + draft flag.

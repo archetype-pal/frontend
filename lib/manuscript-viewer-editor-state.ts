@@ -93,8 +93,7 @@ export function markAnnotationDeleted(
     return next;
   }
 
-  // Persisted annotations stay in state as locally deleted until
-  // backend delete persistence is implemented in a later step.
+  // Persisted annotations stay in state, marked deleted, until saveAll sends the delete.
   return {
     ...records,
     [annotationId]: {

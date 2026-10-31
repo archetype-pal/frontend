@@ -109,7 +109,6 @@ export interface BulkAction {
 }
 
 interface PresetFilter<TData> {
-  /** Display label for the tab, e.g. "All", "Missing dates", "Drafts" */
   label: string;
   /** Filter function applied to data. Return true to include the row. */
   filter?: (row: TData) => boolean;
@@ -131,30 +130,23 @@ interface DataTableProps<TData extends RowData> {
   searchValue?: string;
   /** Callback fired when the search input changes (server-side search mode). */
   onSearchChange?: (value: string) => void;
-  /** Actions rendered in the toolbar (e.g. a "New" button). */
   toolbarActions?: React.ReactNode;
   /** Enable client-side pagination (default: true). */
   pagination?: boolean;
   pageSize?: number;
   /** Remembers the chosen rows per page in this browser under this name. */
   pageSizeKey?: string;
-  /** Enable row selection with checkboxes. */
   enableRowSelection?: boolean;
-  /** Bulk actions shown when rows are selected. */
   bulkActions?: BulkAction[];
   /** Unique ID accessor for bulk actions (default: 'id'). */
   getRowId?: (row: TData) => string;
-  /** Enable column visibility toggle. */
   enableColumnVisibility?: boolean;
-  /** Enable CSV export of current view. */
   enableExport?: boolean;
   /** Fetch every row for Export when the table holds only one server page. */
   fetchAllRows?: (options: Required<ListAllPagesOptions>) => Promise<TData[]>;
   /** Offer Export only for ticked rows. */
   exportSelectionOnly?: boolean;
-  /** Filename for CSV export. */
   exportFilename?: string;
-  /** Content for filter bar above the table. */
   filterBar?: React.ReactNode;
   /** Preset filter views displayed as tabs above the table. */
   presetFilters?: PresetFilter<TData>[];

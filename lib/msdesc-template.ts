@@ -9,7 +9,7 @@
  *   - all comments, PIs and placeholder ALL-CAPS text are stripped to empty
  *     defaults (empty elements self-close);
  *   - prose leaves whose template content is a paragraph keep an empty `<p/>`
- *     for the Phase-3 rich editor to mount on;
+ *     for the rich editor to mount on;
  *   - the template's attribute defaults are kept as initial dropdown values
  *     (`form="codex"`, `material="perg"`, `mainLang="la"`,
  *     `calendar="#Gregorian"`, `columns="1"`, layout/hand vocab defaults);
