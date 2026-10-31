@@ -58,8 +58,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { coerceLocale } from '@/lib/locale';
 import { searchHref, searchHrefForKeyword } from '@/lib/search-routing';
 import { getCarouselImageUrl } from '@/utils/api';
+import { parseBoolean, useStoredPreference } from '@/hooks/use-stored-preference';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
+const parseBannerVisible = (raw: string | null) => parseBoolean(raw, true);
 
 export default function Header({
   pages = [],
@@ -73,7 +75,12 @@ export default function Header({
   const tCompare = useTranslations('compare');
   const locale = coerceLocale(useLocale());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isBannerVisible, setIsBannerVisible] = useState(true);
+  const [isBannerVisible, setIsBannerVisible] = useStoredPreference(
+    BANNER_VISIBLE_KEY,
+    parseBannerVisible,
+    String,
+    true
+  );
   const headerRef = useRef<HTMLElement>(null);
 
   // Publish the sticky header's height as a CSS variable so other sticky chrome
@@ -99,19 +106,7 @@ export default function Header({
   const defaultSearchType = enabledCategories[0] ?? null;
   const defaultSearchHref = defaultSearchType ? searchHref(defaultSearchType) : '/not-found';
 
-  useEffect(() => {
-    const stored = localStorage.getItem(BANNER_VISIBLE_KEY);
-    if (stored !== null) {
-      const value = stored === 'true';
-      queueMicrotask(() => setIsBannerVisible(value));
-    }
-  }, []);
-
-  const toggleBanner = () => {
-    const next = !isBannerVisible;
-    setIsBannerVisible(next);
-    localStorage.setItem(BANNER_VISIBLE_KEY, String(next));
-  };
+  const toggleBanner = () => setIsBannerVisible(!isBannerVisible);
   const router = useRouter();
   const { suggestionsPool, loadGlobalSuggestions, getServerSuggestions } = useSearchContext();
   const isOnSearchPage = pathname?.startsWith('/search') ?? false;

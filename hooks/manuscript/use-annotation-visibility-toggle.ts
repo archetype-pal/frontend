@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import type { ViewerApi } from '@/components/manuscript/manuscript-annotorious';
+import { parseBoolean, useStoredPreference } from '@/hooks/use-stored-preference';
 
 interface UseAnnotationVisibilityToggleArgs {
   imageId: string;
@@ -10,27 +11,24 @@ interface UseAnnotationVisibilityToggleArgs {
   viewerApiRef: React.RefObject<ViewerApi | null>;
 }
 
+const parseVisible = (raw: string | null) => parseBoolean(raw, true);
+
 /**
  * Owns the per-image "annotations visible" toggle, extracted from
- * manuscript-viewer.tsx (Track D1): hydrates from localStorage (keyed by
- * imageId), syncs into the OSD viewer, and persists on toggle.
+ * manuscript-viewer.tsx (Track D1): remembered per imageId in localStorage
+ * and synced into the OSD viewer.
  */
 export function useAnnotationVisibilityToggle({
   imageId,
   osdReady,
   viewerApiRef,
 }: UseAnnotationVisibilityToggleArgs) {
-  const [annotationsEnabled, setAnnotationsEnabled] = React.useState<boolean>(true);
-
-  // Hydrate from localStorage (re-runs per image).
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const saved = localStorage.getItem(`annotationsVisible:${imageId}`);
-    if (saved !== null) {
-      // oxlint-disable-next-line react-hooks/set-state-in-effect -- Hydrate client-only state from localStorage after mount. The read must stay in an effect so SSR and the first client render both use the `true` default (avoiding a hydration mismatch); the stored value is applied post-hydration and re-applied when imageId changes.
-      setAnnotationsEnabled(saved === 'true');
-    }
-  }, [imageId]);
+  const [annotationsEnabled, setAnnotationsEnabled] = useStoredPreference(
+    `annotationsVisible:${imageId}`,
+    parseVisible,
+    String,
+    true
+  );
 
   // Sync visibility into the viewer once it's ready.
   React.useEffect(() => {
@@ -38,23 +36,12 @@ export function useAnnotationVisibilityToggle({
     viewerApiRef.current?.toggleAnnotations(annotationsEnabled);
   }, [annotationsEnabled, osdReady, viewerApiRef]);
 
-  const toggleAnnotations = React.useCallback(() => {
-    setAnnotationsEnabled((prev) => {
-      const next = !prev;
-
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(`annotationsVisible:${imageId}`, String(next));
-        } catch {
-          // ignore
-        }
-      }
-
-      // OSD sync is handled by the effect above (annotationsEnabled is a dep);
-      // calling it here too would double-fire under StrictMode.
-      return next;
-    });
-  }, [imageId]);
+  // OSD sync is handled by the effect above (annotationsEnabled is a dep);
+  // calling it here too would double-fire under StrictMode.
+  const toggleAnnotations = React.useCallback(
+    () => setAnnotationsEnabled(!annotationsEnabled),
+    [annotationsEnabled, setAnnotationsEnabled]
+  );
 
   return { annotationsEnabled, toggleAnnotations };
 }

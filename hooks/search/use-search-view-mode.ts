@@ -3,11 +3,13 @@
 import * as React from 'react';
 import type { ResultType } from '@/lib/search-types';
 import type { ViewMode } from '@/components/search/search-actions-menu';
+import { parseBoolean, useStoredPreference } from '@/hooks/use-stored-preference';
 
 const TABLE_ONLY_TYPES: readonly ResultType[] = ['texts', 'people', 'places'];
 const TABLE_ONLY_TYPE_SET = new Set<ResultType>(TABLE_ONLY_TYPES);
 const VIEW_PREFS_KEY = 'search-view-prefs';
 const FILTERS_SIDEBAR_COLLAPSED_KEY = 'search-filters-sidebar-collapsed';
+const parseCollapsed = (raw: string | null) => parseBoolean(raw, false);
 
 export function isTableOnlyType(type: ResultType): boolean {
   return TABLE_ONLY_TYPE_SET.has(type);
@@ -23,60 +25,19 @@ export function parseViewModeParam(raw: string | null, resultType: ResultType): 
   return v;
 }
 
-// --- filters-sidebar-collapsed external store (localStorage-backed) ---
-//
-// The sidebar-collapsed flag lives in localStorage, a browser store that is
-// unavailable during SSR. Reading it via useSyncExternalStore keeps the server
-// snapshot (`false`) and the client's first paint consistent (no hydration
-// mismatch) while letting `toggleFiltersSidebar` notify subscribers so React
-// re-renders without an effect.
-const sidebarListeners = new Set<() => void>();
-
-function subscribeSidebarCollapsed(onChange: () => void): () => void {
-  sidebarListeners.add(onChange);
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === FILTERS_SIDEBAR_COLLAPSED_KEY) onChange();
-  };
-  window.addEventListener('storage', onStorage);
-  return () => {
-    sidebarListeners.delete(onChange);
-    window.removeEventListener('storage', onStorage);
-  };
-}
-
-function getSidebarCollapsedSnapshot(): boolean {
-  try {
-    return window.localStorage.getItem(FILTERS_SIDEBAR_COLLAPSED_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function getSidebarCollapsedServerSnapshot(): boolean {
-  return false;
-}
-
-function setSidebarCollapsed(next: boolean): void {
-  try {
-    window.localStorage.setItem(FILTERS_SIDEBAR_COLLAPSED_KEY, next ? 'true' : 'false');
-  } catch {
-    // ignore
-  }
-  sidebarListeners.forEach((listener) => listener());
-}
-
 export function useSearchViewMode(resultType: ResultType) {
   const [viewMode, setViewMode] = React.useState<ViewMode>('table');
 
-  const filtersSidebarCollapsed = React.useSyncExternalStore(
-    subscribeSidebarCollapsed,
-    getSidebarCollapsedSnapshot,
-    getSidebarCollapsedServerSnapshot
+  const [filtersSidebarCollapsed, setFiltersSidebarCollapsed] = useStoredPreference(
+    FILTERS_SIDEBAR_COLLAPSED_KEY,
+    parseCollapsed,
+    String,
+    false
   );
-
-  const toggleFiltersSidebar = React.useCallback(() => {
-    setSidebarCollapsed(!getSidebarCollapsedSnapshot());
-  }, []);
+  const toggleFiltersSidebar = React.useCallback(
+    () => setFiltersSidebarCollapsed(!filtersSidebarCollapsed),
+    [filtersSidebarCollapsed, setFiltersSidebarCollapsed]
+  );
 
   // Load view mode preference from localStorage when resultType changes.
   //

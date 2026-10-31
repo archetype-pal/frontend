@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+import { useStoredPreference } from '@/hooks/use-stored-preference';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
@@ -200,36 +201,18 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
 // ---------------------------------------------------------------------------
 
 const STORAGE_PREFIX = 'backoffice-subgroup-';
+const serializeOpen = (open: boolean) => (open ? '1' : '0');
 
 function useSubGroupOpen(label: string, defaultOpen: boolean) {
   const key = STORAGE_PREFIX + label.toLowerCase().replace(/\s+/g, '-');
 
-  const [open, setOpen] = useState(() => {
-    if (typeof window === 'undefined') return defaultOpen;
-    const stored = localStorage.getItem(key);
-    return stored !== null ? stored === '1' : defaultOpen;
-  });
-
-  const toggle = useCallback(() => {
-    setOpen((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(key, next ? '1' : '0');
-      } catch {
-        // Quota exceeded / private mode — the sidebar still toggles via
-        // state; the preference just won't persist across reloads.
-      }
-      return next;
-    });
-  }, [key]);
-
-  // Sync with localStorage on mount (SSR hydration safety)
-  useEffect(() => {
-    const stored = localStorage.getItem(key);
-    if (stored !== null) {
-      setOpen(stored === '1'); // oxlint-disable-line react-hooks/set-state-in-effect
-    }
-  }, [key]);
+  const [open, setOpen] = useStoredPreference(
+    key,
+    (raw) => (raw !== null ? raw === '1' : defaultOpen),
+    serializeOpen,
+    defaultOpen
+  );
+  const toggle = useCallback(() => setOpen(!open), [open, setOpen]);
 
   return { open, toggle };
 }
