@@ -8,8 +8,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import RepositoriesPage from './page';
 import { createTestQueryClient } from '@/test/query-client';
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/services/backoffice/manuscripts', () => ({
   getRepositories: async () => [
     {

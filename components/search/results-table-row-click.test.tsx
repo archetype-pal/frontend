@@ -3,9 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ResultsTable } from './results-table';
 import type { HandListItem } from '@/types/search';
 
-vi.mock('@/contexts/model-labels-context', () => ({
-  useModelLabels: () => ({ getLabel: (key: string) => key }),
-}));
+vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 
 vi.mock('@/contexts/collection-context', () => ({
   useCollection: () => ({

@@ -48,14 +48,7 @@ vi.mock('@/contexts/auth-context', () => ({
   }),
 }));
 
-vi.mock('@/contexts/model-labels-context', () => ({
-  useModelLabels: () => ({
-    config: {},
-    loading: false,
-    getLabel: (key: string) => key,
-    getPluralLabel: (key: string) => key,
-  }),
-}));
+vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 
 vi.mock('@/contexts/collection-context', () => ({
   useCollection: () => ({

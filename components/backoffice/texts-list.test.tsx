@@ -11,14 +11,9 @@ const { fetchImageTextList, proxyFetch } = vi.hoisted(() => ({
   proxyFetch: vi.fn(),
 }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), loading: vi.fn() },
-}));
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 vi.mock('@/lib/api-fetch', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api-fetch')>()),
   proxyFetch,

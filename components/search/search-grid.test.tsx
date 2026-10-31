@@ -6,7 +6,7 @@ import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-c
 
 const { thumbnailUrlSpy } = vi.hoisted(() => ({ thumbnailUrlSpy: vi.fn() }));
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 
 vi.mock('@/contexts/collection-context', () => ({
   useCollection: () => ({

@@ -14,9 +14,7 @@ vi.mock('next/dynamic', () => ({
   default: () => () => null,
 }));
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 vi.mock('@/services/backoffice/manuscripts', () => ({
   updateMsDescArea: vi.fn().mockResolvedValue({}),

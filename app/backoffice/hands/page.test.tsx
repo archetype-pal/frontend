@@ -8,7 +8,7 @@ import { createTestQueryClient } from '@/test/query-client';
 
 const { getHands } = vi.hoisted(() => ({ getHands: vi.fn() }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('@/services/backoffice/scribes', () => ({ getHands }));
 
 const TOTAL = 45;

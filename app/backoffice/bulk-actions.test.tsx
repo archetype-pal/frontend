@@ -41,8 +41,8 @@ const services = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/services/backoffice/annotations', () => ({
   ...services,
   getTrashActors: vi.fn(async () => []),

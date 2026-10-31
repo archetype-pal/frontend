@@ -65,9 +65,7 @@ vi.mock('@/contexts/collection-context', async () => {
   };
 });
 
-vi.mock('@/contexts/model-labels-context', () => ({
-  useModelLabels: () => ({ getLabel: (k: string) => k, getPluralLabel: (k: string) => k }),
-}));
+vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 
 vi.mock('@/hooks/use-in-view', () => ({ useInView: () => true }));
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({

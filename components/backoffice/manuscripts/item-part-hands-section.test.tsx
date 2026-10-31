@@ -7,9 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { AdminHandListItem, AdminScribeListItem } from '@/types/backoffice';
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 const proxyFetchMock = vi.fn();
 vi.mock('@/lib/api-fetch', () => ({

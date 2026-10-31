@@ -6,9 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CurrentItemOption } from '@/types/backoffice';
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 vi.mock('@/contexts/model-labels-context', () => ({
   useModelLabels: () => ({ getLabel: () => 'Shelfmark' }),

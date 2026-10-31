@@ -13,9 +13,7 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
   createPlace: (...args: unknown[]) => createPlaceMock(...args),
 }));
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 import { PlaceCombobox } from './place-combobox';
 import { createTestQueryClient } from '@/test/query-client';

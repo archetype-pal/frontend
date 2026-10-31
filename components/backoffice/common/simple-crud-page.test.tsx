@@ -9,8 +9,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { SimpleCrudPage } from './simple-crud-page';
 import { createTestQueryClient } from '@/test/query-client';
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 
 type Format = { id: number; name: string };
 

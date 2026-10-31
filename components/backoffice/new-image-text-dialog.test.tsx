@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { NewImageTextDialog } from './new-image-text-dialog';
 import { createTestQueryClient } from '@/test/query-client';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/services/backoffice/image-texts-list', () => ({
   fetchImageTextList: async () => ({
     results: [{ id: 31, item_image: 1658, type: 'Transcription' }],

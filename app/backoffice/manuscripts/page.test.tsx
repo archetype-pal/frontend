@@ -12,8 +12,8 @@ const { getHistoricalItems, downloadBlob } = vi.hoisted(() => ({
   downloadBlob: vi.fn(),
 }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 vi.mock('@/services/backoffice/manuscripts', () => ({ getHistoricalItems }));
 vi.mock('@/lib/download', () => ({ downloadBlob }));
 

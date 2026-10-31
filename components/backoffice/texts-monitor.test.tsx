@@ -12,9 +12,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('view=recent'),
 }));
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 const OVERVIEW: TextsOverview = {
   generated_at: '2026-10-12T00:00:00Z',

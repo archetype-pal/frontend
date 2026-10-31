@@ -14,7 +14,7 @@ const services = vi.hoisted(() => ({
 }));
 vi.mock('@/services/backoffice/pages', () => services);
 
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('next-intl', () => ({
   useLocale: () => 'fr',
   useTranslations: () => (key: string) => key,

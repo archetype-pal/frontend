@@ -13,12 +13,12 @@ const { getComments, getAllPublications, routerReplace, urlParams } = vi.hoisted
   urlParams: { current: new URLSearchParams() },
 }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: routerReplace }),
   useSearchParams: () => urlParams.current,
 }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/services/backoffice/publications', () => ({
   getComments,
   getAllPublications,

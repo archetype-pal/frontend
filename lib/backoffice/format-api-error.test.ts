@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 import { formatApiError, toastApiError } from './format-api-error';
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 
 describe('formatApiError', () => {
   it('returns the `detail` field directly when present', () => {

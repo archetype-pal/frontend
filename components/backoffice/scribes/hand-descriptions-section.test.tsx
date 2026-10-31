@@ -21,9 +21,7 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
   getSources: () => getSourcesMock(),
 }));
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 // The real editor is TipTap behind next/dynamic; a textarea exercises the same
 // `content` / `onChange` contract.

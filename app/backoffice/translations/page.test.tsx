@@ -7,9 +7,9 @@ import { getDefaultModelLabelsConfig } from '@/lib/model-labels';
 import TranslationsPage from './page';
 import { createTestQueryClient } from '@/test/query-client';
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 
 const stored = getDefaultModelLabelsConfig();
 stored.labels.appManuscripts = { en: 'Corpus', fr: 'Corpus', de: 'Corpus' };

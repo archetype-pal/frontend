@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { copyLink } from './copy-link';
 
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 
 const MESSAGES = { copied: 'Link copied', failed: 'Could not copy' };
 
