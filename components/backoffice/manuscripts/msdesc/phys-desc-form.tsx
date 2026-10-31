@@ -14,6 +14,7 @@ import type {
   PhysDescState,
 } from '@/lib/msdesc-form';
 import {
+  opt,
   MsAddButton,
   MsOptionalSection,
   MsRemoveButton,
@@ -22,8 +23,6 @@ import {
   MsVocabSelect,
 } from './fields';
 import { MsDescLeafEditor } from './msdesc-leaf-editor';
-
-const opt = (value: string): string | undefined => (value === '' ? undefined : value);
 
 /** physDesc area form (roadmap 2.2): the ODD container tree as typed fields. */
 export function PhysDescForm({

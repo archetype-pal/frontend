@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,6 +22,7 @@ vi.mock('@/services/backoffice/scribes', () => ({
 }));
 
 import { ItemPartHandsSection, formatScribeOptionLabel } from './item-part-hands-section';
+import { createTestQueryClient } from '@/test/query-client';
 
 const HAND = {
   id: 11,
@@ -42,7 +43,7 @@ const page = (results: unknown[], next: string | null = null) =>
 const serverError = () => new Response('{}', { status: 500 });
 
 function renderSection() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
   render(
     <QueryClientProvider client={client}>

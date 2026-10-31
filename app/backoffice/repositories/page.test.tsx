@@ -1,11 +1,12 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import RepositoriesPage from './page';
+import { createTestQueryClient } from '@/test/query-client';
 
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -37,7 +38,7 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
 
 describe('<RepositoriesPage>', () => {
   it('disables delete, with the reason, on repositories that have linked items', async () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const client = createTestQueryClient();
     render(
       <QueryClientProvider client={client}>
         <TooltipProvider>

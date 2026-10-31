@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { authorizeSuperuser, getServerAuthToken } from '@/lib/auth-token-server';
 import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
-
-const MANAGEMENT_PAGES_PATH = '/api/v1/management/pages/';
+import { MANAGEMENT_PAGES_PATH } from '@/lib/backoffice/management-paths';
 
 type RouteParams = { params: Promise<{ slug: string }> };
 

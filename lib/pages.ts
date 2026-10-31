@@ -72,6 +72,9 @@ export function isReservedHeadingSlug(slug: string): boolean {
   return (RESERVED_HEADING_SLUGS as readonly string[]).includes(slug);
 }
 
+/** The menu-heading select's value for "listed under About" (a page with no heading). */
+export const ABOUT_HEADING_VALUE = '__about';
+
 export function isReservedPageSlug(slug: string): boolean {
   return (RESERVED_PAGE_SLUGS as readonly string[]).includes(slug);
 }

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultConfig, getDefaultThemeColors } from './site-features';
+import { jsonResponse } from '@/test/json-response';
 
 const { apiFetch, authFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),
@@ -13,13 +14,6 @@ vi.mock('./api-fetch', () => ({ apiFetch, authFetch }));
 // so the module-scope last-known-good starts empty each time.
 let readSiteFeatures: typeof import('./site-features-server').readSiteFeatures;
 let writeSiteFeatures: typeof import('./site-features-server').writeSiteFeatures;
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
 
 /** The backend response shape as it exists today: no `features` key at all. */
 function legacyResponseBody() {

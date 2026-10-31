@@ -9,7 +9,15 @@ export function escapeXmlText(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** For attribute values and any HTML we build by hand. */
+/**
+ * For attribute values and any HTML we build by hand. Every emitter must
+ * agree on this, including `>` and `'`: a prose leaf built by
+ * `lib/msdesc-fragments.ts` is compared byte-for-byte against `docToTei`
+ * output by the leaf editor's rich-representability gate, so a value carrying
+ * an apostrophe (a place name like "St Andrew's", an external URL with `'`)
+ * would otherwise fail the gate and demote the leaf to the plain-textarea
+ * fallback forever.
+ */
 export function escapeXmlAttr(value: string): string {
   return value
     .replace(/&/g, '&amp;')

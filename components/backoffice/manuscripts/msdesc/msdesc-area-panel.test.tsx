@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -7,6 +7,7 @@ import { msdescTemplateFragment } from '@/lib/msdesc-template';
 import { MSDESC_AREAS } from '@/lib/msdesc-vocab';
 import type { MsDescArea } from '@/types/backoffice';
 import { MsDescAreaPanel } from './msdesc-area-panel';
+import { createTestQueryClient } from '@/test/query-client';
 
 // The Source tab loads CodeMirror via next/dynamic; keep the module light.
 vi.mock('next/dynamic', () => ({
@@ -26,7 +27,7 @@ vi.mock('@/services/image-texts', () => ({
 }));
 
 function renderPanel(row: MsDescArea) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   return render(
     <QueryClientProvider client={client}>
       <MsDescAreaPanel historicalItemId={1} area={row.area} row={row} />

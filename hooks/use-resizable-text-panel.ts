@@ -3,9 +3,7 @@
 import * as React from 'react';
 
 import type { TextPanelPosition } from '@/types/annotation-viewer';
-
-const KEYBOARD_STEP = 16;
-const KEYBOARD_STEP_LARGE = 64;
+import { KEYBOARD_STEP, KEYBOARD_STEP_LARGE } from '@/hooks/use-resizable';
 
 export interface UseResizableTextPanelOptions {
   storageKey?: string;

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_MODEL_LABELS, getDefaultModelLabelsConfig } from './model-labels';
+import { jsonResponse } from '@/test/json-response';
 
 const { apiFetch, authFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),
@@ -11,13 +12,6 @@ vi.mock('./api-fetch', () => ({ apiFetch, authFetch }));
 
 const { readModelLabels, writeModelLabels, SITE_LABELS_TAG } =
   await import('./model-labels-server');
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
 
 beforeEach(() => {
   apiFetch.mockReset();

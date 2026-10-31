@@ -6,6 +6,7 @@ vi.mock('@/lib/api-fetch', () => ({
 }));
 
 import { searchItemParts, searchPlaces, searchScribes } from './tei-ref-search';
+import { jsonResponse } from '@/test/json-response';
 
 /**
  * Pins the public search-endpoint contract the `<ref>` picker depends on:
@@ -15,13 +16,6 @@ import { searchItemParts, searchPlaces, searchScribes } from './tei-ref-search';
  * the param name or the envelope would otherwise surface as "no results".
  */
 
-function jsonResponse(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
 beforeEach(() => {
   apiFetchMock.mockReset();
 });
@@ -29,7 +23,7 @@ beforeEach(() => {
 describe('tei-ref-search endpoints', () => {
   it('queries the scribes index with q + limit and returns the results array', async () => {
     apiFetchMock.mockResolvedValue(
-      jsonResponse(200, { results: [{ id: 42, name: 'A. Scribe' }], total: 1 })
+      jsonResponse({ results: [{ id: 42, name: 'A. Scribe' }], total: 1 }, 200)
     );
     const hits = await searchScribes('john');
     expect(apiFetchMock).toHaveBeenCalledTimes(1);
@@ -39,7 +33,7 @@ describe('tei-ref-search endpoints', () => {
 
   it('uses the item-parts and places segments with their own default limits', async () => {
     // A Response body can only be read once, so hand out a fresh one per call.
-    apiFetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, { results: [] })));
+    apiFetchMock.mockImplementation(() => Promise.resolve(jsonResponse({ results: [] }, 200)));
     await searchItemParts('kelso');
     expect(apiFetchMock.mock.calls[0][0]).toBe('/api/v1/search/item-parts/?q=kelso&limit=12');
     await searchPlaces('kelso');
@@ -47,7 +41,7 @@ describe('tei-ref-search endpoints', () => {
   });
 
   it('honours an explicit limit and forwards the abort signal', async () => {
-    apiFetchMock.mockResolvedValue(jsonResponse(200, { results: [] }));
+    apiFetchMock.mockResolvedValue(jsonResponse({ results: [] }, 200));
     const controller = new AbortController();
     await searchScribes('a', 3, controller.signal);
     expect(apiFetchMock.mock.calls[0][0]).toBe('/api/v1/search/scribes/?q=a&limit=3');
@@ -55,7 +49,7 @@ describe('tei-ref-search endpoints', () => {
   });
 
   it('percent-encodes the query', async () => {
-    apiFetchMock.mockResolvedValue(jsonResponse(200, { results: [] }));
+    apiFetchMock.mockResolvedValue(jsonResponse({ results: [] }, 200));
     await searchPlaces("St Andrew's & co");
     expect(apiFetchMock.mock.calls[0][0]).toBe(
       '/api/v1/search/places/?q=St+Andrew%27s+%26+co&limit=20'
@@ -63,14 +57,14 @@ describe('tei-ref-search endpoints', () => {
   });
 
   it('yields [] when the envelope has no usable results array', async () => {
-    apiFetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, { total: 0 })));
+    apiFetchMock.mockImplementation(() => Promise.resolve(jsonResponse({ total: 0 }, 200)));
     await expect(searchScribes('a')).resolves.toEqual([]);
-    apiFetchMock.mockImplementation(() => Promise.resolve(jsonResponse(200, { results: 'nope' })));
+    apiFetchMock.mockImplementation(() => Promise.resolve(jsonResponse({ results: 'nope' }, 200)));
     await expect(searchScribes('a')).resolves.toEqual([]);
   });
 
   it('throws on a non-2xx response rather than silently returning []', async () => {
-    apiFetchMock.mockResolvedValue(jsonResponse(503, { detail: 'search unavailable' }));
+    apiFetchMock.mockResolvedValue(jsonResponse({ detail: 'search unavailable' }, 503));
     await expect(searchScribes('a')).rejects.toThrow(/503/);
   });
 });

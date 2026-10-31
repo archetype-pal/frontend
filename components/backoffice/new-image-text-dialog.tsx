@@ -45,8 +45,10 @@ import {
   useExistingImageText,
 } from '@/components/backoffice/image-text-create-guards';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import type { ImageTextKind } from '@/types/image-text';
 
-export type NewTextKind = 'Transcription' | 'Translation';
+type NewTextKind = ImageTextKind;
+export type { NewTextKind };
 
 export interface NewImageTextDialogProps {
   open: boolean;

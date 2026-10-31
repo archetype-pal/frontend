@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -69,10 +69,11 @@ vi.mock('@/services/texts-monitor', () => ({
 }));
 
 import { TextsMonitor } from './texts-monitor';
+import { createTestQueryClient } from '@/test/query-client';
 
 describe('TextsMonitor recent edits', () => {
   it('opens a recent edit in the text editor when its row is clicked', async () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const client = createTestQueryClient();
     render(
       <QueryClientProvider client={client}>
         <TextsMonitor />

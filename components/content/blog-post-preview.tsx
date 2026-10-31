@@ -12,19 +12,7 @@ import {
   PUBLICATION_KIND_CONFIG,
   type PublicationKind,
 } from '@/lib/publications';
-
-// Format a date string, returning '' for null/empty/malformed input so the UI
-// never surfaces the literal 'Invalid Date' to readers.
-const formatDate = (value: string) => {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-};
+import { formatPublicationDate } from '@/lib/publications';
 
 // The API sends Tagulous' render_tags output: tags joined with ", ", any tag
 // containing a comma or a space wrapped in quotes, inner quotes doubled ("").
@@ -115,7 +103,7 @@ export default function BlogPostPreview({
         <span className="mx-1">·</span>
         <span className="flex items-center">
           <Calendar className="h-4 w-4 mr-1" />
-          <time dateTime={date}>{formatDate(date)}</time>
+          <time dateTime={date}>{formatPublicationDate(date)}</time>
         </span>
         <span className="mx-1">·</span>
         <Link

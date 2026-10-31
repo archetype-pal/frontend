@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ComponentType } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +9,7 @@ import AnnotationsPage from './annotations/page';
 import ManuscriptsPage from './manuscripts/page';
 import PhysicalVolumesPage from './physical-volumes/page';
 import TrashPage from './trash/page';
+import { createTestQueryClient } from '@/test/query-client';
 
 const services = vi.hoisted(() => {
   const page = () => Promise.resolve({ count: 120, next: null, previous: null, results: [] });
@@ -39,7 +40,7 @@ vi.mock('@/services/backoffice/annotations', () => ({
 }));
 
 function renderPage(Page: ComponentType) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   render(
     <QueryClientProvider client={client}>
       <ModelLabelsProvider>

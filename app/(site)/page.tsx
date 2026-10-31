@@ -1,27 +1,17 @@
 import IntroSection from '@/components/content/intro-section';
 import ArticleList from '@/components/content/article-list';
-import { apiFetch } from '@/lib/api-fetch';
+import { getPublications } from '@/utils/api';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, safeLinkHref, type ModelLabelLocale } from '@/lib/model-labels';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 
-async function getPublications(params: { is_news?: boolean; is_featured?: boolean }) {
-  const searchParams = new URLSearchParams();
-  if (params.is_news) searchParams.append('is_news', 'true');
-  if (params.is_featured) searchParams.append('is_featured', 'true');
-  const qs = searchParams.toString();
-  const path = `/api/v1/media/publications/${qs ? `?${qs}` : ''}`;
-
-  try {
-    const res = await apiFetch(path);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.results ?? [];
-  } catch {
-    return [];
-  }
+/** The home page renders without its news or features rather than failing on a backend hiccup. */
+function publicationsOrNone(params: { is_news?: boolean; is_featured?: boolean }) {
+  return getPublications(params)
+    .then((page) => page.results)
+    .catch(() => []);
 }
 
 export default async function Home() {
@@ -38,8 +28,8 @@ export default async function Home() {
   const showFeatureArticles = siteFeatures.sections.featureArticles !== false;
 
   const [newsArticles, featureArticles] = await Promise.all([
-    showNews ? getPublications({ is_news: true }) : Promise.resolve([]),
-    showFeatureArticles ? getPublications({ is_featured: true }) : Promise.resolve([]),
+    showNews ? publicationsOrNone({ is_news: true }) : Promise.resolve([]),
+    showFeatureArticles ? publicationsOrNone({ is_featured: true }) : Promise.resolve([]),
   ]);
 
   const hasArticles =

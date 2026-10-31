@@ -1,11 +1,12 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import UsersPage from './page';
+import { createTestQueryClient } from '@/test/query-client';
 
 const { proxyFetch } = vi.hoisted(() => ({ proxyFetch: vi.fn() }));
 
@@ -39,7 +40,7 @@ function page(from: number, to: number, next: string | null) {
 }
 
 function renderPage() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   render(
     <QueryClientProvider client={client}>
       <TooltipProvider>

@@ -3,14 +3,15 @@
 import { useTranslations } from 'next-intl';
 
 import type { HistoryState, MsKeyedText, MsOrigDate, MsOrigPlace } from '@/lib/msdesc-form';
-import { MsAddButton, MsOptionalSection, MsSubsection, MsTextField } from './fields';
+import {
+  opt,
+  pruneKeyedText,
+  MsAddButton,
+  MsOptionalSection,
+  MsSubsection,
+  MsTextField,
+} from './fields';
 import { MsDescLeafEditor } from './msdesc-leaf-editor';
-
-const opt = (value: string): string | undefined => (value === '' ? undefined : value);
-
-function pruneKeyedText(next: MsKeyedText): MsKeyedText | undefined {
-  return next.text === '' && next.key === undefined ? undefined : next;
-}
 
 function pruneOrigDate(next: MsOrigDate): MsOrigDate | undefined {
   const empty =

@@ -16,6 +16,7 @@ import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { getPublicationRoutes } from '@/lib/publications';
+import { slugify } from '@/lib/slugify';
 
 export default function NewPublicationPage() {
   const { isAuthenticated, user } = useAuth();
@@ -28,16 +29,10 @@ export default function NewPublicationPage() {
   const [isNews, setIsNews] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
 
-  const generateSlug = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-
   const handleTitleChange = (value: string) => {
     setTitle(value);
     if (!slugLocked) {
-      setSlug(generateSlug(value));
+      setSlug(slugify(value));
     }
   };
 
@@ -47,7 +42,7 @@ export default function NewPublicationPage() {
 
       return createPublication({
         title,
-        slug: slug || generateSlug(title),
+        slug: slug || slugify(title),
         is_blog_post: isBlog,
         is_news: isNews,
         is_featured: isFeatured,
@@ -104,7 +99,7 @@ export default function NewPublicationPage() {
               onClick={() => {
                 const next = !slugLocked;
                 setSlugLocked(next);
-                if (!next) setSlug(generateSlug(title));
+                if (!next) setSlug(slugify(title));
               }}
             >
               {slugLocked ? t('publicationsNew.slugUnlock') : t('publicationsNew.slugLock')}

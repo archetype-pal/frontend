@@ -1,7 +1,9 @@
 import { optionalAuthFetch, proxyFetch } from '@/lib/api-fetch';
 import { throwIfNotOk } from '@/services/backoffice/api-client';
+import type { PaginatedResponse } from '@/types/backoffice';
+import type { ImageTextKind, ImageTextStatus } from '@/types/image-text';
 
-export type ImageTextStatus = 'Draft' | 'Review' | 'Live' | 'Reviewed';
+export type { ImageTextStatus };
 
 export interface ImageTextDetail {
   id: number;
@@ -14,12 +16,7 @@ export interface ImageTextDetail {
   modified: string;
 }
 
-interface PaginatedImageTexts {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: ImageTextDetail[];
-}
+type PaginatedImageTexts = PaginatedResponse<ImageTextDetail>;
 
 export async function fetchImageTextsForImage(
   imageId: string | number,
@@ -171,7 +168,7 @@ export async function unlinkElement(
 
 export interface CreateImageTextPayload {
   item_image: number;
-  type: 'Transcription' | 'Translation';
+  type: ImageTextKind;
   language?: string;
   content?: string;
   status?: ImageTextStatus;

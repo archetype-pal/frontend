@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { escapeXmlAttr, parseFragment } from '@/lib/msdesc-fragments';
+import { escapeXmlAttr } from '@/lib/markup-escape';
+import { parseFragment } from '@/lib/msdesc-fragments';
 import { docToTei, indexLinkableElements, teiToDoc } from '@/lib/tei-prosemirror';
 import { buildRefMarkup, parseRefMarkup, type ResourceRef } from '@/lib/tei-ref';
 import { leafIsRichRepresentable } from '@/components/backoffice/manuscripts/msdesc/msdesc-leaf-editor';

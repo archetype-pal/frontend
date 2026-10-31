@@ -3,16 +3,9 @@
 import { useTranslations } from 'next-intl';
 
 import type { MsContentsState, MsItemState, MsKeyedText, MsTextLang } from '@/lib/msdesc-form';
-import { MsAddButton, MsSubsection, MsTextField } from './fields';
+import { opt, pruneKeyedText, MsAddButton, MsSubsection, MsTextField } from './fields';
 import { MsKeyField } from './ms-key-field';
 import { MsDescLeafEditor } from './msdesc-leaf-editor';
-
-const opt = (value: string): string | undefined => (value === '' ? undefined : value);
-
-/** `{key?, text}` phrase leaf — pruned to absent when both parts are empty. */
-function pruneKeyedText(next: MsKeyedText): MsKeyedText | undefined {
-  return next.text === '' && next.key === undefined ? undefined : next;
-}
 
 function pruneTextLang(next: MsTextLang): MsTextLang | undefined {
   return next.text === '' && next.mainLang === undefined ? undefined : next;

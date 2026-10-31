@@ -5,6 +5,7 @@
  */
 
 import { backofficeGet } from './api-client';
+import type { PaginatedResponse } from '@/types/backoffice';
 
 export interface UncoveredImage {
   id: number;
@@ -18,12 +19,7 @@ export interface UncoveredImage {
   texts: Array<{ id: number; type: string; status: string; language: string }>;
 }
 
-export interface PaginatedUncovered {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: UncoveredImage[];
-}
+export type PaginatedUncovered = PaginatedResponse<UncoveredImage>;
 
 export type UncoveredMode = 'either' | 'transcription' | 'translation';
 

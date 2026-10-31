@@ -57,7 +57,10 @@ import { useViewerTextMode } from '@/hooks/manuscript/use-viewer-text-mode';
 import { useViewerHighlights } from '@/hooks/manuscript/use-viewer-highlights';
 import { useAnnotationVisibilityFilters } from '@/hooks/manuscript/use-annotation-visibility-filters';
 import { describeSaveOutcome, standardSaveValidationError } from '@/lib/manuscript-viewer-save';
-import { usePopupSelection } from '@/hooks/manuscript/use-popup-selection';
+import {
+  ANNOTATION_SELECTION_TOAST_ID,
+  usePopupSelection,
+} from '@/hooks/manuscript/use-popup-selection';
 import { useAnnotationDeletion } from '@/hooks/manuscript/use-annotation-deletion';
 import { useImageTextLinking } from '@/hooks/manuscript/use-image-text-linking';
 import { useShareTarget } from '@/hooks/manuscript/use-share-target';
@@ -73,8 +76,6 @@ import { useViewerChromeState } from '@/hooks/use-viewer-chrome-state';
 import { useViewerShortcuts } from '@/hooks/manuscript/use-viewer-shortcuts';
 
 const ManuscriptAnnotorious = dynamic(() => import('./manuscript-annotorious'), { ssr: false });
-const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
-
 interface ManuscriptViewerProps {
   imageId: string;
   mode?: ViewerMode;

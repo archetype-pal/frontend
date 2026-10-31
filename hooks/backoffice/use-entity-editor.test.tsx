@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const push = vi.fn();
@@ -10,12 +10,13 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { toast } from 'sonner';
 import { useEntityEditor } from './use-entity-editor';
+import { createTestQueryClient } from '@/test/query-client';
 
 type Detail = { id: number; name: string; note: string };
 type Form = { name: string; note: string };
 
 function wrapper({ children }: { children: React.ReactNode }) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const qc = createTestQueryClient();
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
 }
 

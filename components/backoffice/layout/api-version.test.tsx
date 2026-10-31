@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import { ApiVersion, formatReleaseDate } from './api-version';
+import { createTestQueryClient } from '@/test/query-client';
 
 const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
 vi.mock('@/lib/api-fetch', () => ({ apiFetch }));
@@ -14,7 +15,7 @@ vi.mock('next-intl', () => ({
 }));
 
 function renderVersion() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   return render(
     <QueryClientProvider client={client}>
       <TooltipProvider>

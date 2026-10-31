@@ -47,7 +47,6 @@
 import {
   attrValue,
   el,
-  escapeXmlAttr,
   innerXml,
   parseFragment,
   raw,
@@ -58,6 +57,7 @@ import {
   type XmlNode,
 } from '@/lib/msdesc-fragments';
 import { resolveRefKeyHref, sanitizeRefHref } from '@/lib/tei-msdesc-render';
+import { escapeXmlAttr } from '@/lib/markup-escape';
 
 // ── Descriptor ──────────────────────────────────────────────────────────
 

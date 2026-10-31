@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Tag } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import { SimpleCrudPage } from './simple-crud-page';
+import { createTestQueryClient } from '@/test/query-client';
 
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -20,7 +21,7 @@ const FORMATS: Format[] = Array.from({ length: 25 }, (_, i) => ({
 
 describe('<SimpleCrudPage>', () => {
   it('shows 20 rows a page and pages through the rest', async () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const client = createTestQueryClient();
     render(
       <QueryClientProvider client={client}>
         <TooltipProvider>
