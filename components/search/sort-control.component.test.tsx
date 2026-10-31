@@ -5,23 +5,6 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SearchOrdering } from '@/lib/search-sort';
 import { SortControl } from './sort-control';
 
-vi.mock('next-intl', () => ({
-  useTranslations: () => {
-    const messages: Record<string, string> = {
-      sortAscending: 'Ascending',
-      sortBy: 'Sort by',
-      sortByLabel: 'Sort results by',
-      sortDefault: 'Default',
-      sortDescending: 'Descending',
-      sortReverse: 'Reverse sort order',
-      'sortFields.shelfmark': 'Shelfmark',
-    };
-    const t = (key: string) => messages[key] ?? key;
-    t.has = (key: string) => key in messages;
-    return t;
-  },
-}));
-
 const ordering: SearchOrdering = {
   current: '-id',
   options: [
