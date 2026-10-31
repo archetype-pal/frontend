@@ -176,8 +176,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
   const handsSearchEnabled =
     isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'hands');
 
-  const manuscriptLabel =
-    manuscript?.display_label ?? manuscript?.current_item?.shelfmark ?? (hand.shelfmark || null);
+  const manuscriptLabel = manuscript?.display_label ?? manuscript?.current_item?.shelfmark ?? null;
 
   // Lazy-load graphs only when the Graphs tab is active
   const { state: graphsState, retry: retryGraphs } = useHandGraphs(
@@ -337,16 +336,6 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                       manuscriptLabel
                     )}
                   </dd>
-                </>
-              )}
-
-              {hand.script && (
-                <>
-                  <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    {t('fields.script')}
-                  </dt>
-                  <dd className="text-sm">{hand.script}</dd>
                 </>
               )}
 

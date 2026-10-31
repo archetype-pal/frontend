@@ -14,7 +14,6 @@ const QualityResponseSchema = z.object({
   cards: z.array(QualityCardSchema),
 });
 
-export type QualityCard = z.infer<typeof QualityCardSchema>;
 export type QualityResponse = z.infer<typeof QualityResponseSchema>;
 
 export async function fetchQualityDashboard(): Promise<QualityResponse> {

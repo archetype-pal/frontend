@@ -57,7 +57,6 @@ export interface LightboxState {
   setZoom: (zoom: number) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  clearError: () => void;
   loadSession: (sessionId: string) => Promise<void>;
   /**
    * Hydrate the store from a server workset payload. `persist` writes the
@@ -545,10 +544,6 @@ export const useLightboxStore = create<LightboxState>((set, get) => ({
 
   setError: (error) => {
     set({ error });
-  },
-
-  clearError: () => {
-    set({ error: null });
   },
 
   loadSession: async (sessionId) => {

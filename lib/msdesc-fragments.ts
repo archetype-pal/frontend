@@ -298,45 +298,6 @@ export function innerXml(source: string, element: XmlElementNode): string {
   return source.slice(element.innerStart, element.innerEnd);
 }
 
-/**
- * Replace the element's inner XML in `source`, leaving every byte outside the
- * element's content span untouched. A self-closing element is expanded to an
- * open/close pair when given non-empty content.
- */
-export function replaceInnerXml(source: string, element: XmlElementNode, inner: string): string {
-  if (!element.selfClosing) {
-    return source.slice(0, element.innerStart) + inner + source.slice(element.innerEnd);
-  }
-  if (inner === '') return source;
-  const rawTag = source.slice(element.start, element.end);
-  const openTag = rawTag.replace(/\s*\/>$/, '>');
-  return (
-    source.slice(0, element.start) +
-    openTag +
-    inner +
-    `</${element.name}>` +
-    source.slice(element.end)
-  );
-}
-
-/**
- * Resolve a descendant by a path of child-element steps; a step is a name
- * (first match) or a `[name, index]` pair. Returns null when absent.
- */
-export function resolvePath(
-  root: XmlElementNode,
-  path: ReadonlyArray<string | readonly [string, number]>
-): XmlElementNode | null {
-  let current = root;
-  for (const step of path) {
-    const [name, index] = typeof step === 'string' ? [step, 0] : step;
-    const next = childElements(current).filter((c) => c.name === name)[index];
-    if (!next) return null;
-    current = next;
-  }
-  return current;
-}
-
 // ── Representability shapes ─────────────────────────────────────────────
 
 /**
@@ -482,27 +443,4 @@ function serializeElement(node: BuildElement, depth: number, indent: string): st
  */
 export function serializeFragment(root: BuildElement, indent = '  '): string {
   return serializeElement(root, 0, indent);
-}
-
-function elementToBuild(element: XmlElementNode, source: string): BuildElement {
-  const attrs = element.attrs.map((a) => [a.name, a.value] as const);
-  if (hasNonWhitespaceText(element)) {
-    // Mixed / textual content: carried verbatim so prose is never reshaped.
-    return el(element.name, attrs, [raw(innerXml(source, element))]);
-  }
-  const children = childElements(element).map((c) => elementToBuild(c, source));
-  return el(element.name, attrs, children);
-}
-
-export type CanonicalizeResult = { ok: true; xml: string } | { ok: false; error: string };
-
-/**
- * Parse + re-serialize a fragment canonically: attribute order preserved from
- * source, empty elements self-closed, container indentation normalized, and
- * any element carrying text kept byte-verbatim inside. Idempotent.
- */
-export function canonicalizeFragment(input: string): CanonicalizeResult {
-  const parsed = parseFragment(input);
-  if (!parsed.ok) return { ok: false, error: parsed.error };
-  return { ok: true, xml: serializeFragment(elementToBuild(parsed.root, parsed.source)) };
 }
