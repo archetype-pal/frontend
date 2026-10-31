@@ -4,6 +4,7 @@ import { buildInitialViewerAnnotations } from './manuscript-viewer-annotations';
 import { encodeDraftSharePayload } from './annotation-popup-utils';
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
 import type { BackendGraph } from '@/services/annotations';
+import { makeBackendGraph } from '@/test/annotation-fixtures';
 
 // Mock the network so the builder is exercised against canned backend lists.
 // We don't care which arguments hit fetchAnnotationsForImage — the assertion
@@ -13,38 +14,6 @@ vi.mock('@/services/annotations', () => ({
 }));
 
 import { fetchAnnotationsForImage } from '@/services/annotations';
-
-function makeBackendGraph(
-  id: number,
-  annotationType: 'image' | 'editorial' = 'image'
-): BackendGraph {
-  return {
-    id,
-    item_image: 42,
-    annotation_type: annotationType,
-    allograph: null,
-    hand: null,
-    positions: [],
-    position_details: [],
-    graphcomponent_set: [],
-    annotation: {
-      type: 'Feature',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [0, 90],
-            [0, 100],
-            [10, 100],
-            [10, 90],
-            [0, 90],
-          ],
-        ],
-      },
-      properties: { saved: 1 },
-    },
-  };
-}
 
 function makeDraft(id: string): A9sAnnotation {
   return {

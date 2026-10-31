@@ -111,19 +111,9 @@ vi.mock('@/services/image-texts', () => ({
 
 import ManuscriptViewer from './manuscript-viewer';
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
+import { EDITING_CAPS } from '@/test/annotation-fixtures';
 
 // Full editing capabilities so the create/save/delete paths are active in tests.
-const EDITING_CAPS = {
-  canCreatePublicAnnotations: true,
-  canPersistPublicAnnotations: true,
-  canCreateEditorialAnnotations: true,
-  canPersistEditorialAnnotations: true,
-  canDeleteAnnotations: true,
-  canModifyAnnotations: true,
-  canViewEditorialControls: true,
-  canUseSettings: true,
-  canUseEditorSettings: true,
-} as const;
 
 const draftAnnotation = (id: string) => ({
   id,

@@ -17,49 +17,8 @@ import {
   MULTI_POPUP_BASE_Y,
   MULTI_POPUP_OFFSET_STEP,
 } from './manuscript-viewer-popup-utils';
-import type {
-  AnnotationPopupCapabilities,
-  PopupRecord,
-  ViewerCapabilities,
-} from '@/types/annotation-viewer';
-
-function makePopup(overrides: Partial<PopupRecord> = {}): PopupRecord {
-  return {
-    id: 'local-uuid',
-    annotation: {
-      id: 'local-uuid',
-      type: 'Annotation',
-      target: {},
-      _meta: {},
-    },
-    popupTab: 'components',
-    shareUrl: '',
-    isShareUrlVisible: false,
-    draftAllographText: '',
-    draftNoteText: '',
-    draftAllographId: null,
-    draftHandId: null,
-    draftInternalNoteText: '',
-    draftGraphcomponentSet: [],
-    draftPositionIds: [],
-    ...overrides,
-  } as PopupRecord;
-}
-
-function makeCaps(overrides: Partial<ViewerCapabilities> = {}): ViewerCapabilities {
-  return {
-    canCreatePublicAnnotations: true,
-    canPersistPublicAnnotations: true,
-    canCreateEditorialAnnotations: true,
-    canPersistEditorialAnnotations: true,
-    canDeleteAnnotations: true,
-    canModifyAnnotations: true,
-    canViewEditorialControls: true,
-    canUseSettings: true,
-    canUseEditorSettings: true,
-    ...overrides,
-  } as ViewerCapabilities;
-}
+import type { AnnotationPopupCapabilities, PopupRecord } from '@/types/annotation-viewer';
+import { makeCaps, makePopup } from '@/test/annotation-fixtures';
 
 describe('buildPositionDetails', () => {
   it('looks up names from the map when present', () => {
