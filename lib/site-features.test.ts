@@ -26,12 +26,8 @@ import {
 import { SEARCH_RESULT_TYPES } from './search-types';
 
 describe('normalizeSectionOrder', () => {
-  it('returns the canonical order when input is undefined', () => {
-    expect(normalizeSectionOrder(undefined)).toEqual(ALL_SECTION_KEYS);
-  });
-
-  it('returns the canonical order when input is empty', () => {
-    expect(normalizeSectionOrder([])).toEqual(ALL_SECTION_KEYS);
+  it.each([undefined, []])('returns the canonical order when input is %s', (input) => {
+    expect(normalizeSectionOrder(input)).toEqual(ALL_SECTION_KEYS);
   });
 
   it('honors a fully-specified custom order verbatim', () => {

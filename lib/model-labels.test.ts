@@ -11,12 +11,8 @@ import {
 } from './model-labels';
 
 describe('normalizeModelLabels', () => {
-  it('returns the canonical defaults when input is undefined', () => {
-    expect(normalizeModelLabels(undefined)).toEqual(DEFAULT_MODEL_LABELS);
-  });
-
-  it('returns the canonical defaults when input is empty', () => {
-    expect(normalizeModelLabels({})).toEqual(DEFAULT_MODEL_LABELS);
+  it.each([undefined, {}])('returns the canonical defaults when input is %s', (input) => {
+    expect(normalizeModelLabels(input)).toEqual(DEFAULT_MODEL_LABELS);
   });
 
   it('overrides only the keys explicitly provided', () => {
