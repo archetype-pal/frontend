@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PublicationsPage from './page';
+import { createTestQueryClient } from '@/test/query-client';
 
 const { getPublications } = vi.hoisted(() => ({ getPublications: vi.fn() }));
 
@@ -17,7 +18,7 @@ vi.mock('@/services/backoffice/publications', () => ({
 }));
 
 function renderPage() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   render(
     <QueryClientProvider client={client}>
       <PublicationsPage />

@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,6 +12,7 @@ vi.mock('@/services/tei-ref-search', () => ({
 }));
 
 import { TeiRefPicker } from './tei-ref-picker';
+import { createTestQueryClient } from '@/test/query-client';
 
 /**
  * Regression cover for the picker's transient state. The dialog is opened from
@@ -23,10 +24,7 @@ import { TeiRefPicker } from './tei-ref-picker';
 
 function Harness({ personOnly = false }: { personOnly?: boolean }) {
   const [, force] = React.useState(0);
-  const client = React.useMemo(
-    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-    []
-  );
+  const client = React.useMemo(() => createTestQueryClient(), []);
   return (
     <QueryClientProvider client={client}>
       <button type="button" onClick={() => force((n) => n + 1)}>
@@ -82,7 +80,7 @@ describe('TeiRefPicker — transient state survives parent re-renders', () => {
   });
 
   it('seeds the query from the selection', () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const client = createTestQueryClient();
     render(
       <QueryClientProvider client={client}>
         <TeiRefPicker

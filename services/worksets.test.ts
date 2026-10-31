@@ -14,13 +14,7 @@ import {
   listMyWorksets,
   updateWorkset,
 } from './worksets';
-
-function jsonResponse(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from '@/test/json-response';
 
 const PAYLOAD = { schema_version: 2, workspaces: [], images: [] };
 
@@ -31,7 +25,7 @@ beforeEach(() => {
 
 describe('getWorkset', () => {
   it('fetches anonymously and returns the parsed detail on 200', async () => {
-    apiFetchMock.mockResolvedValueOnce(jsonResponse(200, { public_id: 'abc', title: 'T' }));
+    apiFetchMock.mockResolvedValueOnce(jsonResponse({ public_id: 'abc', title: 'T' }, 200));
     const result = await getWorkset('abc');
     expect(result).toEqual({ public_id: 'abc', title: 'T' });
     const [path] = apiFetchMock.mock.calls[0]!;
@@ -39,12 +33,12 @@ describe('getWorkset', () => {
   });
 
   it('returns null on 404 (unknown or private)', async () => {
-    apiFetchMock.mockResolvedValueOnce(jsonResponse(404, {}));
+    apiFetchMock.mockResolvedValueOnce(jsonResponse({}, 404));
     await expect(getWorkset('missing')).resolves.toBeNull();
   });
 
   it('throws on a 5xx so a transient outage is not a false 404', async () => {
-    apiFetchMock.mockResolvedValueOnce(jsonResponse(503, {}));
+    apiFetchMock.mockResolvedValueOnce(jsonResponse({}, 503));
     await expect(getWorkset('abc')).rejects.toThrow();
   });
 });
@@ -52,7 +46,7 @@ describe('getWorkset', () => {
 describe('listMyWorksets', () => {
   it('goes through the proxy and unwraps paginated results', async () => {
     proxyFetchMock.mockResolvedValueOnce(
-      jsonResponse(200, { count: 1, results: [{ public_id: 'a' }] })
+      jsonResponse({ count: 1, results: [{ public_id: 'a' }] }, 200)
     );
     const result = await listMyWorksets();
     expect(result).toEqual([{ public_id: 'a' }]);
@@ -61,14 +55,14 @@ describe('listMyWorksets', () => {
   });
 
   it('returns [] when unauthorized', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(401, {}));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({}, 401));
     await expect(listMyWorksets()).resolves.toEqual([]);
   });
 });
 
 describe('createWorkset', () => {
   it('POSTs the input through the proxy', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(201, { public_id: 'new' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ public_id: 'new' }, 201));
     await createWorkset({ title: 'My set', payload: PAYLOAD });
     const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/worksets/');
@@ -87,7 +81,7 @@ describe('createWorkset', () => {
 
 describe('updateWorkset', () => {
   it('PATCHes the public_id path', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { public_id: 'abc' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ public_id: 'abc' }, 200));
     await updateWorkset('abc', { visibility: 'Public' });
     const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/worksets/abc/');

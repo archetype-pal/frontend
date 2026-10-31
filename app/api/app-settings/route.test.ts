@@ -22,13 +22,7 @@ vi.mock('@/lib/auth-token-server', async (importOriginal) => ({
 import { revalidateTag } from 'next/cache';
 import type { NextRequest } from 'next/server';
 import { GET, PUT } from './route';
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from '@/test/json-response';
 
 /**
  * A tiny in-memory stand-in for the backend's `AppSettings` rows (one per

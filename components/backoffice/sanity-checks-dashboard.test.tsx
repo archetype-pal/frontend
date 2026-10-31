@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,6 +27,7 @@ vi.mock('sonner', () => ({
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 
 import { SanityChecksDashboard } from './sanity-checks-dashboard';
+import { createTestQueryClient } from '@/test/query-client';
 
 const REPORT = {
   migrations: { ok: true, has_pending: false, pending: [], detail: null },
@@ -44,7 +45,7 @@ const REPORT = {
 };
 
 function renderDashboard() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   return render(
     <QueryClientProvider client={client}>
       <SanityChecksDashboard />

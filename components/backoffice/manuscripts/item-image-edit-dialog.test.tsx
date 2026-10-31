@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,6 +23,7 @@ vi.mock('@/components/backoffice/common/iiif-thumbnail', () => ({
 }));
 
 import { ItemImageEditDialog } from './item-image-edit-dialog';
+import { createTestQueryClient } from '@/test/query-client';
 
 const IMAGE: ItemPartImage = {
   id: 1,
@@ -34,7 +35,7 @@ const IMAGE: ItemPartImage = {
 };
 
 function renderDialog() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
   render(
     <QueryClientProvider client={client}>

@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -28,9 +28,10 @@ vi.mock('@/services/backoffice/symbols', () => ({
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 import SymbolsPage from './page';
+import { createTestQueryClient } from '@/test/query-client';
 
 function renderPage() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   render(
     <QueryClientProvider client={client}>
       <SymbolsPage />

@@ -1,10 +1,11 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ModelLabelsProvider } from '@/contexts/model-labels-context';
 import ManuscriptsPage from './page';
+import { createTestQueryClient } from '@/test/query-client';
 
 const { getHistoricalItems, downloadBlob } = vi.hoisted(() => ({
   getHistoricalItems: vi.fn(),
@@ -17,7 +18,7 @@ vi.mock('@/services/backoffice/manuscripts', () => ({ getHistoricalItems }));
 vi.mock('@/lib/download', () => ({ downloadBlob }));
 
 function renderPage() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   render(
     <QueryClientProvider client={client}>
       <ModelLabelsProvider>

@@ -9,13 +9,7 @@ vi.mock('@/lib/api-fetch', () => ({
 
 import { BackofficeApiError } from './api-client';
 import { getSanityChecks, sendTestEmail } from './sanity-checks';
-
-function jsonResponse(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from '@/test/json-response';
 
 // Captured from a local backend, so a contract drift fails here first.
 const FULL_RESPONSE = {
@@ -39,7 +33,7 @@ beforeEach(() => {
 
 describe('getSanityChecks', () => {
   it('fetches the sanity-checks endpoint and returns the parsed report', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, FULL_RESPONSE));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse(FULL_RESPONSE, 200));
     const result = await getSanityChecks();
     expect(result).toEqual(FULL_RESPONSE);
     const [path, init] = proxyFetchMock.mock.calls[0]!;
@@ -49,7 +43,7 @@ describe('getSanityChecks', () => {
 
   it('accepts a null database size (non-Postgres backend)', async () => {
     proxyFetchMock.mockResolvedValueOnce(
-      jsonResponse(200, { ...FULL_RESPONSE, database: { size_bytes: null } })
+      jsonResponse({ ...FULL_RESPONSE, database: { size_bytes: null } }, 200)
     );
     const result = await getSanityChecks();
     expect(result.database.size_bytes).toBeNull();
@@ -62,21 +56,24 @@ describe('getSanityChecks', () => {
       pending: [],
       detail: 'Conflicting migrations',
     };
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { ...FULL_RESPONSE, migrations }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ ...FULL_RESPONSE, migrations }, 200));
     const result = await getSanityChecks();
     expect(result.migrations).toEqual(migrations);
   });
 
   it('accepts pending migrations and a down service with a detail message', async () => {
     proxyFetchMock.mockResolvedValueOnce(
-      jsonResponse(200, {
-        ...FULL_RESPONSE,
-        migrations: { ok: true, has_pending: true, pending: ['app.0002_x'], detail: null },
-        services: {
-          ...FULL_RESPONSE.services,
-          redis: { ok: false, detail: 'Connection refused' },
+      jsonResponse(
+        {
+          ...FULL_RESPONSE,
+          migrations: { ok: true, has_pending: true, pending: ['app.0002_x'], detail: null },
+          services: {
+            ...FULL_RESPONSE.services,
+            redis: { ok: false, detail: 'Connection refused' },
+          },
         },
-      })
+        200
+      )
     );
     const result = await getSanityChecks();
     expect(result.migrations).toEqual({
@@ -89,20 +86,20 @@ describe('getSanityChecks', () => {
   });
 
   it('throws BackofficeApiError on a 403 (non-superuser)', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(403, { detail: 'Forbidden' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ detail: 'Forbidden' }, 403));
     await expect(getSanityChecks()).rejects.toBeInstanceOf(BackofficeApiError);
   });
 
   it('rejects the old top-level database_size_bytes shape', async () => {
     const { database: _database, ...rest } = FULL_RESPONSE;
     proxyFetchMock.mockResolvedValueOnce(
-      jsonResponse(200, { ...rest, database_size_bytes: 40400575 })
+      jsonResponse({ ...rest, database_size_bytes: 40400575 }, 200)
     );
     await expect(getSanityChecks()).rejects.toThrow();
   });
 
   it('rejects a malformed response that does not match the contract', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { unexpected: true }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ unexpected: true }, 200));
     await expect(getSanityChecks()).rejects.toThrow();
   });
 });
@@ -110,7 +107,7 @@ describe('getSanityChecks', () => {
 describe('sendTestEmail', () => {
   it('POSTs and returns {sent: true, detail} on success', async () => {
     proxyFetchMock.mockResolvedValueOnce(
-      jsonResponse(200, { sent: true, detail: 'Test email sent to admin@example.com.' })
+      jsonResponse({ sent: true, detail: 'Test email sent to admin@example.com.' }, 200)
     );
     const result = await sendTestEmail();
     expect(result).toEqual({ sent: true, detail: 'Test email sent to admin@example.com.' });
@@ -121,10 +118,13 @@ describe('sendTestEmail', () => {
 
   it('throws BackofficeApiError with the {sent: false, detail} body on a 400 short-circuit', async () => {
     proxyFetchMock.mockResolvedValueOnce(
-      jsonResponse(400, {
-        sent: false,
-        detail: 'SMTP is not configured (EMAIL_HOST is unset or still the default).',
-      })
+      jsonResponse(
+        {
+          sent: false,
+          detail: 'SMTP is not configured (EMAIL_HOST is unset or still the default).',
+        },
+        400
+      )
     );
     await expect(sendTestEmail()).rejects.toMatchObject({
       name: 'BackofficeApiError',
@@ -138,7 +138,7 @@ describe('sendTestEmail', () => {
 
   it('throws BackofficeApiError with the {sent: false, detail} body on a 502 delivery failure', async () => {
     proxyFetchMock.mockResolvedValueOnce(
-      jsonResponse(502, { sent: false, detail: 'Connection refused' })
+      jsonResponse({ sent: false, detail: 'Connection refused' }, 502)
     );
     await expect(sendTestEmail()).rejects.toMatchObject({
       name: 'BackofficeApiError',

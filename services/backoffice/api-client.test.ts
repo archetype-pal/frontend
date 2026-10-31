@@ -16,13 +16,7 @@ import {
   backofficePost,
   backofficePostFormData,
 } from './api-client';
-
-function jsonResponse(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from '@/test/json-response';
 
 function textResponse(status: number, text: string) {
   return new Response(text, { status, headers: { 'content-type': 'text/plain' } });
@@ -38,7 +32,7 @@ afterEach(() => {
 
 describe('backofficeGet', () => {
   it('returns the parsed JSON body on a 2xx response', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { id: 1, name: 'X' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 1, name: 'X' }, 200));
     await expect(backofficeGet<{ id: number; name: string }>('/x')).resolves.toEqual({
       id: 1,
       name: 'X',
@@ -46,7 +40,7 @@ describe('backofficeGet', () => {
   });
 
   it('passes path + a default Content-Type to proxyFetch', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, {}));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({}, 200));
     await backofficeGet('/x');
     const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/x');
@@ -55,7 +49,7 @@ describe('backofficeGet', () => {
   });
 
   it('throws BackofficeApiError with status + body on a 4xx', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(400, { detail: 'bad' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ detail: 'bad' }, 400));
     await expect(backofficeGet('/x')).rejects.toMatchObject({
       name: 'BackofficeApiError',
       status: 400,
@@ -87,7 +81,7 @@ describe('backofficeDelete', () => {
 
 describe('backofficePost / backofficePatch', () => {
   it('POST stringifies the JSON body and sets method=POST', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(201, { id: 1 }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 1 }, 201));
     await backofficePost('/x/', { name: 'Foo' });
     const init = proxyFetchMock.mock.calls[0]![1] as RequestInit;
     expect(init.method).toBe('POST');
@@ -95,7 +89,7 @@ describe('backofficePost / backofficePatch', () => {
   });
 
   it('PATCH stringifies the JSON body and sets method=PATCH', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { id: 1 }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 1 }, 200));
     await backofficePatch('/x/1/', { name: 'Bar' });
     const init = proxyFetchMock.mock.calls[0]![1] as RequestInit;
     expect(init.method).toBe('PATCH');
@@ -105,7 +99,7 @@ describe('backofficePost / backofficePatch', () => {
 
 describe('backofficePostFormData / backofficePatchFormData', () => {
   it('does NOT set Content-Type so the browser can add the multipart boundary', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(201, { id: 1 }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 1 }, 201));
     const fd = new FormData();
     fd.append('file', new Blob(['x']), 'a.txt');
     await backofficePostFormData('/x/', fd);
@@ -117,7 +111,7 @@ describe('backofficePostFormData / backofficePatchFormData', () => {
   });
 
   it('PATCH variant uses method=PATCH', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { id: 1 }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 1 }, 200));
     const fd = new FormData();
     await backofficePatchFormData('/x/1/', fd);
     const init = proxyFetchMock.mock.calls[0]![1] as RequestInit;
@@ -148,7 +142,7 @@ describe('transient retry', () => {
     vi.useFakeTimers();
     proxyFetchMock
       .mockResolvedValueOnce(textResponse(502, 'gateway'))
-      .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+      .mockResolvedValueOnce(jsonResponse({ ok: true }, 200));
     const promise = backofficeGet<{ ok: boolean }>('/x');
     // Drain the per-attempt setTimeout(500ms).
     await vi.advanceTimersByTimeAsync(500);
@@ -157,7 +151,7 @@ describe('transient retry', () => {
   });
 
   it('does NOT retry on a 400 (non-transient)', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(400, { detail: 'bad' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ detail: 'bad' }, 400));
     await expect(backofficeGet('/x')).rejects.toBeInstanceOf(BackofficeApiError);
     expect(proxyFetchMock).toHaveBeenCalledTimes(1);
   });

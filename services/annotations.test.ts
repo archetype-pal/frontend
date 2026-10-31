@@ -15,13 +15,7 @@ import {
   updateViewerAnnotation,
   type BackendGraph,
 } from './annotations';
-
-function jsonResponse(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from '@/test/json-response';
 
 function textResponse(status: number, text: string) {
   return new Response(text, { status, headers: { 'content-type': 'text/plain' } });
@@ -49,7 +43,7 @@ beforeEach(() => {
 
 describe('fetchAnnotationsForImage', () => {
   it('builds the graphs query with item_image and optional filters', async () => {
-    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(200, []));
+    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse([], 200));
     await fetchAnnotationsForImage('42', '7', 'text', true);
     const [path, authenticated, init] = optionalAuthFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/manuscripts/graphs/?item_image=42&allograph=7&annotation_type=text');
@@ -58,7 +52,7 @@ describe('fetchAnnotationsForImage', () => {
   });
 
   it('omits annotation_type when explicitly null', async () => {
-    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(200, []));
+    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse([], 200));
     await fetchAnnotationsForImage('42', undefined, null);
     const [path] = optionalAuthFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/manuscripts/graphs/?item_image=42');
@@ -72,7 +66,7 @@ describe('fetchAnnotationsForImage', () => {
 
 describe('createViewerAnnotation', () => {
   it('POSTs with a default annotation_type of "image"', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(201, { id: 1 }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 1 }, 201));
     await createViewerAnnotation({ item_image: 42, annotation: ANNOTATION });
     const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/annotations/graphs/');
@@ -82,7 +76,7 @@ describe('createViewerAnnotation', () => {
   });
 
   it('preserves an explicit annotation_type', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(201, { id: 1 }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 1 }, 201));
     await createViewerAnnotation({
       item_image: 42,
       annotation: ANNOTATION,
@@ -102,7 +96,7 @@ describe('createViewerAnnotation', () => {
 
 describe('updateViewerAnnotation', () => {
   it('PATCHes the graph by id', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { id: 5 }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 5 }, 200));
     await updateViewerAnnotation(5, { note: 'hi' });
     const [path, init] = proxyFetchMock.mock.calls[0]!;
     expect(path).toBe('/api/v1/annotations/graphs/5/');
@@ -141,7 +135,7 @@ describe('fetchGraphsByIds', () => {
 
   it('fetches graphs with comma-separated id__in parameter', async () => {
     const mockGraphs = [{ id: 10 }, { id: 20 }] as BackendGraph[];
-    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(200, mockGraphs));
+    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(mockGraphs, 200));
 
     const result = await fetchGraphsByIds([10, 20], true);
     expect(result).toEqual(mockGraphs);
@@ -160,9 +154,9 @@ describe('fetchGraphsByIds', () => {
     const chunk3 = ids.slice(600).map((id) => ({ id })) as BackendGraph[];
 
     optionalAuthFetchMock
-      .mockResolvedValueOnce(jsonResponse(200, chunk1))
-      .mockResolvedValueOnce(jsonResponse(200, chunk2))
-      .mockResolvedValueOnce(jsonResponse(200, chunk3));
+      .mockResolvedValueOnce(jsonResponse(chunk1, 200))
+      .mockResolvedValueOnce(jsonResponse(chunk2, 200))
+      .mockResolvedValueOnce(jsonResponse(chunk3, 200));
 
     const result = await fetchGraphsByIds(ids, true);
     expect(result.length).toBe(650);
@@ -170,7 +164,7 @@ describe('fetchGraphsByIds', () => {
   });
 
   it('throws when the API returns graphs that were not requested', async () => {
-    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse(200, [{ id: 10 }, { id: 99 }]));
+    optionalAuthFetchMock.mockResolvedValueOnce(jsonResponse([{ id: 10 }, { id: 99 }], 200));
     await expect(fetchGraphsByIds([10], true)).rejects.toThrow('not requested');
   });
 

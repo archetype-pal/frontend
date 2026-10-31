@@ -17,13 +17,7 @@ import {
   updateImageText,
   validateTei,
 } from './image-texts';
-
-function jsonResponse(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from '@/test/json-response';
 
 beforeEach(() => {
   optionalAuthFetchMock.mockReset();
@@ -32,7 +26,7 @@ beforeEach(() => {
 
 describe('image-text write helpers', () => {
   it('PATCHes through the same-origin proxy', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { id: 7, content: 'ok' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ id: 7, content: 'ok' }, 200));
 
     await updateImageText(7, { content: 'ok' });
 
@@ -46,13 +40,16 @@ describe('image-text write helpers', () => {
 
   it('POSTs create requests through the same-origin proxy', async () => {
     proxyFetchMock.mockResolvedValueOnce(
-      jsonResponse(201, {
-        id: 9,
-        item_image: 1,
-        type: 'Transcription',
-        content: '',
-        status: 'Draft',
-      })
+      jsonResponse(
+        {
+          id: 9,
+          item_image: 1,
+          type: 'Transcription',
+          content: '',
+          status: 'Draft',
+        },
+        201
+      )
     );
 
     await createImageText({ item_image: 1, type: 'Transcription' });
@@ -91,7 +88,7 @@ describe('TEI tooling and region-link helpers', () => {
   });
 
   it('validates TEI through the same-origin proxy', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { valid: true, errors: [] }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ valid: true, errors: [] }, 200));
 
     await expect(validateTei('<p/>')).resolves.toEqual({ valid: true, errors: [] });
 
@@ -103,7 +100,7 @@ describe('TEI tooling and region-link helpers', () => {
   });
 
   it('formats TEI through the same-origin proxy', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { content: '<p>\n</p>' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ content: '<p>\n</p>' }, 200));
 
     await expect(formatTei('<p></p>')).resolves.toBe('<p>\n</p>');
 
@@ -115,7 +112,7 @@ describe('TEI tooling and region-link helpers', () => {
   });
 
   it('links a region through the same-origin proxy', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { graph_id: 5, content: 'x' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ graph_id: 5, content: 'x' }, 200));
 
     await linkRegionToElement(7, 3, undefined, 5);
 
@@ -127,7 +124,7 @@ describe('TEI tooling and region-link helpers', () => {
   });
 
   it('unlinks an element through the same-origin proxy', async () => {
-    proxyFetchMock.mockResolvedValueOnce(jsonResponse(200, { content: 'x' }));
+    proxyFetchMock.mockResolvedValueOnce(jsonResponse({ content: 'x' }, 200));
 
     await unlinkElement(7, 3, 5);
 

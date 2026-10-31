@@ -7,13 +7,7 @@ vi.mock('@/lib/api-fetch', () => ({
 
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 import { walkPaginated } from './walk-paginated';
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from '@/test/json-response';
 
 const fetcher = vi.fn();
 

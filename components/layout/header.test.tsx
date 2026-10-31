@@ -1,11 +1,12 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PageListItem } from '@/lib/pages';
 import type { ResultType } from '@/lib/search-types';
 import Header from './header';
+import { createTestQueryClient } from '@/test/query-client';
 
 const mockState = vi.hoisted(() => ({
   enabledCategories: ['images'] as ResultType[],
@@ -75,7 +76,7 @@ vi.mock('@/contexts/search-context', () => ({
 }));
 
 function renderHeader(props: React.ComponentProps<typeof Header> = {}) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   return render(
     <QueryClientProvider client={client}>
       <Header {...props} />

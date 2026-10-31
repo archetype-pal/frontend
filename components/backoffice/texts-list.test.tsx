@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { TextsList } from './texts-list';
+import { createTestQueryClient } from '@/test/query-client';
 
 const { fetchImageTextList, proxyFetch } = vi.hoisted(() => ({
   fetchImageTextList: vi.fn(),
@@ -70,7 +71,7 @@ function text(id: number) {
 }
 
 function renderList() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   render(
     <QueryClientProvider client={client}>
       <TextsList />

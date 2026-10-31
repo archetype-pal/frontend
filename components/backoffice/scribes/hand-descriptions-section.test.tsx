@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -43,6 +43,7 @@ vi.mock('next/dynamic', () => ({
 }));
 
 import { HandDescriptionsSection } from './hand-descriptions-section';
+import { createTestQueryClient } from '@/test/query-client';
 
 const DESCRIPTION: HandDescription = {
   id: 7,
@@ -53,7 +54,7 @@ const DESCRIPTION: HandDescription = {
 };
 
 function renderSection(onDirtyChange = vi.fn(), descriptions = [DESCRIPTION]) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   render(
     <QueryClientProvider client={client}>
       <HandDescriptionsSection
@@ -68,7 +69,7 @@ function renderSection(onDirtyChange = vi.fn(), descriptions = [DESCRIPTION]) {
 
 /** Renders the section from the cached hand, as the hand page does. */
 function renderFromCache() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   const key = backofficeKeys.hands.detail(3);
   client.setQueryData(key, { id: 3, descriptions: [DESCRIPTION] } as AdminHandListItem);
   // Keep the refetch from replacing the optimistic value during the test.

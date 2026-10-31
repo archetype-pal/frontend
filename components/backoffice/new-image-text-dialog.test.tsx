@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { NewImageTextDialog } from './new-image-text-dialog';
+import { createTestQueryClient } from '@/test/query-client';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -15,7 +16,7 @@ vi.mock('@/services/backoffice/image-texts-list', () => ({
 
 describe('<NewImageTextDialog>', () => {
   it('blocks a type the image already has and links to the existing text', async () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const client = createTestQueryClient();
     render(
       <QueryClientProvider client={client}>
         <NewImageTextDialog open onOpenChange={() => {}} defaultItemImage={1658} />
