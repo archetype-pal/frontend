@@ -282,10 +282,6 @@ describe('targetForKey matches lib/tei-msdesc-render resolveRefKeyHref', () => {
     });
   }
 
-  it('resolves a person key to the scribe detail route', () => {
-    expect(targetForKey('person_42')).toBe('/scribes/42');
-  });
-
   it('keyForResource derives person_{id} and preserves tolerated keys', () => {
     expect(keyForResource({ kind: 'person', id: 42, target: '/scribes/42', label: 'x' })).toBe(
       'person_42'

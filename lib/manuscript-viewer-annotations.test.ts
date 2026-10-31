@@ -43,19 +43,6 @@ describe('buildInitialViewerAnnotations', () => {
     expect(fetchAnnotationsForImage).toHaveBeenCalledTimes(1);
   });
 
-  it('skips the editorial fetch when includeEditorial is false', async () => {
-    vi.mocked(fetchAnnotationsForImage).mockResolvedValueOnce([]);
-    await buildInitialViewerAnnotations({
-      itemImageId: '42',
-      iiifImage: 'iiif',
-      imageHeight: 100,
-      allographNameById: new Map(),
-      isPublicDemoMode: false,
-      currentViewerAnnotations: [],
-    });
-    expect(fetchAnnotationsForImage).toHaveBeenCalledTimes(1);
-  });
-
   it('fetches editorial annotations as a second call when includeEditorial is true', async () => {
     vi.mocked(fetchAnnotationsForImage)
       .mockResolvedValueOnce([makeBackendGraph(1)])

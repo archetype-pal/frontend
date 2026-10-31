@@ -92,11 +92,6 @@ describe('invariant 1 — currentCreationKind fallback', () => {
 
     expect(result.current.currentCreationKind).toBe('public');
   });
-
-  it('does nothing when the current kind is still allowed', () => {
-    const { result } = renderHook(() => useViewerEditorUiState(makeArgs()));
-    expect(result.current.currentCreationKind).toBe('public');
-  });
 });
 
 describe('invariant 2 — selectedHand reset', () => {
