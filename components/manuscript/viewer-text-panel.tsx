@@ -18,6 +18,7 @@ import type { Mode } from '@/components/backoffice/tei-text-editor';
 import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import type { TextDisplayMode } from '@/types/annotation-viewer';
 import { errorMessage } from '@/lib/error-message';
+import { scrollIntoNearestScroller } from '@/lib/scroll-utils';
 
 function LoadingEditorFallback() {
   const t = useTranslations('manuscript');
@@ -112,31 +113,6 @@ function graphIdsOf(el: Element | null): number[] {
     .split(',')
     .map((part) => Number.parseInt(part.trim(), 10))
     .filter((value) => Number.isFinite(value));
-}
-
-/**
- * Bring a span into view by scrolling ONLY its nearest scrollable ancestor (the
- * card body) — never the window. `el.scrollIntoView()` would also scroll the page
- * (the viewer is 100dvh), yanking the whole layout. No-op if already visible.
- */
-function scrollSpanIntoView(el: HTMLElement): void {
-  let scroller: HTMLElement | null = el.parentElement;
-  while (scroller) {
-    const overflowY = getComputedStyle(scroller).overflowY;
-    if (
-      (overflowY === 'auto' || overflowY === 'scroll') &&
-      scroller.scrollHeight > scroller.clientHeight
-    ) {
-      break;
-    }
-    scroller = scroller.parentElement;
-  }
-  if (!scroller) return;
-  const sRect = scroller.getBoundingClientRect();
-  const eRect = el.getBoundingClientRect();
-  if (eRect.top >= sRect.top && eRect.bottom <= sRect.bottom) return; // already visible
-  const delta = eRect.top + eRect.height / 2 - (sRect.top + scroller.clientHeight / 2);
-  scroller.scrollBy({ top: delta, behavior: 'smooth' });
 }
 
 // The ImageText.type taxonomy (compared case-insensitively — older rows vary).
@@ -587,7 +563,7 @@ export function ViewerTextPanel({
     if (skipLinkScrollRef.current) {
       skipLinkScrollRef.current = false;
     } else {
-      scrollSpanIntoView(matches[0]);
+      scrollIntoNearestScroller(matches[0]);
     }
   }, [linkedGraphId, shownKey]);
 

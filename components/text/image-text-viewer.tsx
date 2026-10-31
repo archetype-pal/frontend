@@ -5,6 +5,7 @@ import { sanitizeHtml } from '@/lib/sanitize-html';
 import { applyHighlightClasses } from '@/lib/tei-highlight';
 import { toDptHtml } from '@/lib/tei-to-dpt-html';
 import { cn } from '@/lib/utils';
+import { scrollIntoNearestScroller } from '@/lib/scroll-utils';
 
 interface ImageTextViewerProps {
   html: string;
@@ -69,30 +70,6 @@ function markSearchHits(root: HTMLElement, query: string): HTMLElement | null {
     textNode.parentNode?.replaceChild(frag, textNode);
   }
   return first;
-}
-
-/**
- * Scroll `el` into view within its nearest scrollable ancestor only — never the
- * window (the viewer is 100dvh, so a plain scrollIntoView would yank the page).
- */
-function scrollIntoNearestScroller(el: HTMLElement): void {
-  let scroller: HTMLElement | null = el.parentElement;
-  while (scroller) {
-    const overflowY = getComputedStyle(scroller).overflowY;
-    if (
-      (overflowY === 'auto' || overflowY === 'scroll') &&
-      scroller.scrollHeight > scroller.clientHeight
-    ) {
-      break;
-    }
-    scroller = scroller.parentElement;
-  }
-  if (!scroller) return;
-  const sRect = scroller.getBoundingClientRect();
-  const eRect = el.getBoundingClientRect();
-  if (eRect.top >= sRect.top && eRect.bottom <= sRect.bottom) return;
-  const delta = eRect.top + eRect.height / 2 - (sRect.top + scroller.clientHeight / 2);
-  scroller.scrollBy({ top: delta, behavior: 'smooth' });
 }
 
 export function ImageTextViewer({
