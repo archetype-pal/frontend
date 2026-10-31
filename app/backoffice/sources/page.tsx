@@ -18,7 +18,6 @@ export default function SourcesPage() {
     <SimpleCrudPage<BibliographicSource>
       queryKey={backofficeKeys.sources.all()}
       queryFn={() => getSources()}
-      getRows={(data) => (Array.isArray(data) ? (data as BibliographicSource[]) : [])}
       createFn={(payload) => createSource(payload as Partial<BibliographicSource>)}
       updateFn={(id, payload) => updateSource(id, payload as Partial<BibliographicSource>)}
       deleteFn={(id) => deleteSource(id)}

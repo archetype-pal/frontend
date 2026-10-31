@@ -28,7 +28,6 @@ describe('<SimpleCrudPage>', () => {
           <SimpleCrudPage<Format>
             queryKey={['formats']}
             queryFn={async () => FORMATS}
-            getRows={(data) => (data as Format[] | undefined) ?? []}
             createFn={vi.fn()}
             updateFn={vi.fn()}
             deleteFn={vi.fn()}

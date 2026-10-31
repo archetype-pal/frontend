@@ -41,8 +41,7 @@ type CrudFieldConfig<T> = {
 
 type SimpleCrudPageProps<T extends { id: number }> = {
   queryKey: readonly unknown[];
-  queryFn: () => Promise<unknown>;
-  getRows: (data: unknown) => T[];
+  queryFn: () => Promise<T[]>;
   createFn: (payload: Record<string, unknown>) => Promise<unknown>;
   updateFn: (id: number, payload: Record<string, unknown>) => Promise<unknown>;
   deleteFn: (id: number) => Promise<unknown>;
@@ -67,7 +66,6 @@ function toEditableString(value: unknown): string {
 export function SimpleCrudPage<T extends { id: number }>({
   queryKey,
   queryFn,
-  getRows,
   createFn,
   updateFn,
   deleteFn,
@@ -91,11 +89,11 @@ export function SimpleCrudPage<T extends { id: number }>({
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey,
-    queryFn: () => queryFn(),
+    queryFn,
     enabled: isAuthenticated,
   });
 
-  const rows = getRows(data);
+  const rows = data ?? [];
 
   const resetDraft = () => {
     const next: Record<string, string> = {};

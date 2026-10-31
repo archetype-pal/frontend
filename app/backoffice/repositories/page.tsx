@@ -18,7 +18,6 @@ export default function RepositoriesPage() {
     <SimpleCrudPage<Repository>
       queryKey={backofficeKeys.repositories.all()}
       queryFn={() => getRepositories()}
-      getRows={(data) => (Array.isArray(data) ? (data as Repository[]) : [])}
       createFn={(payload) =>
         createRepository({
           name: String(payload.name ?? ''),
