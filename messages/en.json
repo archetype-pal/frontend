@@ -2257,8 +2257,7 @@
       "toastUserDeleted": "User deleted",
       "toastFailedDelete": "Failed to delete user",
       "failedLoad": "Failed to load users",
-      "relativeNever": "Never",
-      "relativeJustNow": "Just now"
+      "relativeNever": "Never"
     },
     "searchEngine": {
       "title": "Indexing",

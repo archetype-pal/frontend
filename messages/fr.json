@@ -2257,8 +2257,7 @@
       "toastUserDeleted": "Utilisateur supprimé",
       "toastFailedDelete": "Échec de la suppression de l'utilisateur",
       "failedLoad": "Échec du chargement des utilisateurs",
-      "relativeNever": "Jamais",
-      "relativeJustNow": "À l'instant"
+      "relativeNever": "Jamais"
     },
     "searchEngine": {
       "title": "Indexation",
