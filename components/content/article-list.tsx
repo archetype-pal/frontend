@@ -12,9 +12,9 @@ interface Author {
 
 interface Article {
   title: string;
-  published_at: string;
+  published_at: string | null;
   author: Author;
-  id: string;
+  id: string | number;
   slug: string;
 }
 
