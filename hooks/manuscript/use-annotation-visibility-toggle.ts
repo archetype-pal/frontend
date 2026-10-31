@@ -14,9 +14,8 @@ interface UseAnnotationVisibilityToggleArgs {
 const parseVisible = (raw: string | null) => parseBoolean(raw, true);
 
 /**
- * Owns the per-image "annotations visible" toggle, extracted from
- * manuscript-viewer.tsx (Track D1): remembered per imageId in localStorage
- * and synced into the OSD viewer.
+ * Owns the per-image "annotations visible" toggle: remembered per imageId in
+ * localStorage and synced into the OSD viewer.
  */
 export function useAnnotationVisibilityToggle({
   imageId,

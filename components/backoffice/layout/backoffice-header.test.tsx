@@ -24,9 +24,7 @@ vi.mock('@/contexts/auth-context', () => ({
 vi.mock('@/contexts/upload-manager-context', () => ({
   useUploadManager: () => ({ activeCount, cancelAll }),
 }));
-vi.mock('@/contexts/model-labels-context', () => ({
-  useModelLabels: () => ({ getLabel: (k: string) => k, getPluralLabel: (k: string) => k }),
-}));
+vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 vi.mock('@/hooks/backoffice/use-recent-entities', () => ({
   useRecentEntities: () => ({ recent: [], addRecent: vi.fn(), clearRecent: vi.fn() }),
 }));

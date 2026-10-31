@@ -1,7 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { UserProfile } from '@/types';
@@ -27,17 +26,12 @@ vi.mock('sonner', () => ({
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 
 import { CommentEmailSetting } from './comment-email-setting';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const NAME = 'Email me about comments awaiting approval';
 
 function renderSetting() {
-  const client = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={client}>
-      <CommentEmailSetting />
-    </QueryClientProvider>
-  );
+  return renderWithQueryClient(<CommentEmailSetting />);
 }
 
 async function loadedSwitch() {

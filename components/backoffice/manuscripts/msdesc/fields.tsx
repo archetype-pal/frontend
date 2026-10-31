@@ -19,9 +19,9 @@ import { cn } from '@/lib/utils';
 import type { MsKeyedText } from '@/lib/msdesc-form';
 
 /**
- * Shared field primitives for the msDesc area forms (roadmap 2.2-UI):
+ * Shared field primitives for the msDesc area forms:
  * labelled text inputs, closed-vocab dropdowns fed by `lib/msdesc-vocab.ts`,
- * monospace TEI-prose textareas (plain until the Phase-3 rich editor), and
+ * monospace TEI-prose textareas, and
  * add/remove list chrome. All labels are i18n keys under `backoffice.msdesc`.
  */
 
@@ -129,7 +129,7 @@ export function MsVocabSelect<V extends MsDescVocabId>({
 
 /**
  * Verbatim TEI-prose leaf (`<p>`-sequence inner XML) as a monospace textarea.
- * Since Phase 3.1 this is the **fallback path** of {@link MsDescLeafEditor}: it
+ * This is the **fallback path** of {@link MsDescLeafEditor}: it
  * edits the raw string byte-for-byte, so a leaf whose markup can't be
  * represented by the rich model is still editable without loss. `hint` overrides
  * the caption (the leaf editor passes the "not representable as rich" note).

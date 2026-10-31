@@ -1,15 +1,14 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultModelLabelsConfig } from '@/lib/model-labels';
 import TranslationsPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 
 const stored = getDefaultModelLabelsConfig();
 stored.labels.appManuscripts = { en: 'Corpus', fr: 'Corpus', de: 'Corpus' };
@@ -28,14 +27,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
 });
 
-function renderPage() {
-  const client = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={client}>
-      <TranslationsPage />
-    </QueryClientProvider>
-  );
-}
+const renderPage = () => renderWithQueryClient(<TranslationsPage />);
 
 describe('<TranslationsPage>', () => {
   it('shows an error state instead of a form full of defaults when the read fails', async () => {

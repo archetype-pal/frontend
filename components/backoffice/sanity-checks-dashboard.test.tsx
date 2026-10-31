@@ -1,12 +1,9 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 const getSanityChecksMock = vi.fn();
 const sendTestEmailMock = vi.fn();
@@ -27,7 +24,7 @@ vi.mock('sonner', () => ({
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 
 import { SanityChecksDashboard } from './sanity-checks-dashboard';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const REPORT = {
   migrations: { ok: true, has_pending: false, pending: [], detail: null },
@@ -45,12 +42,7 @@ const REPORT = {
 };
 
 function renderDashboard() {
-  const client = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={client}>
-      <SanityChecksDashboard />
-    </QueryClientProvider>
-  );
+  return renderWithQueryClient(<SanityChecksDashboard />);
 }
 
 beforeEach(() => {

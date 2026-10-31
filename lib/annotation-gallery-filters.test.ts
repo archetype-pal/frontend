@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { BackendGraph } from '@/services/annotations';
+import { makeGraph } from '@/test/annotation-fixtures';
 import {
   activeFilterCount,
   allographGroupComparator,
@@ -15,19 +15,6 @@ import {
   isGraphDescribed,
   withFiltersInSearch,
 } from './annotation-gallery-filters';
-
-function makeGraph(overrides: Partial<BackendGraph> = {}): BackendGraph {
-  return {
-    id: 1,
-    item_image: 1,
-    annotation: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [] } },
-    allograph: 10,
-    hand: 100,
-    graphcomponent_set: [],
-    positions: [],
-    ...overrides,
-  } as BackendGraph;
-}
 
 describe('isGraphDescribed', () => {
   it('trusts the server is_described flag when present', () => {

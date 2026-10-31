@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { BackendGraph } from '@/services/annotations';
+import { makeGraph } from '@/test/annotation-fixtures';
 import type { HandType } from '@/types/hands';
 import { EMPTY_FILTERS } from './annotation-gallery-filters';
 import {
@@ -10,19 +10,6 @@ import {
   handAccentColor,
   handAnchorId,
 } from './annotation-gallery-groups';
-
-function makeGraph(overrides: Partial<BackendGraph> = {}): BackendGraph {
-  return {
-    id: 1,
-    item_image: 1,
-    annotation: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [] } },
-    allograph: 10,
-    hand: 100,
-    graphcomponent_set: [],
-    positions: [],
-    ...overrides,
-  } as BackendGraph;
-}
 
 function makeHand(overrides: Partial<HandType> = {}): HandType {
   return {

@@ -14,9 +14,8 @@ import type { HandType } from '@/types/hands';
 import { errorMessage } from '@/lib/error-message';
 
 /**
- * Loads the viewer's base data for an image, extracted from
- * manuscript-viewer.tsx (Track D1): the image + manuscript + allographs + IIIF
- * height, the hands list, and the allograph ids present on the image. Exposes
+ * Loads the viewer's base data for an image: the image + manuscript +
+ * allographs + IIIF height, the hands list, and the allograph ids present on the image. Exposes
  * setHands/setHandsLoaded because the imageId-change reset still clears them.
  */
 export function useViewerBaseData(imageId: string) {

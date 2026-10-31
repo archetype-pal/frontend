@@ -125,13 +125,6 @@ const TYPE_ORDER = (type: string): number => {
   return 2;
 };
 
-/**
- * Always-on authoring surface for a single text (editors only). The Rich/Preview
- * toolbar portals into the column header; a Save bar slides in only when there
- * are unsaved changes. Defaults to Preview so the column reads like the public
- * view until the editor switches to Rich. The draft is held by the parent
- * (keyed by text id) so it survives a display-mode switch that unmounts this card.
- */
 /** Editor state a text card lifts out of its editor to drive the link bar. */
 interface EditorCardState {
   mode: Mode;

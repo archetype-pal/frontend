@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { RelativeTime } from '@/components/backoffice/relative-time';
 import {
   Table,
   TableBody,
@@ -70,19 +71,6 @@ function getInitials(user: UserListItem): string {
 
 function fullName(user: UserListItem): string {
   return [user.first_name, user.last_name].filter(Boolean).join(' ');
-}
-
-function relativeTime(dateStr: string | null, t: (key: string) => string): string {
-  if (!dateStr) return t('users.relativeNever');
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return t('users.relativeJustNow');
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
 }
 
 const AVATAR_COLORS = [
@@ -680,16 +668,7 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell>
                         {u.last_login ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-sm cursor-default">
-                                {relativeTime(u.last_login, t)}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {new Date(u.last_login).toLocaleString()}
-                            </TooltipContent>
-                          </Tooltip>
+                          <RelativeTime iso={u.last_login} className="text-sm cursor-default" />
                         ) : (
                           <span className="text-sm text-muted-foreground">
                             {t('users.relativeNever')}

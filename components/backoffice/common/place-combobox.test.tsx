@@ -1,7 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createPlaceMock = vi.fn();
@@ -13,20 +12,17 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
   createPlace: (...args: unknown[]) => createPlaceMock(...args),
 }));
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 import { PlaceCombobox } from './place-combobox';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 function renderCombobox(onChange = vi.fn()) {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
+  renderWithQueryClient(
+    <>
       <label htmlFor="hand-place">Place</label>
       <PlaceCombobox id="hand-place" value={null} onChange={onChange} />
-    </QueryClientProvider>
+    </>
   );
   return { onChange };
 }

@@ -3,8 +3,8 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AnnotationGallery } from './annotation-gallery';
-import type { BackendGraph } from '@/services/annotations';
 import type { HandType } from '@/types/hands';
+import { makeGraph } from '@/test/annotation-fixtures';
 
 // Drives the real gallery: grouping, filtering, selection and the toolbar's
 // summary line. Network-bound pieces (crops, the API, the router) are faked.
@@ -65,9 +65,7 @@ vi.mock('@/contexts/collection-context', async () => {
   };
 });
 
-vi.mock('@/contexts/model-labels-context', () => ({
-  useModelLabels: () => ({ getLabel: (k: string) => k, getPluralLabel: (k: string) => k }),
-}));
+vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 
 vi.mock('@/hooks/use-in-view', () => ({ useInView: () => true }));
 vi.mock('@/hooks/use-iiif-thumbnail', () => ({
@@ -111,24 +109,11 @@ const ALLOGRAPHS = [
   { id: 16, name: 'b' },
 ];
 
-function makeGraph(overrides: Partial<BackendGraph> = {}): BackendGraph {
-  return {
-    id: 1,
-    item_image: 5,
-    annotation: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [] } },
-    allograph: 62,
-    hand: 141,
-    graphcomponent_set: [],
-    positions: [],
-    is_described: false,
-    ...overrides,
-  } as BackendGraph;
-}
-
+const ON_IMAGE = { item_image: 5, hand: 141, is_described: false };
 const GRAPHS = [
-  makeGraph({ id: 4189, allograph: 62 }),
-  makeGraph({ id: 4410, allograph: 62, is_described: true }),
-  makeGraph({ id: 4190, allograph: 16 }),
+  makeGraph({ ...ON_IMAGE, id: 4189, allograph: 62 }),
+  makeGraph({ ...ON_IMAGE, id: 4410, allograph: 62, is_described: true }),
+  makeGraph({ ...ON_IMAGE, id: 4190, allograph: 16 }),
 ];
 
 function renderGallery(props: Partial<React.ComponentProps<typeof AnnotationGallery>> = {}) {

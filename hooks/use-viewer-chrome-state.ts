@@ -25,9 +25,7 @@ export interface ViewerChromeApi {
 
 /**
  * Co-locates the viewer's overlay-chrome state: fullscreen toggle, plus the
- * filter and settings drawer panels with their drag-reset coupling. Replaces
- * three useStates and four wrapper handlers in manuscript-viewer.tsx (P1.1
- * in IMPROVEMENT_PLAN.md; second of four hooks).
+ * filter and settings drawer panels with their drag-reset coupling.
  *
  * `canUseSettings` is consulted on every settings toggle so the caller doesn't
  * need to guard at every call site; toggling when settings are disabled is a

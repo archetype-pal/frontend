@@ -1,7 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
@@ -23,7 +22,7 @@ vi.mock('@/components/backoffice/common/iiif-thumbnail', () => ({
 }));
 
 import { ItemImageEditDialog } from './item-image-edit-dialog';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const IMAGE: ItemPartImage = {
   id: 1,
@@ -35,20 +34,17 @@ const IMAGE: ItemPartImage = {
 };
 
 function renderDialog() {
-  const client = createTestQueryClient();
-  const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
-  render(
-    <QueryClientProvider client={client}>
-      <ItemImageEditDialog
-        open
-        onOpenChange={() => {}}
-        image={IMAGE}
-        historicalItemId={3}
-        itemPartId={5}
-        itemPartLabel="Current part"
-      />
-    </QueryClientProvider>
+  const { client } = renderWithQueryClient(
+    <ItemImageEditDialog
+      open
+      onOpenChange={() => {}}
+      image={IMAGE}
+      historicalItemId={3}
+      itemPartId={5}
+      itemPartLabel="Current part"
+    />
   );
+  const invalidateSpy = vi.spyOn(client, 'invalidateQueries');
   return { invalidateSpy };
 }
 

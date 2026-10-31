@@ -9,7 +9,7 @@ vi.mock('@/lib/api-fetch', () => ({
 
 import { BackofficeApiError } from './api-client';
 import { getSanityChecks, sendTestEmail } from './sanity-checks';
-import { jsonResponse } from '@/test/json-response';
+import { jsonResponse } from '@/test/responses';
 
 // Captured from a local backend, so a contract drift fails here first.
 const FULL_RESPONSE = {

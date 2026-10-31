@@ -2,16 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { useManuscriptPopups } from './use-manuscript-popups';
-import type { A9sWithMeta } from '@/types/annotation-viewer';
-
-function makeAnnotation(id: string, meta: A9sWithMeta['_meta'] = {}): A9sWithMeta {
-  return {
-    id,
-    type: 'Annotation',
-    target: {},
-    _meta: meta,
-  } as A9sWithMeta;
-}
+import { makeAnnotation } from '@/test/annotation-fixtures';
 
 describe('useManuscriptPopups', () => {
   describe('opening', () => {

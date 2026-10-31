@@ -6,7 +6,7 @@ vi.mock('@/lib/api-fetch', () => ({
 }));
 
 import { searchItemParts, searchPlaces, searchScribes } from './tei-ref-search';
-import { jsonResponse } from '@/test/json-response';
+import { jsonResponse } from '@/test/responses';
 
 /**
  * Pins the public search-endpoint contract the `<ref>` picker depends on:

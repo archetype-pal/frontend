@@ -14,7 +14,7 @@ import {
   listMyWorksets,
   updateWorkset,
 } from './worksets';
-import { jsonResponse } from '@/test/json-response';
+import { jsonResponse } from '@/test/responses';
 
 const PAYLOAD = { schema_version: 2, workspaces: [], images: [] };
 

@@ -1,46 +1,13 @@
 /** @vitest-environment jsdom */
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
+import en from '@/messages/en.json';
+import fr from '@/messages/fr.json';
+import { lookupMessage, tBackoffice } from '@/test/messages';
 import type { PublicMsDescArea } from '@/types/manuscript';
 import { MsDescSection } from './msdesc-section';
-
-const messagesDir = join(
-  dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
-  '..',
-  'messages'
-);
-
-function catalogue(locale: 'en' | 'fr'): Record<string, unknown> {
-  return JSON.parse(readFileSync(join(messagesDir, `${locale}.json`), 'utf8')) as Record<
-    string,
-    unknown
-  >;
-}
-
-function lookup(root: Record<string, unknown>, path: string): unknown {
-  return path
-    .split('.')
-    .reduce<unknown>(
-      (node, part) =>
-        node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined,
-      root
-    );
-}
-
-const en = catalogue('en');
-const tBackoffice = (key: string): string => {
-  const value = lookup(en.backoffice as Record<string, unknown>, key);
-  return typeof value === 'string' ? value : key;
-};
 
 const wrap = (area: PublicMsDescArea['area'], body: string): PublicMsDescArea => ({
   area,
@@ -140,7 +107,6 @@ describe('MsDescSection', () => {
 });
 
 describe('section labels are localized in both catalogues', () => {
-  const fr = catalogue('fr');
   const KEYS = [
     // Public page: the msDesc section title and the 8.2 legacy relabel (one key
     // per surface — heading and on-this-page nav share it).
@@ -161,8 +127,8 @@ describe('section labels are localized in both catalogues', () => {
   ];
 
   it.each(KEYS)('%s exists in en and fr with distinct real wording', (key) => {
-    const enValue = lookup(en, key);
-    const frValue = lookup(fr, key);
+    const enValue = lookupMessage(en, key);
+    const frValue = lookupMessage(fr, key);
     expect(typeof enValue).toBe('string');
     expect(typeof frValue).toBe('string');
     expect((enValue as string).length).toBeGreaterThan(0);
@@ -170,14 +136,14 @@ describe('section labels are localized in both catalogues', () => {
   });
 
   it('the legacy relabel reads as catalogue descriptions, not bare "Description"', () => {
-    expect(lookup(en, 'manuscript.sections.legacyDescriptions')).toBe(
+    expect(lookupMessage(en, 'manuscript.sections.legacyDescriptions')).toBe(
       'Catalogue descriptions / citations'
     );
-    expect(lookup(en, 'backoffice.manuscriptsDetail.descriptions')).toBe(
+    expect(lookupMessage(en, 'backoffice.manuscriptsDetail.descriptions')).toBe(
       'Catalogue descriptions / citations'
     );
-    expect(lookup(fr, 'manuscript.sections.legacyDescriptions')).toContain('catalogue');
-    expect(lookup(fr, 'backoffice.manuscriptsDetail.descriptions')).toContain('catalogue');
+    expect(lookupMessage(fr, 'manuscript.sections.legacyDescriptions')).toContain('catalogue');
+    expect(lookupMessage(fr, 'backoffice.manuscriptsDetail.descriptions')).toContain('catalogue');
   });
 
   it('leaves no bare "Descriptions" label on a surface the msDesc editor shares', () => {
@@ -189,13 +155,13 @@ describe('section labels are localized in both catalogues', () => {
       'backoffice.manuscriptWorkspace.checklistDescriptions',
     ];
     for (const key of WORKSPACE_KEYS) {
-      expect(lookup(en, key)).toBe('Catalogue descriptions');
-      expect(lookup(fr, key)).toBe('Descriptions de catalogue');
+      expect(lookupMessage(en, key)).toBe('Catalogue descriptions');
+      expect(lookupMessage(fr, key)).toBe('Descriptions de catalogue');
     }
   });
 
   it('keeps the ICU placeholder of the source attribution in both catalogues', () => {
-    expect(lookup(en, 'manuscript.sections.sourceAttribution')).toContain('{source}');
-    expect(lookup(fr, 'manuscript.sections.sourceAttribution')).toContain('{source}');
+    expect(lookupMessage(en, 'manuscript.sections.sourceAttribution')).toContain('{source}');
+    expect(lookupMessage(fr, 'manuscript.sections.sourceAttribution')).toContain('{source}');
   });
 });

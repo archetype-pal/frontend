@@ -35,11 +35,9 @@ const DEFAULT_FILTERS: AnnotationVisibilityFilters = {
 };
 
 /**
- * Owns the annotation-visibility filter cluster, extracted from
- * manuscript-viewer.tsx (Track D1): the filter state, the per-image seeding of
- * allograph/hand filter sets, the toggle handlers, the derived "active" flag,
- * and the per-annotation predicate. It owns its OWN imageId-keyed reset (so it
- * no longer relies on the monolithic imageId reset reaching in).
+ * Owns the annotation-visibility filter cluster: the filter state, the per-image
+ * seeding of allograph/hand filter sets, the toggle handlers, the derived
+ * "active" flag, the per-annotation predicate and its own imageId-keyed reset.
  */
 export function useAnnotationVisibilityFilters({
   imageId,

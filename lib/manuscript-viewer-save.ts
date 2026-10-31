@@ -1,6 +1,5 @@
 /**
- * Pure interpretation of an annotation save outcome, extracted from
- * manuscript-viewer.tsx (Track D1). `handleSave` is otherwise orchestration
+ * Pure interpretation of an annotation save outcome. `handleSave` is otherwise orchestration
  * (validate → editorState.saveAll → side effects), but the 8-branch mapping of
  * the outcome to a user notification — and whether the success side effects
  * should run — is load-bearing logic worth testing directly.

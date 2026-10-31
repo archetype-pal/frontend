@@ -80,7 +80,7 @@ interface AnnotationPopupLayerProps {
 // entry, the active one last so it paints on top). Owns the per-popup
 // derived-view computation + the trivial draft-field handlers; the viewer
 // only sees the layer as a single component with a wide-but-flat prop
-// surface. Phase A.3 of ROADMAP-EDITORS.
+// surface.
 export function AnnotationPopupLayer({
   visiblePopupRecords,
   activePopupId,

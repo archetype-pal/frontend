@@ -7,22 +7,7 @@ import {
 } from './use-viewer-editor-ui-state';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
-import type { ViewerCapabilities } from '@/types/annotation-viewer';
-
-function makeCaps(overrides: Partial<ViewerCapabilities> = {}): ViewerCapabilities {
-  return {
-    canCreatePublicAnnotations: true,
-    canPersistPublicAnnotations: true,
-    canCreateEditorialAnnotations: true,
-    canPersistEditorialAnnotations: true,
-    canDeleteAnnotations: true,
-    canModifyAnnotations: true,
-    canViewEditorialControls: true,
-    canUseSettings: true,
-    canUseEditorSettings: true,
-    ...overrides,
-  } as ViewerCapabilities;
-}
+import { makeCaps } from '@/test/annotation-fixtures';
 
 function makeArgs(overrides: Partial<UseViewerEditorUiStateArgs> = {}): UseViewerEditorUiStateArgs {
   return {
@@ -105,11 +90,6 @@ describe('invariant 1 — currentCreationKind fallback', () => {
     });
     rerender({ args: makeArgs({ viewerCapabilities: tightenedCaps }) });
 
-    expect(result.current.currentCreationKind).toBe('public');
-  });
-
-  it('does nothing when the current kind is still allowed', () => {
-    const { result } = renderHook(() => useViewerEditorUiState(makeArgs()));
     expect(result.current.currentCreationKind).toBe('public');
   });
 });

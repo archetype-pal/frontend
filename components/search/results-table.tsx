@@ -460,7 +460,6 @@ const RESULT_TYPE_DESCRIPTORS = {
   },
 } satisfies { [K in ResultType]: ResultTypeDescriptor<K> };
 
-/** Table view only renders a thumbnail row for types that declare a preview. */
 /**
  * Makes a whole result (main row + its preview/snippet rows) clickable by
  * forwarding clicks to the row's primary link (the cell marked `data-row-link`).

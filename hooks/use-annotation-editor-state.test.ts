@@ -5,7 +5,8 @@ import {
   useAnnotationEditorState,
   type UseAnnotationEditorStateArgs,
 } from './use-annotation-editor-state';
-import type { A9sWithMeta, ViewerCapabilities } from '@/types/annotation-viewer';
+import type { A9sWithMeta } from '@/types/annotation-viewer';
+import { makeAnnotation, makeBackendGraph, makeCaps } from '@/test/annotation-fixtures';
 
 vi.mock('@/services/annotations', () => ({
   createViewerAnnotation: vi.fn(),
@@ -19,59 +20,6 @@ import {
   deleteViewerAnnotation,
   fetchAnnotationsForImage,
 } from '@/services/annotations';
-
-function makeAnnotation(id: string, meta: A9sWithMeta['_meta'] = {}): A9sWithMeta {
-  return {
-    id,
-    type: 'Annotation',
-    target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:1,2,3,4' } },
-    _meta: meta,
-  } as A9sWithMeta;
-}
-
-function makeBackendGraph(id: number, annotationType: 'image' | 'text' = 'image') {
-  return {
-    id,
-    item_image: 42,
-    annotation_type: annotationType,
-    annotation: {
-      type: 'Feature',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [0, 90],
-            [0, 100],
-            [10, 100],
-            [10, 90],
-            [0, 90],
-          ],
-        ],
-      },
-      properties: {},
-    },
-    allograph: null,
-    hand: null,
-    positions: [],
-    position_details: [],
-    graphcomponent_set: [],
-  } as never;
-}
-
-function makeCaps(overrides: Partial<ViewerCapabilities> = {}): ViewerCapabilities {
-  return {
-    canCreatePublicAnnotations: true,
-    canPersistPublicAnnotations: true,
-    canCreateEditorialAnnotations: true,
-    canPersistEditorialAnnotations: true,
-    canDeleteAnnotations: true,
-    canModifyAnnotations: true,
-    canViewEditorialControls: true,
-    canUseSettings: true,
-    canUseEditorSettings: true,
-    ...overrides,
-  } as ViewerCapabilities;
-}
 
 function makeArgs(
   overrides: Partial<UseAnnotationEditorStateArgs> = {}

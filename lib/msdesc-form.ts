@@ -14,8 +14,8 @@
  *
  * Field conventions:
  *   - `…InnerXml` / `innerXml` fields hold a prose leaf's inner `<p>`-sequence
- *     as a **verbatim** XML string (byte-exact from the source; the Phase-3
- *     rich editor edits these same strings). '' means present-but-empty;
+ *     as a **verbatim** XML string (byte-exact from the source; the rich
+ *     editor edits these same strings). '' means present-but-empty;
  *     undefined means the element is absent.
  *   - Plain string fields hold decoded, whitespace-trimmed text; numbers and
  *     dates stay strings because XML attributes are strings and a numeric

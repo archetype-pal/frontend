@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getPubliclyShareableCollectionItems } from '@/lib/collection-workset';
 import { createAnonymousCollectionShareUrl } from '@/lib/collection-share-url';
+import { copyLink } from '@/lib/copy-link';
 import type { NamedCollection } from '@/lib/collection-storage';
 
 export function ShareCollectionButton({ collection }: { collection: NamedCollection }) {
@@ -32,14 +33,8 @@ export function ShareCollectionButton({ collection }: { collection: NamedCollect
   );
   const excludedItemsCount = collection.items.length - shareableItems.length;
 
-  const copyShareUrl = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success(t('share.toastLinkCopied'));
-    } catch {
-      toast.error(t('share.toastCopyFailed'), { description: url });
-    }
-  };
+  const copyShareUrl = (url: string) =>
+    copyLink(url, { copied: t('share.toastLinkCopied'), failed: t('share.toastCopyFailed') });
 
   const openDialog = () => {
     setTitle(collection.name);

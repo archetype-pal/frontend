@@ -9,12 +9,7 @@ import { getDefaultConfig } from '@/lib/site-features';
 import { ManuscriptViewer } from './manuscript-viewer';
 
 // The viewer only needs these for chrome around the section under test.
-vi.mock('@/contexts/model-labels-context', () => ({
-  useModelLabels: () => ({
-    getLabel: (key: string) => key,
-    getPluralLabel: (key: string) => key,
-  }),
-}));
+vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 
 vi.mock('@/components/common/backoffice-link', () => ({
   BackofficeLink: () => null,

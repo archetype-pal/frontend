@@ -25,8 +25,7 @@ interface UseAnnotationDeletionArgs {
 }
 
 /**
- * Annotation deletion flow, extracted from manuscript-viewer.tsx (Track D1):
- * the confirm-dialog builders and the viewer/popup delete handlers. markDeleted
+ * Annotation deletion flow: the confirm-dialog builders and the viewer/popup delete handlers. markDeleted
  * handles both drafts (removed) and saved annotations (marked isDeleted);
  * deliberately does NOT touch initialA9sAnnots (that would re-seed the OSD layer
  * and drop in-flight selection / mid-draw polygons).

@@ -10,10 +10,10 @@ describe('ThumbnailSizeControl', () => {
     const radios = screen.getAllByRole('radio');
     expect(radios.map((r) => r.textContent)).toEqual(['S', 'M', 'L']);
 
-    const small = screen.getByRole('radio', { name: 'Small thumbnails' });
+    const small = screen.getByRole('radio', { name: 'Compact thumbnails' });
     expect(small.getAttribute('aria-checked')).toBe('true');
     expect(
-      screen.getByRole('radio', { name: 'Medium thumbnails' }).getAttribute('aria-checked')
+      screen.getByRole('radio', { name: 'Comfortable thumbnails' }).getAttribute('aria-checked')
     ).toBe('false');
   });
 

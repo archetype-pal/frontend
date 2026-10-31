@@ -26,8 +26,8 @@ interface UseCollectionActionsArgs {
 }
 
 /**
- * Lightbox/collection integration for the manuscript viewer, extracted from
- * manuscript-viewer.tsx (Track D1). Owns the collection context derivation and
+ * Lightbox/collection integration for the manuscript viewer. Owns the
+ * collection context derivation and
  * the page/annotation add/remove/toggle handlers. Calls useCollection()
  * internally and re-exports isInCollection for the popup layer prop.
  */

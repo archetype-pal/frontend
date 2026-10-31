@@ -1,24 +1,18 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { TextsList } from './texts-list';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const { fetchImageTextList, proxyFetch } = vi.hoisted(() => ({
   fetchImageTextList: vi.fn(),
   proxyFetch: vi.fn(),
 }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), loading: vi.fn() },
-}));
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 vi.mock('@/lib/api-fetch', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api-fetch')>()),
   proxyFetch,
@@ -71,12 +65,7 @@ function text(id: number) {
 }
 
 function renderList() {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <TextsList />
-    </QueryClientProvider>
-  );
+  renderWithQueryClient(<TextsList />);
 }
 
 function exportQuery() {

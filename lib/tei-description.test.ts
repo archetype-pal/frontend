@@ -12,77 +12,56 @@ const PROSE =
   '<p>Granted by <persName>William I</persName> at <placeName>Roxburgh</placeName>.</p>';
 const WRAPPED = `<div xmlns="${TEI_NS}" type="description">${PROSE}</div>`;
 
-describe('isTeiDescription — accepts', () => {
-  it('the canonical wrapper', () => {
-    expect(isTeiDescription(WRAPPED)).toBe(true);
+describe('isTeiDescription', () => {
+  it.each([
+    ['the canonical wrapper', WRAPPED],
+    ['attributes in the other order', `<div type="description" xmlns="${TEI_NS}">${PROSE}</div>`],
+    ['single-quoted attribute values', `<div xmlns='${TEI_NS}' type='description'>${PROSE}</div>`],
+    [
+      'surrounding and internal whitespace',
+      `\n  <div\n   xmlns="${TEI_NS}"\n   type="description">\n${PROSE}\n</div>\n`,
+    ],
+    ['an empty wrapper', `<div xmlns="${TEI_NS}" type="description"></div>`],
+    ['a self-closing empty wrapper', `<div xmlns="${TEI_NS}" type="description"/>`],
+    [
+      'a wrapper whose prose contains nested divs',
+      `<div xmlns="${TEI_NS}" type="description"><div><p>x</p></div></div>`,
+    ],
+  ])('accepts %s', (_name, value) => {
+    expect(isTeiDescription(value)).toBe(true);
   });
 
-  it('attributes in the other order', () => {
-    expect(isTeiDescription(`<div type="description" xmlns="${TEI_NS}">${PROSE}</div>`)).toBe(true);
-  });
-
-  it('single-quoted attribute values', () => {
-    expect(isTeiDescription(`<div xmlns='${TEI_NS}' type='description'>${PROSE}</div>`)).toBe(true);
-  });
-
-  it('surrounding and internal whitespace', () => {
-    expect(
-      isTeiDescription(`\n  <div\n   xmlns="${TEI_NS}"\n   type="description">\n${PROSE}\n</div>\n`)
-    ).toBe(true);
-  });
-
-  it('an empty wrapper, self-closing or not', () => {
-    expect(isTeiDescription(`<div xmlns="${TEI_NS}" type="description"></div>`)).toBe(true);
-    expect(isTeiDescription(`<div xmlns="${TEI_NS}" type="description"/>`)).toBe(true);
-  });
-
-  it('a wrapper whose prose contains nested divs', () => {
-    expect(
-      isTeiDescription(`<div xmlns="${TEI_NS}" type="description"><div><p>x</p></div></div>`)
-    ).toBe(true);
-  });
-});
-
-describe('isTeiDescription — rejects', () => {
-  it('legacy catalogue HTML', () => {
-    expect(isTeiDescription('<p><b>Melrose, Liber Sancte Marie</b>, no. 175.</p>')).toBe(false);
-  });
-
-  it('legacy HTML that merely quotes TEI element names — the false-positive a sniff would fail', () => {
-    const quoting =
+  it.each([
+    ['legacy catalogue HTML', '<p><b>Melrose, Liber Sancte Marie</b>, no. 175.</p>'],
+    [
+      'legacy HTML that merely quotes TEI element names — the false-positive a sniff would fail',
       '<p>The editors mark witnesses with <code>&lt;persName&gt;</code> and places with ' +
-      '<code>&lt;placeName&gt;</code>. A clause is <code>&lt;seg type="disposition"&gt;</code>.</p>';
-    expect(isTeiDescription(quoting)).toBe(false);
-  });
-
-  it('legacy HTML that literally contains unescaped TEI markup', () => {
-    expect(isTeiDescription('<p>Witnessed by <persName>Walter</persName>.</p>')).toBe(false);
-  });
-
-  it('a plain HTML div — legacy content routinely opens with one', () => {
-    expect(isTeiDescription('<div class="cat-entry"><p>no. 175</p></div>')).toBe(false);
-  });
-
-  it('a div carrying some other namespace', () => {
-    expect(isTeiDescription('<div xmlns="http://www.w3.org/1999/xhtml"><p>x</p></div>')).toBe(
-      false
-    );
-  });
-
-  it('a wrapper that is not the root — trailing siblings would be truncated on unwrap', () => {
-    expect(isTeiDescription(`<div xmlns="${TEI_NS}">${PROSE}</div><p>orphan</p>`)).toBe(false);
-  });
-
-  it('a wrapper that starts part-way through the value', () => {
-    expect(isTeiDescription(`<p>lead</p><div xmlns="${TEI_NS}">${PROSE}</div>`)).toBe(false);
-  });
-
-  it('the namespace mentioned in text rather than declared', () => {
-    expect(isTeiDescription(`<p>Encoded to ${TEI_NS} P5.</p>`)).toBe(false);
-  });
-
-  it('the empty string', () => {
-    expect(isTeiDescription('')).toBe(false);
+        '<code>&lt;placeName&gt;</code>. A clause is <code>&lt;seg type="disposition"&gt;</code>.</p>',
+    ],
+    [
+      'legacy HTML that literally contains unescaped TEI markup',
+      '<p>Witnessed by <persName>Walter</persName>.</p>',
+    ],
+    [
+      'a plain HTML div — legacy content routinely opens with one',
+      '<div class="cat-entry"><p>no. 175</p></div>',
+    ],
+    [
+      'a div carrying some other namespace',
+      '<div xmlns="http://www.w3.org/1999/xhtml"><p>x</p></div>',
+    ],
+    [
+      'a wrapper that is not the root — trailing siblings would be truncated on unwrap',
+      `<div xmlns="${TEI_NS}">${PROSE}</div><p>orphan</p>`,
+    ],
+    [
+      'a wrapper that starts part-way through the value',
+      `<p>lead</p><div xmlns="${TEI_NS}">${PROSE}</div>`,
+    ],
+    ['the namespace mentioned in text rather than declared', `<p>Encoded to ${TEI_NS} P5.</p>`],
+    ['the empty string', ''],
+  ])('rejects %s', (_name, value) => {
+    expect(isTeiDescription(value)).toBe(false);
   });
 });
 

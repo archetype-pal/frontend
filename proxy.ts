@@ -18,8 +18,6 @@ const SECTION_ROUTE_MAP: Partial<Record<SectionKey, string>> = {
   // pages when the section is off; pages under a custom heading stay reachable.
 };
 
-// CSP / security-header concerns previously lived in middleware.ts. Next 16
-// requires middleware to be merged into proxy.ts, so they ride along here.
 // Dev keeps 'unsafe-inline'/'unsafe-eval' so React Fast Refresh works; prod
 // keeps nonce support but allows same-origin script chunks explicitly.
 function buildCsp(nonce: string): string {
@@ -161,9 +159,9 @@ export async function proxy(request: NextRequest) {
   );
 }
 
-// Matcher inherited from the former middleware (broad — every HTML response
-// needs the CSP). API routes, Next internals, and static assets are excluded
-// because they don't render HTML and CSP-on-asset just bloats every request.
+// Every HTML response needs the CSP. API routes, Next internals and static
+// assets are excluded: they don't render HTML, and a CSP on an asset just
+// bloats the request.
 export const config = {
   matcher: [
     {

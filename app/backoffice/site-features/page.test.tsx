@@ -1,6 +1,5 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
@@ -8,14 +7,12 @@ import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { toast } from 'sonner';
 import SiteFeaturesPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('@/contexts/model-labels-context', () => ({
-  useModelLabels: () => ({ getLabel: (key: string) => key }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
+vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 
 let getStatus: number;
 let responseConfig: SiteFeaturesConfig;
@@ -33,14 +30,7 @@ beforeEach(() => {
   );
 });
 
-function renderPage() {
-  const client = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={client}>
-      <SiteFeaturesPage />
-    </QueryClientProvider>
-  );
-}
+const renderPage = () => renderWithQueryClient(<SiteFeaturesPage />);
 
 describe('<SiteFeaturesPage>', () => {
   it('shows an error state instead of an editable form full of defaults', async () => {

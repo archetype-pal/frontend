@@ -22,6 +22,7 @@ import {
 } from '@/services/worksets';
 import type { WorksetSummary } from '@/types/workset';
 import { WORKSET_SCHEMA_VERSION } from '@/types/workset';
+import { copyLink } from '@/lib/copy-link';
 
 interface LightboxSessionManagerProps {
   onClose: () => void;
@@ -215,15 +216,11 @@ export function LightboxSessionManager({ onClose, onLoad }: LightboxSessionManag
     }
   };
 
-  const handleShare = async (workset: WorksetSummary) => {
-    const url = `${env.siteUrl}/worksets/${workset.public_id}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success(t('session.toastLinkCopied'));
-    } catch {
-      toast.error(t('session.toastLinkCopyFailed'), { description: url });
-    }
-  };
+  const handleShare = (workset: WorksetSummary) =>
+    copyLink(`${env.siteUrl}/worksets/${workset.public_id}`, {
+      copied: t('session.toastLinkCopied'),
+      failed: t('session.toastLinkCopyFailed'),
+    });
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">

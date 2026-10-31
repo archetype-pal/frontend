@@ -227,7 +227,7 @@ function MarkupFilter({ filters, onChange, options }: FilterProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Active-filter chips (G6.3)
+// Active-filter chips
 // ---------------------------------------------------------------------------
 
 // Renders the chips inline (no wrapper) so they flow in the summary line.

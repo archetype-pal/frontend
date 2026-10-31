@@ -1,14 +1,13 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import HandsPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const { getHands } = vi.hoisted(() => ({ getHands: vi.fn() }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('@/services/backoffice/scribes', () => ({ getHands }));
 
 const TOTAL = 45;
@@ -26,14 +25,7 @@ function hand(id: number) {
   };
 }
 
-function renderPage() {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <HandsPage />
-    </QueryClientProvider>
-  );
-}
+const renderPage = () => renderWithQueryClient(<HandsPage />);
 
 describe('<HandsPage>', () => {
   beforeEach(() => {

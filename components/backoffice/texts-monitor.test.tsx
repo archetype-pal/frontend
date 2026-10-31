@@ -1,7 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { TextsOverview } from '@/services/texts-monitor';
@@ -12,9 +11,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('view=recent'),
 }));
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 const OVERVIEW: TextsOverview = {
   generated_at: '2026-10-12T00:00:00Z',
@@ -69,16 +66,11 @@ vi.mock('@/services/texts-monitor', () => ({
 }));
 
 import { TextsMonitor } from './texts-monitor';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 describe('TextsMonitor recent edits', () => {
   it('opens a recent edit in the text editor when its row is clicked', async () => {
-    const client = createTestQueryClient();
-    render(
-      <QueryClientProvider client={client}>
-        <TextsMonitor />
-      </QueryClientProvider>
-    );
+    renderWithQueryClient(<TextsMonitor />);
 
     const label = await screen.findByText('Charter of David I');
     fireEvent.click(label.closest('tr')!);

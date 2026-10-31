@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { AnnotationPopupLayer } from './annotation-popup-layer';
 import type { CollectionItem } from '@/contexts/collection-context';
-import type { PopupRecord, ViewerCapabilities } from '@/types/annotation-viewer';
+import type { PopupRecord } from '@/types/annotation-viewer';
+import { makeCaps, makePopup } from '@/test/annotation-fixtures';
 import type { Allograph } from '@/types/allographs';
 import type { HandType } from '@/types/hands';
 
@@ -92,46 +93,9 @@ vi.mock('@/components/manuscript/draggable-popup-layer', () => ({
   ),
 }));
 
-function makePopup(id: string, overrides: Partial<PopupRecord> = {}): PopupRecord {
-  return {
-    id,
-    annotation: {
-      id,
-      type: 'Annotation',
-      target: {},
-      _meta: {},
-    },
-    popupTab: 'components',
-    shareUrl: '',
-    isShareUrlVisible: false,
-    draftAllographText: '',
-    draftNoteText: '',
-    draftAllographId: null,
-    draftHandId: null,
-    draftInternalNoteText: '',
-    draftGraphcomponentSet: [],
-    draftPositionIds: [],
-    ...overrides,
-  } as PopupRecord;
-}
-
-function makeCaps(): ViewerCapabilities {
-  return {
-    canCreatePublicAnnotations: true,
-    canPersistPublicAnnotations: true,
-    canCreateEditorialAnnotations: true,
-    canPersistEditorialAnnotations: true,
-    canDeleteAnnotations: true,
-    canModifyAnnotations: true,
-    canViewEditorialControls: true,
-    canUseSettings: true,
-    canUseEditorSettings: true,
-  } as ViewerCapabilities;
-}
-
 function defaults() {
   return {
-    visiblePopupRecords: [makePopup('local-a')] as PopupRecord[],
+    visiblePopupRecords: [makePopup({ id: 'local-a' })] as PopupRecord[],
     activePopupId: 'local-a' as string | null,
     viewerCapabilities: makeCaps(),
     allographs: [] as Allograph[],
@@ -174,7 +138,11 @@ describe('AnnotationPopupLayer', () => {
     render(
       <AnnotationPopupLayer
         {...defaults()}
-        visiblePopupRecords={[makePopup('a'), makePopup('b'), makePopup('c')]}
+        visiblePopupRecords={[
+          makePopup({ id: 'a' }),
+          makePopup({ id: 'b' }),
+          makePopup({ id: 'c' }),
+        ]}
       />
     );
     expect(screen.getAllByTestId('popup-card')).toHaveLength(3);
@@ -184,7 +152,7 @@ describe('AnnotationPopupLayer', () => {
     render(
       <AnnotationPopupLayer
         {...defaults()}
-        visiblePopupRecords={[makePopup('a'), makePopup('b')]}
+        visiblePopupRecords={[makePopup({ id: 'a' }), makePopup({ id: 'b' })]}
         activePopupId="b"
       />
     );
@@ -208,13 +176,15 @@ describe('AnnotationPopupLayer', () => {
       <AnnotationPopupLayer
         {...defaults()}
         visiblePopupRecords={[
-          makePopup('db:1', {
+          makePopup({
+            id: 'db:1',
             annotation: baseAnnotation,
             draftAllographId: 5,
             draftHandId: 7,
             draftNoteText: 'original',
           }),
-          makePopup('db:2', {
+          makePopup({
+            id: 'db:2',
             annotation: { ...baseAnnotation, id: 'db:2' },
             draftAllographId: 5,
             draftHandId: 7,
@@ -236,7 +206,8 @@ describe('AnnotationPopupLayer', () => {
       <AnnotationPopupLayer
         {...defaults()}
         visiblePopupRecords={[
-          makePopup('db:1', {
+          makePopup({
+            id: 'db:1',
             annotation: {
               id: 'db:1',
               type: 'Annotation',
@@ -297,7 +268,7 @@ describe('AnnotationPopupLayer', () => {
     render(
       <AnnotationPopupLayer
         {...props}
-        visiblePopupRecords={[makePopup('a'), makePopup('b')]}
+        visiblePopupRecords={[makePopup({ id: 'a' }), makePopup({ id: 'b' })]}
         activePopupId="b"
       />
     );
@@ -337,7 +308,8 @@ describe('AnnotationPopupLayer', () => {
     const props = {
       ...defaults(),
       visiblePopupRecords: [
-        makePopup('db:99', {
+        makePopup({
+          id: 'db:99',
           annotation: {
             id: 'db:99',
             type: 'Annotation',
@@ -374,7 +346,7 @@ describe('AnnotationPopupLayer', () => {
     } as PopupRecord['annotation'];
     const props = {
       ...defaults(),
-      visiblePopupRecords: [makePopup('local-a')],
+      visiblePopupRecords: [makePopup({ id: 'local-a' })],
       getCanonicalAnnotation: vi.fn(() => canonical),
       getCollectionItemFor: vi.fn(() => null),
     };

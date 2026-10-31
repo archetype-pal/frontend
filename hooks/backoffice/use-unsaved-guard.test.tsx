@@ -1,9 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
-}));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 
 import { useUnsavedGuard } from './use-unsaved-guard';
 

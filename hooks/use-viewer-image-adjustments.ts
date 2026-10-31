@@ -53,8 +53,6 @@ export interface ViewerImageAdjustmentsApi {
 
 /**
  * Co-locates the viewer's rotation and brightness/contrast/saturation state.
- * Replaces two useStates and ~30 lines of duplicated reset/adjust handlers in
- * manuscript-viewer.tsx (P1.1 in IMPROVEMENT_PLAN.md).
  */
 export function useViewerImageAdjustments(): ViewerImageAdjustmentsApi {
   const [state, dispatch] = React.useReducer(reducer, INITIAL_STATE);

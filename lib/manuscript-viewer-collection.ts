@@ -1,6 +1,5 @@
 /**
- * Pure helpers extracted from manuscript-viewer.tsx (Track D1 decomposition):
- * collection-item builders and annotation-count phrasing. Render-agnostic and
+ * Pure helpers for the manuscript viewer: collection-item builders and annotation-count phrasing. Render-agnostic and
  * closure-free, so they live here and are unit-tested directly.
  */
 

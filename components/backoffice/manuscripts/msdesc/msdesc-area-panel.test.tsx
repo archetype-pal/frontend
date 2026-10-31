@@ -1,22 +1,19 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { msdescTemplateFragment } from '@/lib/msdesc-template';
 import { MSDESC_AREAS } from '@/lib/msdesc-vocab';
 import type { MsDescArea } from '@/types/backoffice';
 import { MsDescAreaPanel } from './msdesc-area-panel';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 // The Source tab loads CodeMirror via next/dynamic; keep the module light.
 vi.mock('next/dynamic', () => ({
   default: () => () => null,
 }));
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 vi.mock('@/services/backoffice/manuscripts', () => ({
   updateMsDescArea: vi.fn().mockResolvedValue({}),
@@ -27,12 +24,7 @@ vi.mock('@/services/image-texts', () => ({
 }));
 
 function renderPanel(row: MsDescArea) {
-  const client = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={client}>
-      <MsDescAreaPanel historicalItemId={1} area={row.area} row={row} />
-    </QueryClientProvider>
-  );
+  return renderWithQueryClient(<MsDescAreaPanel historicalItemId={1} area={row.area} row={row} />);
 }
 
 const REPRESENTABLE: MsDescArea = {

@@ -1,14 +1,11 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CurrentItemOption } from '@/types/backoffice';
 
-vi.mock('@/contexts/auth-context', () => ({
-  useAuth: () => ({ isAuthenticated: true }),
-}));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
 vi.mock('@/contexts/model-labels-context', () => ({
   useModelLabels: () => ({ getLabel: () => 'Shelfmark' }),
@@ -23,7 +20,7 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
 }));
 
 import { CurrentItemCombobox } from './current-item-combobox';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 function item(id: number, repositoryName: string, shelfmark: string): CurrentItemOption {
   return {
@@ -49,12 +46,7 @@ function Harness({ repositoryId }: { repositoryId?: number }) {
 }
 
 function renderCombobox(repositoryId?: number) {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <Harness repositoryId={repositoryId} />
-    </QueryClientProvider>
-  );
+  renderWithQueryClient(<Harness repositoryId={repositoryId} />);
 }
 
 function openAndType(text: string) {

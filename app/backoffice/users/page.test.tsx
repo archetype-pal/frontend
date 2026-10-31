@@ -1,17 +1,14 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TooltipProvider } from '@/components/ui/tooltip';
-
 import UsersPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const { proxyFetch } = vi.hoisted(() => ({ proxyFetch: vi.fn() }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/lib/api-fetch', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api-fetch')>()),
   proxyFetch,
@@ -39,16 +36,7 @@ function page(from: number, to: number, next: string | null) {
   return { ok: true, json: async () => ({ count: 105, next, previous: null, results }) };
 }
 
-function renderPage() {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <TooltipProvider>
-        <UsersPage />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+const renderPage = () => renderWithQueryClient(<UsersPage />, { tooltip: true });
 
 describe('<UsersPage>', () => {
   beforeEach(() => {

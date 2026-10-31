@@ -1,12 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    warning: vi.fn(),
-  },
-}));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 
 import { toast } from 'sonner';
 import { runBulkAction } from './bulk-action';

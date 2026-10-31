@@ -1,13 +1,12 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { NewImageTextDialog } from './new-image-text-dialog';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/services/backoffice/image-texts-list', () => ({
   fetchImageTextList: async () => ({
     results: [{ id: 31, item_image: 1658, type: 'Transcription' }],
@@ -16,11 +15,8 @@ vi.mock('@/services/backoffice/image-texts-list', () => ({
 
 describe('<NewImageTextDialog>', () => {
   it('blocks a type the image already has and links to the existing text', async () => {
-    const client = createTestQueryClient();
-    render(
-      <QueryClientProvider client={client}>
-        <NewImageTextDialog open onOpenChange={() => {}} defaultItemImage={1658} />
-      </QueryClientProvider>
+    renderWithQueryClient(
+      <NewImageTextDialog open onOpenChange={() => {}} defaultItemImage={1658} />
     );
 
     expect(await screen.findByText(/Image 1658 already has a transcription/)).toBeTruthy();

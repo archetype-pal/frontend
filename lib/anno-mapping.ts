@@ -136,7 +136,6 @@ export function isDbAnnotation(a9s: Annotation): boolean {
 
 export function dbIdFromA9s(a9s: Annotation): number | null {
   if (!isDbAnnotation(a9s)) return null;
-  // return parseInt(a9s.id.split(':')[1], 10)
   const [, idStr] = (a9s.id as string).split(':');
   const idNum = Number.parseInt(idStr ?? '', 10);
 

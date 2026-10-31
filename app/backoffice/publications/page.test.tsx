@@ -1,30 +1,22 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PublicationsPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const { getPublications } = vi.hoisted(() => ({ getPublications: vi.fn() }));
 
-vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/services/backoffice/publications', () => ({
   getPublications,
   updatePublication: vi.fn(),
   deletePublication: vi.fn(),
 }));
 
-function renderPage() {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <PublicationsPage />
-    </QueryClientProvider>
-  );
-}
+const renderPage = () => renderWithQueryClient(<PublicationsPage />);
 
 /** Picks an option of a filter bar select: the status filter comes first, then the type. */
 function pick(filterIndex: number, option: string) {

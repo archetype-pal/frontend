@@ -17,7 +17,7 @@ import {
   updateImageText,
   validateTei,
 } from './image-texts';
-import { jsonResponse } from '@/test/json-response';
+import { jsonResponse } from '@/test/responses';
 
 beforeEach(() => {
   optionalAuthFetchMock.mockReset();

@@ -1,33 +1,10 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
 import { renderPublicDescription } from '@/lib/description-public';
 import { TEI_NS, wrapTeiDescription } from '@/lib/tei-description';
+import { tBackoffice } from '@/test/messages';
 
-// Real English catalogue, so a missing label key surfaces as a failed assertion
-// rather than a silently rendered dotted key.
-const messagesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'messages');
-const enBackoffice = (
-  JSON.parse(readFileSync(join(messagesDir, 'en.json'), 'utf8')) as {
-    backoffice: Record<string, unknown>;
-  }
-).backoffice;
-
-const tEn = (key: string): string => {
-  const value = key
-    .split('.')
-    .reduce<unknown>(
-      (node, part) =>
-        node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined,
-      enBackoffice
-    );
-  return typeof value === 'string' ? value : key;
-};
-
-const render = (content: string) => renderPublicDescription(content, tEn);
+const render = (content: string) => renderPublicDescription(content, tBackoffice);
 
 describe('legacy HTML descriptions', () => {
   it('render exactly as before — sanitized, not routed through the TEI renderer', () => {
