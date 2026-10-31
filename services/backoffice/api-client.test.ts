@@ -16,11 +16,7 @@ import {
   backofficePost,
   backofficePostFormData,
 } from './api-client';
-import { jsonResponse } from '@/test/json-response';
-
-function textResponse(status: number, text: string) {
-  return new Response(text, { status, headers: { 'content-type': 'text/plain' } });
-}
+import { jsonResponse, textResponse } from '@/test/responses';
 
 beforeEach(() => {
   proxyFetchMock.mockReset();

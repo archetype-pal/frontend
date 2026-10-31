@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_MODEL_LABELS, getDefaultModelLabelsConfig } from './model-labels';
-import { jsonResponse } from '@/test/json-response';
+import { jsonResponse } from '@/test/responses';
 
 const { apiFetch, authFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),

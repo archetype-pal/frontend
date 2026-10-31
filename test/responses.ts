@@ -5,3 +5,8 @@ export function jsonResponse(body: unknown, status = 200): Response {
     headers: { 'content-type': 'application/json' },
   });
 }
+
+/** A plain-text `Response`, for the error pages a proxy or gateway returns. */
+export function textResponse(status: number, text: string): Response {
+  return new Response(text, { status, headers: { 'content-type': 'text/plain' } });
+}

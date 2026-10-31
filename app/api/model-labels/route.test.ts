@@ -20,7 +20,7 @@ vi.mock('@/lib/auth-token-server', async (importOriginal) => ({
 
 import type { NextRequest } from 'next/server';
 import { GET, PUT } from './route';
-import { jsonResponse } from '@/test/json-response';
+import { jsonResponse } from '@/test/responses';
 
 let stored: ModelLabelsConfig;
 
