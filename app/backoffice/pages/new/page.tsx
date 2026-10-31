@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { createPage, getMenuHeadings } from '@/services/backoffice/pages';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { ABOUT_HEADING_VALUE, isReservedPageSlug, resolvePageText } from '@/lib/pages';
 import { coerceLocale } from '@/lib/locale';
 import { toast } from 'sonner';
@@ -67,7 +67,7 @@ export default function NewPagePage() {
       router.push(`/backoffice/pages/${data.slug}`);
     },
     onError: (err) => {
-      toast.error(t('pagesNew.toastFailedCreate'), { description: formatApiError(err) });
+      toastApiError(t('pagesNew.toastFailedCreate'), err);
     },
   });
 

@@ -38,7 +38,7 @@ import {
   deletePublication,
 } from '@/services/backoffice/publications';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
@@ -182,9 +182,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       }
     },
     onError: (err) => {
-      toast.error(t('publicationsDetail.toastFailedSave'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('publicationsDetail.toastFailedSave'), err);
     },
   });
 
@@ -206,9 +204,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
       router.replace('/backoffice/publications');
     },
     onError: (err) => {
-      toast.error(t('publicationsDetail.toastFailedDelete'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('publicationsDetail.toastFailedDelete'), err);
     },
   });
 

@@ -22,7 +22,7 @@ import { BackofficeInlineError } from '@/components/backoffice/common/query-stat
 import { useAuth } from '@/contexts/auth-context';
 import { createHand } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { AdminHandListItem, AdminScribeListItem } from '@/types/backoffice';
 
@@ -154,9 +154,7 @@ function AddHandDialog({
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.handCreateFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.handCreateFailed'), err);
     },
   });
 

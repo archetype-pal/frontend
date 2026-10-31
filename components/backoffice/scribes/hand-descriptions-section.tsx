@@ -22,7 +22,7 @@ import {
   deleteHandDescription,
 } from '@/services/backoffice/scribes';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { AdminHandListItem, HandDescription } from '@/types/backoffice';
 import { useSources } from '@/hooks/backoffice/use-lookups';
 
@@ -104,7 +104,7 @@ export function HandDescriptionsSection({
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('handsDetail.descriptionAddFailed'), { description: formatApiError(err) });
+      toastApiError(t('handsDetail.descriptionAddFailed'), err);
     },
   });
 
@@ -113,7 +113,7 @@ export function HandDescriptionsSection({
       updateHandDescription(id, data),
     onSuccess: invalidate,
     onError: (err) => {
-      toast.error(t('handsDetail.descriptionUpdateFailed'), { description: formatApiError(err) });
+      toastApiError(t('handsDetail.descriptionUpdateFailed'), err);
     },
   });
 
@@ -139,7 +139,7 @@ export function HandDescriptionsSection({
       if (context?.previous) {
         queryClient.setQueryData(backofficeKeys.hands.detail(handId), context.previous);
       }
-      toast.error(t('handsDetail.descriptionUpdateFailed'), { description: formatApiError(err) });
+      toastApiError(t('handsDetail.descriptionUpdateFailed'), err);
     },
     onSettled: invalidate,
   });
@@ -152,7 +152,7 @@ export function HandDescriptionsSection({
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('handsDetail.descriptionRemoveFailed'), { description: formatApiError(err) });
+      toastApiError(t('handsDetail.descriptionRemoveFailed'), err);
     },
   });
 

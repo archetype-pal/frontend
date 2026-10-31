@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import {
   DataTable,
   sortableHeader,
@@ -122,9 +122,7 @@ export function SimpleCrudPage<T extends { id: number }>({
       resetDraft();
     },
     onError: (err) => {
-      toast.error(t('simpleCrud.failedCreate', { label: singularLabel.toLowerCase() }), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('simpleCrud.failedCreate', { label: singularLabel.toLowerCase() }), err);
     },
   });
 
@@ -133,9 +131,7 @@ export function SimpleCrudPage<T extends { id: number }>({
       updateFn(id, payload),
     onSuccess: invalidate,
     onError: (err) => {
-      toast.error(t('simpleCrud.failedUpdate', { label: singularLabel.toLowerCase() }), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('simpleCrud.failedUpdate', { label: singularLabel.toLowerCase() }), err);
     },
   });
 
@@ -147,9 +143,7 @@ export function SimpleCrudPage<T extends { id: number }>({
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(t('simpleCrud.failedDelete', { label: singularLabel.toLowerCase() }), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('simpleCrud.failedDelete', { label: singularLabel.toLowerCase() }), err);
     },
   });
 

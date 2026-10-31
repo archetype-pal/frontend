@@ -30,7 +30,7 @@ import { getGraphs, deleteGraph } from '@/services/backoffice/annotations';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toOrdering } from '@/lib/backoffice/ordering';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
@@ -200,9 +200,7 @@ export default function AnnotationsPage() {
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(t('annotations.toastFailedDelete'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('annotations.toastFailedDelete'), err);
     },
   });
 

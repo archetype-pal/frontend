@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { createPublication } from '@/services/backoffice/publications';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { getPublicationRoutes } from '@/lib/publications';
@@ -54,9 +54,7 @@ export default function NewPublicationPage() {
       router.push(`/backoffice/publications/${data.slug}`);
     },
     onError: (err) => {
-      toast.error(t('publicationsNew.toastFailedCreate'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('publicationsNew.toastFailedCreate'), err);
     },
   });
 

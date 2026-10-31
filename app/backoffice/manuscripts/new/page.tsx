@@ -25,7 +25,7 @@ import {
   deleteHistoricalItem,
   deleteCurrentItem,
 } from '@/services/backoffice/manuscripts';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { formatApiError, toastApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { toast } from 'sonner';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
@@ -161,11 +161,9 @@ export default function NewManuscriptPage() {
       router.push(`/backoffice/manuscripts/${data.id}`);
     },
     onError: (err) => {
-      toast.error(
+      toastApiError(
         t('manuscriptsNew.toastFailedCreate', { label: historicalItemLabel.toLowerCase() }),
-        {
-          description: formatApiError(err),
-        }
+        err
       );
     },
   });

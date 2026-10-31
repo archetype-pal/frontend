@@ -21,23 +21,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
 import { BackofficeLoadingState } from '@/components/backoffice/common/query-state';
 import { formatBytes } from '@/lib/format-bytes';
-import { BackofficeApiError } from '@/services/backoffice/api-client';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import {
   getSanityChecks,
   sendTestEmail,
   type ServiceCheck,
 } from '@/services/backoffice/sanity-checks';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-
-/** Best-effort human message from a failed sendTestEmail call. */
-function extractErrorDetail(err: unknown): string | undefined {
-  if (err instanceof BackofficeApiError) {
-    const body = err.body;
-    if (typeof body.detail === 'string') return body.detail;
-  }
-  if (err instanceof Error) return err.message;
-  return undefined;
-}
 
 /** `ok: null` is "not applicable", e.g. no log file to check. */
 function StatusRow({
@@ -85,7 +75,7 @@ export function SanityChecksDashboard() {
       toast.success(t('sanityChecks.smtp.toastSuccess'), { description: result.detail });
     },
     onError: (err) => {
-      toast.error(t('sanityChecks.smtp.toastError'), { description: extractErrorDetail(err) });
+      toastApiError(t('sanityChecks.smtp.toastError'), err);
     },
   });
 

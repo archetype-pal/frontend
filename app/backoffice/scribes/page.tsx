@@ -29,7 +29,7 @@ import { getScribes, createScribe } from '@/services/backoffice/scribes';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toOrdering } from '@/lib/backoffice/ordering';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import { toast } from 'sonner';
 import type { AdminScribeListItem } from '@/types/backoffice';
@@ -124,9 +124,7 @@ export default function ScribesPage() {
       setNewName('');
     },
     onError: (err) => {
-      toast.error(t('scribes.toastFailedCreate'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('scribes.toastFailedCreate'), err);
     },
   });
 

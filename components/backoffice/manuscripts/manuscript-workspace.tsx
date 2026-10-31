@@ -35,7 +35,7 @@ import {
   deleteHistoricalItem,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useRecentEntities } from '@/hooks/backoffice/use-recent-entities';
@@ -139,11 +139,9 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       setDirty(false);
     },
     onError: (err) => {
-      toast.error(
+      toastApiError(
         t('manuscriptWorkspace.toastFailedSave', { label: historicalItemLabel.toLowerCase() }),
-        {
-          description: formatApiError(err),
-        }
+        err
       );
     },
   });
@@ -167,11 +165,9 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       router.push('/backoffice/manuscripts');
     },
     onError: (err) => {
-      toast.error(
+      toastApiError(
         t('manuscriptWorkspace.toastFailedDelete', { label: historicalItemLabel.toLowerCase() }),
-        {
-          description: formatApiError(err),
-        }
+        err
       );
     },
   });

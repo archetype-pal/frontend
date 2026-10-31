@@ -24,7 +24,7 @@ import {
   createCurrentItem,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { CurrentItemOption, ItemPartNested, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -113,9 +113,7 @@ function SetupLocationPrompt({ historicalItemId }: { historicalItemId: number })
         queryKey: backofficeKeys.currentItems.all(),
       });
     } catch (err) {
-      toast.error(t('manuscriptsDetail.locationSetFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.locationSetFailed'), err);
     } finally {
       setSaving(false);
     }
@@ -233,9 +231,7 @@ function SinglePartLocation({
       setDirty(false);
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.locationUpdateFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.locationUpdateFailed'), err);
     },
   });
 

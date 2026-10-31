@@ -3,14 +3,13 @@
 import { useState } from 'react';
 import { ImageIcon, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ImageUploadZone } from '@/components/backoffice/common/image-upload-zone';
 import { uploadBrandingLogo } from '@/services/backoffice/branding';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { getCarouselImageUrl } from '@/utils/api';
 import type { BrandingConfig } from '@/lib/site-features';
 
@@ -39,7 +38,7 @@ export function BrandingCustomization({ branding, onChange }: Props) {
       const url = await uploadBrandingLogo(file);
       onChange(url);
     } catch (err) {
-      toast.error(t('siteFeatures.branding.uploadFailed'), { description: formatApiError(err) });
+      toastApiError(t('siteFeatures.branding.uploadFailed'), err);
     } finally {
       setUploading(false);
     }

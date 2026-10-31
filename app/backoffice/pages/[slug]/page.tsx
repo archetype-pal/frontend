@@ -33,7 +33,7 @@ import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { getPage, getMenuHeadings, updatePage, deletePage } from '@/services/backoffice/pages';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import {
   ABOUT_HEADING_VALUE,
   isReservedPageSlug,
@@ -168,7 +168,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
       }
     },
     onError: (err) => {
-      toast.error(t('pagesDetail.toastFailedSave'), { description: formatApiError(err) });
+      toastApiError(t('pagesDetail.toastFailedSave'), err);
     },
   });
 
@@ -188,7 +188,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
       router.push('/backoffice/pages');
     },
     onError: (err) => {
-      toast.error(t('pagesDetail.toastFailedDelete'), { description: formatApiError(err) });
+      toastApiError(t('pagesDetail.toastFailedDelete'), err);
     },
   });
 

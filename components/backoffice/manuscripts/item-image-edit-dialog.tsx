@@ -31,7 +31,7 @@ import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import { updateItemImage, deleteItemImage } from '@/services/backoffice/manuscripts';
 import { searchItemParts } from '@/services/tei-ref-search';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { formatApiError, toastApiError } from '@/lib/backoffice/format-api-error';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 import type { ItemPartImage } from '@/types/backoffice';
 
@@ -129,7 +129,7 @@ export function ItemImageEditDialog({
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.imageRemoveFailed'), { description: formatApiError(err) });
+      toastApiError(t('manuscriptsDetail.imageRemoveFailed'), err);
     },
   });
 

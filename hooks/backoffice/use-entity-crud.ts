@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 
 interface EntityCrudConfig<T extends { id: number; name: string }> {
   /** React-Query key(s) to invalidate on mutations. */
@@ -41,9 +41,7 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
       toast.success(t('created', { label: config.entityLabel }));
     },
     onError: (err) => {
-      toast.error(t('failedCreate', { label: config.entityLabel.toLowerCase() }), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('failedCreate', { label: config.entityLabel.toLowerCase() }), err);
     },
   });
 
@@ -54,9 +52,7 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
       toast.success(t('renamed', { label: config.entityLabel }));
     },
     onError: (err) => {
-      toast.error(t('failedRename', { label: config.entityLabel.toLowerCase() }), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('failedRename', { label: config.entityLabel.toLowerCase() }), err);
     },
   });
 
@@ -68,9 +64,7 @@ export function useEntityCrud<T extends { id: number; name: string }>(config: En
       toast.success(t('deleted', { label: config.entityLabel }));
     },
     onError: (err) => {
-      toast.error(t('failedDelete', { label: config.entityLabel.toLowerCase() }), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('failedDelete', { label: config.entityLabel.toLowerCase() }), err);
     },
   });
 

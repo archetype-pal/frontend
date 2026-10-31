@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 
 /**
@@ -38,4 +39,9 @@ export function formatApiError(error: unknown): string {
 
   if (error instanceof Error) return error.message;
   return 'An unexpected error occurred';
+}
+
+/** The standard failure toast: `title` headline, the API's own message underneath. */
+export function toastApiError(title: string, error: unknown): void {
+  toast.error(title, { description: formatApiError(error) });
 }

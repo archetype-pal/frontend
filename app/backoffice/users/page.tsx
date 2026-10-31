@@ -53,7 +53,7 @@ import { createUser, updateUser, deleteUser } from '@/services/backoffice/users'
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { cn } from '@/lib/utils';
 import { useSelectionSet } from '@/hooks/use-selection-set';
@@ -317,7 +317,7 @@ export default function UsersPage() {
       setCreateForm({ ...emptyCreate });
     },
     onError: (err) => {
-      toast.error(t('users.toastFailedCreate'), { description: formatApiError(err) });
+      toastApiError(t('users.toastFailedCreate'), err);
     },
   });
 
@@ -334,7 +334,7 @@ export default function UsersPage() {
       setEditTarget(null);
     },
     onError: (err) => {
-      toast.error(t('users.toastFailedUpdate'), { description: formatApiError(err) });
+      toastApiError(t('users.toastFailedUpdate'), err);
     },
   });
 
@@ -346,7 +346,7 @@ export default function UsersPage() {
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(t('users.toastFailedDelete'), { description: formatApiError(err) });
+      toastApiError(t('users.toastFailedDelete'), err);
     },
   });
 

@@ -28,7 +28,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { listAllPages } from '@/lib/backoffice/list-all-pages';
 import { toOrdering } from '@/lib/backoffice/ordering';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
@@ -146,9 +146,7 @@ export default function PhysicalVolumesPage() {
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(t('physicalVolumes.toastFailedDelete'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('physicalVolumes.toastFailedDelete'), err);
     },
   });
 

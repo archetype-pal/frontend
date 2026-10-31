@@ -28,7 +28,7 @@ import {
   deleteCharacter,
 } from '@/services/backoffice/symbols';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import {
@@ -125,9 +125,7 @@ export function CharacterDetail({
       setDirty(false);
     },
     onError: (err) => {
-      toast.error(t('symbols.toastFailedSave'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('symbols.toastFailedSave'), err);
     },
   });
 
@@ -140,9 +138,7 @@ export function CharacterDetail({
       onDeleted();
     },
     onError: (err) => {
-      toast.error(t('symbols.toastFailedDelete'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('symbols.toastFailedDelete'), err);
     },
   });
 

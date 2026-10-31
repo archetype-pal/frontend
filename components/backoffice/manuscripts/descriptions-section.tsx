@@ -27,7 +27,7 @@ import {
   deleteDescription,
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { cn } from '@/lib/utils';
 import { renderPublicDescription } from '@/lib/description-public';
@@ -107,9 +107,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
       setNewContent('');
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.descriptionAddFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.descriptionAddFailed'), err);
     },
   });
 
@@ -123,9 +121,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
       setEditingSourceId(null);
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.descriptionUpdateFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.descriptionUpdateFailed'), err);
     },
   });
 
@@ -136,9 +132,7 @@ export function DescriptionsSection({ historicalItemId, descriptions }: Descript
       invalidate();
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.descriptionRemoveFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.descriptionRemoveFailed'), err);
     },
   });
 

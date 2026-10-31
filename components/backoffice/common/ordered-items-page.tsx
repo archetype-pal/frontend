@@ -26,7 +26,7 @@ import {
   BackofficeErrorState,
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 
 export interface OrderedItem {
   id: number;
@@ -136,7 +136,7 @@ export function OrderedItemsPage<T extends OrderedItem, P>({
       setPanel({ kind: 'preview' });
     },
     onError: (err) => {
-      toast.error(t('toastFailedCreate'), { description: formatApiError(err) });
+      toastApiError(t('toastFailedCreate'), err);
     },
   });
 
@@ -148,7 +148,7 @@ export function OrderedItemsPage<T extends OrderedItem, P>({
       setPanel({ kind: 'edit', item: updated });
     },
     onError: (err) => {
-      toast.error(t('toastFailedUpdate'), { description: formatApiError(err) });
+      toastApiError(t('toastFailedUpdate'), err);
     },
   });
 
@@ -161,7 +161,7 @@ export function OrderedItemsPage<T extends OrderedItem, P>({
       setDeleteTarget(null);
     },
     onError: (err) => {
-      toast.error(t('toastFailedDelete'), { description: formatApiError(err) });
+      toastApiError(t('toastFailedDelete'), err);
     },
   });
 

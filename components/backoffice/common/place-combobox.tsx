@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/command';
 import { getPlaces, createPlace } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { BackofficePlace } from '@/types/backoffice';
 
 interface PlaceComboboxProps {
@@ -90,9 +90,7 @@ export function PlaceCombobox({
       setOpen(false);
     },
     onError: (err) => {
-      toast.error(t('handsDetail.placeCreateFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('handsDetail.placeCreateFailed'), err);
     },
   });
 

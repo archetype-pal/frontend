@@ -2,11 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/auth-context';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { formatApiError, toastApiError } from '@/lib/backoffice/format-api-error';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import {
   getCommentEmailSetting,
@@ -28,8 +27,7 @@ export function CommentEmailSetting() {
   const save = useMutation({
     mutationFn: setCommentEmailSetting,
     onSuccess: (saved) => queryClient.setQueryData(backofficeKeys.commentEmailSetting(), saved),
-    onError: (err) =>
-      toast.error(t('comments.emailSettingFailed'), { description: formatApiError(err) }),
+    onError: (err) => toastApiError(t('comments.emailSettingFailed'), err),
   });
 
   if (!isSuperuser) return null;

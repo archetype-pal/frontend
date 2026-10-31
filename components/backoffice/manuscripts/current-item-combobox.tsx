@@ -32,7 +32,7 @@ import {
 } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
@@ -146,9 +146,7 @@ export function CurrentItemCombobox({
       close();
     },
     onError: (err) => {
-      toast.error(t('manuscriptsDetail.volumeCreateFailed'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('manuscriptsDetail.volumeCreateFailed'), err);
     },
   });
 

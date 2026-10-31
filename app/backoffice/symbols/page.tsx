@@ -13,7 +13,7 @@ import {
   BackofficeErrorState,
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
-import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { toastApiError } from '@/lib/backoffice/format-api-error';
 import {
   useCharacters,
   useComponents,
@@ -43,9 +43,7 @@ export default function SymbolsPage() {
       setSelectedId(newChar.id);
     },
     onError: (err) => {
-      toast.error(t('symbols.toastFailedCreate'), {
-        description: formatApiError(err),
-      });
+      toastApiError(t('symbols.toastFailedCreate'), err);
     },
   });
 
