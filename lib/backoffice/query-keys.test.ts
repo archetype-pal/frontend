@@ -9,7 +9,7 @@ describe('backofficeKeys structure', () => {
     expect(backofficeKeys.scribes.all()[0]).toBe('backoffice');
     expect(backofficeKeys.publications.all()[0]).toBe('backoffice');
     expect(backofficeKeys.users.all()[0]).toBe('backoffice');
-    expect(backofficeKeys.searchEngine.all()[0]).toBe('backoffice');
+    expect(backofficeKeys.searchEngine.stats()[0]).toBe('backoffice');
     expect(backofficeKeys.reviewQueue.all()[0]).toBe('backoffice');
     expect(backofficeKeys.itemPartSearch.list('x')[0]).toBe('backoffice');
     expect(backofficeKeys.teiRefSearch('item', 'x')[0]).toBe('backoffice');
@@ -50,7 +50,6 @@ describe('backofficeKeys structure', () => {
       42,
     ]);
     expect(backofficeKeys.scribes.detail(7)).toEqual(['backoffice', 'scribes', 'detail', 7]);
-    expect(backofficeKeys.users.detail(1)).toEqual(['backoffice', 'users', 'detail', 1]);
   });
 
   it('publications.detail uses slug (string) instead of numeric id', () => {
@@ -113,17 +112,10 @@ describe('backofficeKeys structure', () => {
     expect(list.slice(0, all.length)).toEqual([...all]);
   });
 
-  it('graphs.list and graphs.detail extend graphs.all() (inline construction)', () => {
+  it('graphs.list and graphs.trashActors extend graphs.all() (inline construction)', () => {
     const all = backofficeKeys.graphs.all();
     expect(backofficeKeys.graphs.list({}).slice(0, all.length)).toEqual([...all]);
-    expect(backofficeKeys.graphs.detail(1).slice(0, all.length)).toEqual([...all]);
     expect(backofficeKeys.graphs.trashActors().slice(0, all.length)).toEqual([...all]);
-  });
-
-  it('searchEngine.stats and searchEngine.task extend searchEngine.all()', () => {
-    const all = backofficeKeys.searchEngine.all();
-    expect(backofficeKeys.searchEngine.stats().slice(0, all.length)).toEqual([...all]);
-    expect(backofficeKeys.searchEngine.task('abc').slice(0, all.length)).toEqual([...all]);
   });
 
   it('itemImages.forPart and itemImages.detail extend itemImages.all()', () => {

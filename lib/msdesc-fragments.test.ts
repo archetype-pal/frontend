@@ -4,7 +4,6 @@ import { escapeXmlAttr, escapeXmlText } from '@/lib/markup-escape';
 import type { ElementShape, XmlElementNode } from '@/lib/msdesc-fragments';
 import {
   attrValue,
-  canonicalizeFragment,
   checkShape,
   childElements,
   el,
@@ -13,8 +12,6 @@ import {
   innerXml,
   parseFragment,
   raw,
-  replaceInnerXml,
-  resolvePath,
   serializeFragment,
   text,
 } from '@/lib/msdesc-fragments';
@@ -89,7 +86,7 @@ describe('parseFragment', () => {
   });
 });
 
-describe('inner XML extraction and replacement', () => {
+describe('innerXml', () => {
   const source =
     '<history>\n' +
     '  <provenance notAfter="1500"><p>Old owner</p></provenance>\n' +
@@ -98,48 +95,9 @@ describe('inner XML extraction and replacement', () => {
 
   it('extracts a leaf inner XML byte-exactly (entities left raw)', () => {
     const { root } = parseOk(source);
-    const acquisition = resolvePath(root, ['acquisition']);
-    expect(acquisition).not.toBeNull();
+    const acquisition = childElements(root).find((c) => c.name === 'acquisition');
+    expect(acquisition).toBeDefined();
     expect(innerXml(source, acquisition!)).toBe('<p>Keep &amp; hold</p>');
-  });
-
-  it('replaces a leaf inner XML without disturbing sibling bytes', () => {
-    const { root } = parseOk(source);
-    const provenance = resolvePath(root, ['provenance']);
-    const replacement = '<p>New <persName key="person_1">X</persName></p>';
-    const result = replaceInnerXml(source, provenance!, replacement);
-    expect(result).toBe(source.replace('<p>Old owner</p>', replacement));
-    // The untouched sibling keeps its exact bytes, including the raw entity.
-    expect(result).toContain('<acquisition when="1602"><p>Keep &amp; hold</p></acquisition>');
-  });
-
-  it('expands a self-closing element when given content', () => {
-    const src = '<msItem n="1">\n  <note/>\n  <rubric>Keep</rubric>\n</msItem>';
-    const { root } = parseOk(src);
-    const note = resolvePath(root, ['note']);
-    expect(replaceInnerXml(src, note!, '<p>added</p>')).toBe(
-      '<msItem n="1">\n  <note><p>added</p></note>\n  <rubric>Keep</rubric>\n</msItem>'
-    );
-  });
-
-  it('leaves a self-closing element untouched when given empty content', () => {
-    const src = '<a><b/></a>';
-    const { root } = parseOk(src);
-    expect(replaceInnerXml(src, resolvePath(root, ['b'])!, '')).toBe(src);
-  });
-
-  it('empties an open/close pair in place', () => {
-    const src = '<a><b>x</b><c>y</c></a>';
-    const { root } = parseOk(src);
-    expect(replaceInnerXml(src, resolvePath(root, ['b'])!, '')).toBe('<a><b></b><c>y</c></a>');
-  });
-
-  it('resolves indexed paths', () => {
-    const src = '<d><n>a</n><n>b</n></d>';
-    const { root } = parseOk(src);
-    expect(elementText(resolvePath(root, [['n', 1]])!)).toBe('b');
-    expect(resolvePath(root, [['n', 2]])).toBeNull();
-    expect(resolvePath(root, ['missing'])).toBeNull();
   });
 });
 
@@ -263,34 +221,3 @@ function escapeAttrLikeProseMirror(value: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;');
 }
-
-describe('canonicalizeFragment', () => {
-  it('normalizes indentation and self-closing while preserving attribute order', () => {
-    const result = canonicalizeFragment('<a  z="1"   b="2"><c></c><d>x &amp; y</d>\n</a>');
-    expect(result).toEqual({
-      ok: true,
-      xml: '<a z="1" b="2">\n  <c/>\n  <d>x &amp; y</d>\n</a>',
-    });
-  });
-
-  it('is idempotent', () => {
-    const once = canonicalizeFragment('<a><b>text <hi>inline</hi></b><c/></a>');
-    if (!once.ok) throw new Error(once.error);
-    expect(canonicalizeFragment(once.xml)).toEqual(once);
-  });
-
-  it('keeps mixed content byte-verbatim', () => {
-    const mixed =
-      '<p>Owner: <persName key="person_1">X</persName>, <q type="pressmark">A 1</q>.</p>';
-    expect(canonicalizeFragment(mixed)).toEqual({ ok: true, xml: mixed });
-    expect(canonicalizeFragment(`<provenance>${mixed}</provenance>`)).toEqual({
-      ok: true,
-      xml: `<provenance>\n  ${mixed}\n</provenance>`,
-    });
-  });
-
-  it('propagates parse errors', () => {
-    const result = canonicalizeFragment('<a><!-- no --></a>');
-    expect(result.ok).toBe(false);
-  });
-});

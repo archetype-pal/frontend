@@ -2,24 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   browserSafeIiifUrl,
-  cacheKeyFor,
   decodeDraftSharePayload,
   encodeDraftSharePayload,
   fromBase64Url,
   includesAllIds,
   isDbId,
-  metaKeyFor,
   toBase64Url,
   toggleNumericId,
 } from './annotation-popup-utils';
 import type { DraftSharePayload } from '@/types/annotation-viewer';
-
-describe('cache / meta keys', () => {
-  it('namespaces by iiif id', () => {
-    expect(metaKeyFor('abc')).toBe('annotations:meta:abc');
-    expect(cacheKeyFor('abc')).toBe('annotations:abc');
-  });
-});
 
 describe('isDbId', () => {
   it('matches the db: prefix only', () => {
