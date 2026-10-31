@@ -1,31 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { describe, expect, it, vi } from 'vitest';
 
 import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
 import type { PublicMsDescArea } from '@/types/manuscript';
-
-// The renderer resolves its labels from the `backoffice` namespace; use the real
-// catalogue so a missing key would surface as a raw dotted key in the output.
-const messagesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'messages');
-const enBackoffice = (
-  JSON.parse(readFileSync(join(messagesDir, 'en.json'), 'utf8')) as {
-    backoffice: Record<string, unknown>;
-  }
-).backoffice;
-
-const tEn = (key: string): string => {
-  const value = key
-    .split('.')
-    .reduce<unknown>(
-      (node, part) =>
-        node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined,
-      enBackoffice
-    );
-  return typeof value === 'string' ? value : key;
-};
+import { tBackoffice } from '@/test/messages';
 
 const area = (
   id: PublicMsDescArea['area'],
@@ -42,7 +19,7 @@ const AREAS: PublicMsDescArea[] = [
 
 describe('renderPublicMsDescAreas — selection and order', () => {
   it('renders in msDesc canonical order regardless of API order', () => {
-    const rendered = renderPublicMsDescAreas(AREAS, tEn);
+    const rendered = renderPublicMsDescAreas(AREAS, tBackoffice);
     expect(rendered.map((entry) => entry.area)).toEqual([
       'msIdentifier',
       'msContents',
@@ -52,9 +29,9 @@ describe('renderPublicMsDescAreas — selection and order', () => {
   });
 
   it('returns nothing for an absent, null or empty area list', () => {
-    expect(renderPublicMsDescAreas(undefined, tEn)).toEqual([]);
-    expect(renderPublicMsDescAreas(null, tEn)).toEqual([]);
-    expect(renderPublicMsDescAreas([], tEn)).toEqual([]);
+    expect(renderPublicMsDescAreas(undefined, tBackoffice)).toEqual([]);
+    expect(renderPublicMsDescAreas(null, tBackoffice)).toEqual([]);
+    expect(renderPublicMsDescAreas([], tBackoffice)).toEqual([]);
   });
 
   it('drops an explicitly unpublished area (defence in depth over the API gate)', () => {
@@ -63,14 +40,17 @@ describe('renderPublicMsDescAreas — selection and order', () => {
         area('msIdentifier', '<idno type="shelfmark">Published</idno>'),
         area('history', '<provenance><p>Secret draft.</p></provenance>', { is_published: false }),
       ],
-      tEn
+      tBackoffice
     );
     expect(rendered.map((entry) => entry.area)).toEqual(['msIdentifier']);
     expect(rendered.map((entry) => entry.html).join('')).not.toContain('Secret draft');
   });
 
   it('keeps areas whose is_published is absent — the public API omits the field', () => {
-    const rendered = renderPublicMsDescAreas([area('physDesc', '<objectDesc form="codex"/>')], tEn);
+    const rendered = renderPublicMsDescAreas(
+      [area('physDesc', '<objectDesc form="codex"/>')],
+      tBackoffice
+    );
     expect(rendered).toHaveLength(1);
   });
 
@@ -80,7 +60,7 @@ describe('renderPublicMsDescAreas — selection and order', () => {
         { area: 'sealDesc' as PublicMsDescArea['area'], content: '<sealDesc>wax</sealDesc>' },
         area('history', '<provenance><p>Kelso Abbey.</p></provenance>'),
       ],
-      tEn
+      tBackoffice
     );
     expect(rendered.map((entry) => entry.area)).toEqual(['history']);
   });
@@ -95,13 +75,13 @@ describe('renderPublicMsDescAreas — selection and order', () => {
         area('msIdentifier', '<idno type="shelfmark"></idno>'),
         area('physDesc', '<objectDesc form="codex"/>'),
       ],
-      tEn
+      tBackoffice
     );
     expect(rendered.map((entry) => entry.area)).toEqual(['physDesc']);
   });
 
   it('renders real content with translated labels, not raw i18n keys', () => {
-    const [rendered] = renderPublicMsDescAreas([AREAS[1]], tEn);
+    const [rendered] = renderPublicMsDescAreas([AREAS[1]], tBackoffice);
     expect(rendered.html).toContain('Identification');
     expect(rendered.html).toContain('Shelfmark');
     expect(rendered.html).toContain('GD 55/1');
@@ -126,7 +106,10 @@ describe('renderPublicMsDescAreas — sanitization', () => {
   ].join('');
 
   it('cannot inject a script, an event handler or a javascript: url', () => {
-    const [rendered] = renderPublicMsDescAreas([{ area: 'physDesc', content: HOSTILE }], tEn);
+    const [rendered] = renderPublicMsDescAreas(
+      [{ area: 'physDesc', content: HOSTILE }],
+      tBackoffice
+    );
     const html = rendered.html;
     expect(html.toLowerCase()).not.toContain('<script');
     expect(html.toLowerCase()).not.toContain('onclick');
@@ -142,7 +125,7 @@ describe('renderPublicMsDescAreas — sanitization', () => {
   it('keeps the data-tei-label hover pills (allowDataAttr must stay on)', () => {
     const [rendered] = renderPublicMsDescAreas(
       [area('history', '<provenance><p>Held by <persName>Malcolm IV</persName>.</p></provenance>')],
-      tEn
+      tBackoffice
     );
     expect(rendered.html).toContain('data-tei-label="persName"');
   });
@@ -155,7 +138,7 @@ describe('renderPublicMsDescAreas — sanitization', () => {
       const mod = await import('@/lib/msdesc-public');
       const rendered = mod.renderPublicMsDescAreas(
         [area('history', '<provenance><p>Kelso Abbey.</p></provenance>')],
-        tEn
+        tBackoffice
       );
       expect(sanitizeHtml).toHaveBeenCalledTimes(1);
       expect(sanitizeHtml).toHaveBeenCalledWith(expect.stringContaining('Kelso Abbey.'), {
@@ -181,7 +164,7 @@ describe('renderPublicMsDescAreas — heading levels', () => {
           '<objectDesc form="codex"/><handDesc><handNote><p>One hand.</p></handNote></handDesc>'
         ),
       ],
-      tEn
+      tBackoffice
     );
     expect(rendered.html).toContain('<h3 class="msdesc-heading">Physical description</h3>');
     expect(rendered.html).toContain('<h4 class="msdesc-heading">Hands</h4>');
@@ -192,6 +175,6 @@ describe('renderPublicMsDescAreas — heading levels', () => {
     // `hasRenderedBody` matches the renderer's envelope, so its heading pattern
     // has to track `headingLevel` — otherwise an unfilled skeleton would slip
     // through as a lone title under the section rule.
-    expect(renderPublicMsDescAreas([area('msIdentifier', '')], tEn)).toEqual([]);
+    expect(renderPublicMsDescAreas([area('msIdentifier', '')], tBackoffice)).toEqual([]);
   });
 });

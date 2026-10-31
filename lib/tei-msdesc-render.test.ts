@@ -1,35 +1,11 @@
 /** @vitest-environment jsdom */
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { renderMsDescArea, resolveRefKeyHref, sanitizeRefHref } from '@/lib/tei-msdesc-render';
+import { tBackoffice } from '@/test/messages';
 
-// English catalogue lookup — doubles as a guard that every label key the
-// renderer resolves actually exists in messages/en.json (missing keys fall
-// back to the raw dotted key, which the assertions below would surface).
-const messagesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'messages');
-const enBackoffice = (
-  JSON.parse(readFileSync(join(messagesDir, 'en.json'), 'utf8')) as {
-    backoffice: Record<string, unknown>;
-  }
-).backoffice;
-
-const tEn = (key: string): string => {
-  const value = key
-    .split('.')
-    .reduce<unknown>(
-      (node, part) =>
-        node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined,
-      enBackoffice
-    );
-  return typeof value === 'string' ? value : key;
-};
-
-function render(area: Parameters<typeof renderMsDescArea>[0], fragment: string, t = tEn) {
+function render(area: Parameters<typeof renderMsDescArea>[0], fragment: string, t = tBackoffice) {
   const host = document.createElement('div');
   host.innerHTML = renderMsDescArea(area, fragment, { t });
   return host;
@@ -568,7 +544,7 @@ describe('renderMsDescArea — sanitize-allowlist safety', () => {
   });
 
   it.each(AREA_FRAGMENTS)('survives sanitizeHtml with no text loss for %s', (area, fragment) => {
-    const rendered = renderMsDescArea(area, fragment, { t: tEn });
+    const rendered = renderMsDescArea(area, fragment, { t: tBackoffice });
     const sanitized = sanitizeHtml(rendered, { allowDataAttr: true });
     const before = document.createElement('div');
     before.innerHTML = rendered;
@@ -609,28 +585,28 @@ describe('renderMsDescArea — heading levels', () => {
   };
 
   it('defaults to h4 area titles and h5 groups (the backoffice preview)', () => {
-    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn }))).toEqual([4, 5]);
+    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tBackoffice }))).toEqual([4, 5]);
   });
 
   it('shifts groups with the area when a consumer sets headingLevel', () => {
     // The public page heads its section with an <h2>, so it asks for h3/h4.
-    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn, headingLevel: 3 }))).toEqual([
-      3, 4,
-    ]);
-    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn, headingLevel: 2 }))).toEqual([
-      2, 3,
-    ]);
+    expect(
+      levels(renderMsDescArea('physDesc', FRAGMENT, { t: tBackoffice, headingLevel: 3 }))
+    ).toEqual([3, 4]);
+    expect(
+      levels(renderMsDescArea('physDesc', FRAGMENT, { t: tBackoffice, headingLevel: 2 }))
+    ).toEqual([2, 3]);
   });
 
   it('restores the default level after a render, so calls cannot bleed into each other', () => {
-    renderMsDescArea('physDesc', FRAGMENT, { t: tEn, headingLevel: 2 });
-    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn }))).toEqual([4, 5]);
+    renderMsDescArea('physDesc', FRAGMENT, { t: tBackoffice, headingLevel: 2 });
+    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tBackoffice }))).toEqual([4, 5]);
   });
 
   it('never emits past h6', () => {
-    expect(levels(renderMsDescArea('physDesc', FRAGMENT, { t: tEn, headingLevel: 5 }))).toEqual([
-      5, 6,
-    ]);
+    expect(
+      levels(renderMsDescArea('physDesc', FRAGMENT, { t: tBackoffice, headingLevel: 5 }))
+    ).toEqual([5, 6]);
   });
 });
 
@@ -717,7 +693,7 @@ describe('renderMsDescArea — an all-skeleton area renders nothing', () => {
     const html = renderMsDescArea(
       'history',
       '<history><origin><origPlace><country/></origPlace></origin><provenance><p/></provenance></history>',
-      { t: tEn }
+      { t: tBackoffice }
     );
     expect(html).toBe('');
   });
