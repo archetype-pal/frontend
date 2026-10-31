@@ -1,3 +1,4 @@
+import { newId } from '@/lib/id';
 import type { ResultType } from '@/lib/search-types';
 
 export type SavedSearch = {
@@ -38,7 +39,7 @@ export function getSavedSearches(): SavedSearch[] {
 export function addSavedSearch(search: Omit<SavedSearch, 'id' | 'savedAt'>): SavedSearch {
   const entry: SavedSearch = {
     ...search,
-    id: crypto.randomUUID(),
+    id: newId(),
     savedAt: Date.now(),
   };
   const current = readStore();

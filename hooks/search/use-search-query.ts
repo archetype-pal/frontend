@@ -18,7 +18,7 @@ import {
 import { canonicalSortAttribute, formatOrdering } from '@/lib/search-sort';
 import type { SearchResult } from '@/utils/fetch-facets';
 
-export function getNextOrderingUrl(
+function getNextOrderingUrl(
   ordering:
     { current: string; options: Array<{ name: string; text: string; url: string }> } | undefined,
   sortKey: string | undefined

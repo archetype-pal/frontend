@@ -128,7 +128,7 @@ export const SEAL_TYPES = [
 export type SealType = (typeof SEAL_TYPES)[number];
 
 /** `availability/@status` (semi-open list). */
-export const AVAILABILITY_STATUSES = [
+const AVAILABILITY_STATUSES = [
   'free',
   'restricted',
   'exhibition',
@@ -137,8 +137,6 @@ export const AVAILABILITY_STATUSES = [
   'none',
   'unknown',
 ] as const;
-
-export type AvailabilityStatus = (typeof AVAILABILITY_STATUSES)[number];
 
 /** `layout/@topLine` (closed list, consolidated-msdesc addition to base TEI). */
 export const LAYOUT_TOP_LINES = ['above', 'below', 'mixed'] as const;
@@ -149,7 +147,7 @@ export type LayoutTopLine = (typeof LAYOUT_TOP_LINES)[number];
  * `layout/@rulingMedium` — free text in the ODD; these are its documented
  * suggested values (semi-open), so a form may still accept other strings.
  */
-export const RULING_MEDIA = [
+const RULING_MEDIA = [
   'leadpoint',
   'hardpoint',
   'ink',
@@ -158,8 +156,6 @@ export const RULING_MEDIA = [
   'mixed',
   'unknown',
 ] as const;
-
-export type RulingMedium = (typeof RULING_MEDIA)[number];
 
 /** Vocabulary id → value list; ids double as the label-key segment. */
 export const MSDESC_VOCABS = {
@@ -203,16 +199,12 @@ export const MSDESC_PROSE_LEAVES = [
   'seal',
 ] as const;
 
-export type MsDescProseLeaf = (typeof MSDESC_PROSE_LEAVES)[number];
-
 /**
  * Phrase-content leaves: they cannot legally contain `<p>`, so they fail the
  * byte-exact rich gate — edited as plain form fields with the `@key`/`@target`
  * stamping shim (roadmap 3.2) instead of the rich editor.
  */
 export const MSDESC_PHRASE_LEAVES = ['author', 'origPlace', 'origDate', 'title'] as const;
-
-export type MsDescPhraseLeaf = (typeof MSDESC_PHRASE_LEAVES)[number];
 
 // ── Per-area element palettes ───────────────────────────────────────────
 

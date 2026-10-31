@@ -14,7 +14,10 @@ const { apiFetch, authFetch } = vi.hoisted(() => ({
 vi.mock('@/lib/api-fetch', () => ({ apiFetch, authFetch }));
 
 const { getServerAuthToken } = vi.hoisted(() => ({ getServerAuthToken: vi.fn() }));
-vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken }));
+vi.mock('@/lib/auth-token-server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/auth-token-server')>()),
+  getServerAuthToken,
+}));
 
 import { revalidateTag } from 'next/cache';
 import type { NextRequest } from 'next/server';

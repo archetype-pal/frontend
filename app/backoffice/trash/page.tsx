@@ -37,7 +37,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toOrdering } from '@/lib/backoffice/ordering';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
-import { formatReviewAge } from '@/lib/backoffice/review-queue-sla';
+import { formatAge } from '@/lib/backoffice/format-age';
 import {
   ALL,
   EMPTY_TRASH_FILTERS,
@@ -253,7 +253,7 @@ export default function TrashPage() {
               className="text-xs text-muted-foreground"
               title={new Date(deletedAt).toLocaleString()}
             >
-              {formatReviewAge(ms)}
+              {formatAge(ms)}
             </span>
           );
         },

@@ -35,7 +35,7 @@ import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { stripHtmlToPlainText } from '@/lib/sanitize-html';
 
-export type Column<T> = {
+type Column<T> = {
   /** Stable identifier — used for visibleColumns matching and as fallback display text. */
   header: string;
   /** When set, the display header is resolved from model labels at render time. */
@@ -196,7 +196,7 @@ function AnnotationInlinePreview({
   );
 }
 
-export const COLUMNS = {
+const COLUMNS = {
   manuscripts: [
     repositoryCityColumn<ManuscriptListItem>(),
     repositoryColumn<ManuscriptListItem>(),

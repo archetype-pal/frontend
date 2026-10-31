@@ -1,5 +1,6 @@
 'use client';
 
+import { getCollectionItemKey } from '@/lib/collection-display';
 import * as React from 'react';
 
 import {
@@ -108,7 +109,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
 
   const mergeCollectionItems = React.useCallback(
     (collectionId: string, updates: CollectionItem[]) => {
-      const updateByKey = new Map(updates.map((item) => [`${item.type}:${item.id}`, item]));
+      const updateByKey = new Map(updates.map((item) => [getCollectionItemKey(item), item]));
       if (updateByKey.size === 0) return;
 
       setStorageState((prev) => ({
@@ -118,7 +119,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
             ? {
                 ...collection,
                 items: collection.items.map((item) => {
-                  const update = updateByKey.get(`${item.type}:${item.id}`);
+                  const update = updateByKey.get(getCollectionItemKey(item));
                   return update ? mergeDefinedItemFields(item, update) : item;
                 }),
               }
@@ -139,12 +140,12 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
 
   const removeItems = React.useCallback(
     (itemsToRemove: Array<Pick<CollectionItem, 'id' | 'type'>>) => {
-      const keys = new Set(itemsToRemove.map((item) => `${item.type}:${item.id}`));
+      const keys = new Set(itemsToRemove.map((item) => getCollectionItemKey(item)));
       if (keys.size === 0) return;
 
       setStorageState((prev) =>
         updateActiveCollectionItems(prev, (items) =>
-          items.filter((item) => !keys.has(`${item.type}:${item.id}`))
+          items.filter((item) => !keys.has(getCollectionItemKey(item)))
         )
       );
     },
@@ -152,7 +153,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
   );
 
   const collectionSet = React.useMemo(
-    () => new Set(items.map((i) => `${i.type}:${i.id}`)),
+    () => new Set(items.map((i) => getCollectionItemKey(i))),
     [items]
   );
 

@@ -1,7 +1,6 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { authFetch } from '@/lib/api-fetch';
-import { getServerAuthToken } from '@/lib/auth-token-server';
+import { authorizeSuperuser, getServerAuthToken } from '@/lib/auth-token-server';
 import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
 import { readSiteFeatures, writeSiteFeatures, SITE_FEATURES_TAG } from '@/lib/site-features-server';
 import {
@@ -11,17 +10,6 @@ import {
   hasEnabledSearchCategory,
   type SiteFeaturesConfig,
 } from '@/lib/site-features';
-
-async function verifySuperuser(token: string): Promise<boolean> {
-  try {
-    const res = await authFetch('/api/v1/auth/profile', token);
-    if (!res.ok) return false;
-    const user = await res.json();
-    return user.is_superuser === true;
-  } catch {
-    return false;
-  }
-}
 
 /** 503 rather than a 200 full of defaults: the backoffice editor PUTs back
  *  whatever it was handed, so a fallback served as healthy erases the config. */
@@ -35,15 +23,8 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   if (!isSameOriginRequest(request)) return crossOriginRefusal();
-  const token = await getServerAuthToken();
-  if (!token) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  }
-
-  const isSuperuser = await verifySuperuser(token);
-  if (!isSuperuser) {
-    return NextResponse.json({ error: 'Superuser access required' }, { status: 403 });
-  }
+  const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());
+  if (refusal) return refusal;
 
   let body: unknown;
   try {

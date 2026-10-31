@@ -19,7 +19,7 @@ import {
 } from '@/components/manuscript/annotation-gallery-filter-bar';
 
 /** CSS variable carrying the toolbar's height, so anchors can clear it. */
-export const GALLERY_TOOLBAR_HEIGHT_VAR = '--gallery-toolbar-h';
+const GALLERY_TOOLBAR_HEIGHT_VAR = '--gallery-toolbar-h';
 
 /** Scroll margin for an anchor target: below the site header and the toolbar. */
 export const GALLERY_SCROLL_MARGIN =

@@ -1,5 +1,6 @@
 'use client';
 
+import { isEditableTarget } from '@/hooks/use-hotkeys';
 import { useState, useRef, useEffect } from 'react';
 import {
   type ColumnDef,
@@ -107,7 +108,7 @@ export interface BulkAction {
   icon?: React.ReactNode;
 }
 
-export interface PresetFilter<TData> {
+interface PresetFilter<TData> {
   /** Display label for the tab, e.g. "All", "Missing dates", "Drafts" */
   label: string;
   /** Filter function applied to data. Return true to include the row. */
@@ -228,15 +229,7 @@ export function DataTable<TData extends RowData>({
   useEffect(() => {
     if (!hasSearch) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (
-        e.key === '/' &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        !(e.target instanceof HTMLInputElement) &&
-        !(e.target instanceof HTMLTextAreaElement) &&
-        !(e.target as HTMLElement)?.isContentEditable
-      ) {
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isEditableTarget(e.target)) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }

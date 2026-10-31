@@ -1,3 +1,4 @@
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { Manuscript } from '@/types/manuscript';
 import type { ManuscriptImage } from '@/types/manuscript-image';
 import type { HandsResponse } from '@/types/hands';
@@ -19,45 +20,10 @@ export async function fetchManuscriptImage(id: string): Promise<ManuscriptImage>
   return response.json();
 }
 
-function toRelativePath(next: string | null): string | null {
-  if (!next) return null;
-
-  try {
-    const url = new URL(next);
-    return url.pathname + url.search;
-  } catch {
-    return next;
-  }
-}
-
-async function fetchHandsPage(path: string): Promise<HandsResponse> {
-  const response = await apiFetch(path);
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch hands');
-  }
-
-  return response.json();
-}
-
 async function fetchAllHandsFromPath(path: string): Promise<HandsResponse> {
-  let nextPath: string | null = path;
-  let count = 0;
-  const results: HandsResponse['results'] = [];
-
-  while (nextPath) {
-    const page = await fetchHandsPage(nextPath);
-    count = page.count;
-    results.push(...page.results);
-    nextPath = toRelativePath(page.next);
-  }
-
-  return {
-    count: count || results.length,
-    next: null,
-    previous: null,
-    results,
-  };
+  // apiFetch, not the proxy: this runs on the server and the data is public.
+  const results = await walkPaginated<HandsResponse['results'][number]>(path, apiFetch);
+  return { count: results.length, next: null, previous: null, results };
 }
 
 function buildHandsPath(itemPartId: string | number, itemImageId?: string | number): string {

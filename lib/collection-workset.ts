@@ -17,7 +17,7 @@ const MAX_DEFAULT_DIMENSION = 400;
 const GRID_COLUMNS = 2;
 const GRID_GAP = 20;
 
-export function isPubliclyShareableCollectionItem(item: CollectionItem): boolean {
+function isPubliclyShareableCollectionItem(item: CollectionItem): boolean {
   return item.annotation_type !== 'editorial';
 }
 

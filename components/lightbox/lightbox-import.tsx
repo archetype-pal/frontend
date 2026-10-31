@@ -1,5 +1,6 @@
 'use client';
 
+import { newId } from '@/lib/id';
 import * as React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -55,11 +56,10 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
 
       if (data.images && Array.isArray(data.images)) {
         const { saveAnnotation } = await import('@/lib/lightbox-db');
-        const base = Date.now();
         for (let i = 0; i < data.images.length; i++) {
           const imgData = data.images[i] as Record<string, unknown>;
           const lightboxImage: LightboxImage = {
-            id: `image-${base}-${i}-${Math.random().toString(36).slice(2, 11)}`,
+            id: newId('image'),
             originalId: (imgData.originalId as number) ?? 0,
             type: ((imgData.type as string) || 'image') as 'image' | 'graph',
             imageUrl: (imgData.imageUrl as string) || '',
@@ -84,9 +84,7 @@ export function LightboxImport({ onClose }: LightboxImportProps) {
           if (Array.isArray(imgData.annotations)) {
             for (const ann of imgData.annotations as Array<Record<string, unknown>>) {
               await saveAnnotation({
-                id:
-                  (ann.id as string) ||
-                  `annotation-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+                id: (ann.id as string) || newId('annotation'),
                 imageId: lightboxImage.id,
                 shape: (ann.shape as LightboxAnnotation['shape']) ?? {
                   type: 'rect',

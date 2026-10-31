@@ -1,5 +1,6 @@
 'use client';
 
+import { newId } from '@/lib/id';
 import * as React from 'react';
 import { Square, Pencil, Trash2, MousePointer } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -19,9 +20,7 @@ const ANNOTATION_COLORS = [
   '#ec4899', // pink
 ];
 
-function generateId(): string {
-  return `ann-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
+const generateId = () => newId('ann');
 
 interface LightboxAnnotationsProps {
   image: LightboxImage;

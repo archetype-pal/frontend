@@ -7,7 +7,7 @@ import { toast, type ExternalToast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 
-export type ActionNotificationKind =
+type ActionNotificationKind =
   | 'selected'
   | 'created'
   | 'updated'

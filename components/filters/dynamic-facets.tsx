@@ -25,7 +25,7 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
-export type DynamicFacetsDensity = 'default' | 'sidebar';
+type DynamicFacetsDensity = 'default' | 'sidebar';
 
 type DynamicFacetsProps = {
   facets: FacetData;

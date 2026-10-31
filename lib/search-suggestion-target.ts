@@ -57,7 +57,7 @@ const SEGMENT_LABEL: Record<string, string> = {
   places: 'Place',
 };
 
-export function suggestionTypeLabel(type: string): string {
+function suggestionTypeLabel(type: string): string {
   return SEGMENT_LABEL[type] ?? type.replace(/_/g, ' ');
 }
 

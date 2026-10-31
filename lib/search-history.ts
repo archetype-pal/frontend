@@ -1,5 +1,6 @@
 'use client';
 
+import { canUseStorage } from '@/lib/browser-storage';
 import type { ResultType } from '@/lib/search-types';
 
 const STORAGE_KEY = 'search-history';
@@ -10,10 +11,6 @@ export type SearchHistoryEntry = {
   resultType: ResultType;
   timestamp: number;
 };
-
-function canUseStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
-}
 
 export function getSearchHistory(): SearchHistoryEntry[] {
   if (!canUseStorage()) return [];

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 
-export interface FilterOption {
+interface FilterOption {
   value: string;
   label: string;
 }

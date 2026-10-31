@@ -1,5 +1,6 @@
 'use client';
 
+import { isEditableTarget } from '@/hooks/use-hotkeys';
 import * as React from 'react';
 import { useLightboxStore } from '@/stores/lightbox-store';
 
@@ -31,14 +32,7 @@ export function LightboxKeyboardShortcuts() {
         redo();
         return;
       }
-      // Don't handle shortcuts when typing in inputs
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        (e.target as HTMLElement)?.isContentEditable
-      ) {
-        return;
-      }
+      if (isEditableTarget(e.target)) return;
 
       // Delete selected images
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedImageIds.size > 0) {

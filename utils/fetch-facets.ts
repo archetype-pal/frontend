@@ -96,7 +96,7 @@ export const EMPTY_SEARCH_RESULT: SearchResult = {
   offset: 0,
 };
 
-export const SEARCH_RESULTS_STALE_TIME_MS = 10_000;
+const SEARCH_RESULTS_STALE_TIME_MS = 10_000;
 
 export const searchKeys = {
   all: ['search'] as const,

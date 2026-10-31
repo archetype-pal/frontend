@@ -4,10 +4,10 @@ import * as React from 'react';
 import type { ResultType } from '@/lib/search-types';
 import type { ViewMode } from '@/components/search/search-actions-menu';
 
-export const TABLE_ONLY_TYPES: readonly ResultType[] = ['texts', 'people', 'places'];
-export const TABLE_ONLY_TYPE_SET = new Set<ResultType>(TABLE_ONLY_TYPES);
-export const VIEW_PREFS_KEY = 'search-view-prefs';
-export const FILTERS_SIDEBAR_COLLAPSED_KEY = 'search-filters-sidebar-collapsed';
+const TABLE_ONLY_TYPES: readonly ResultType[] = ['texts', 'people', 'places'];
+const TABLE_ONLY_TYPE_SET = new Set<ResultType>(TABLE_ONLY_TYPES);
+const VIEW_PREFS_KEY = 'search-view-prefs';
+const FILTERS_SIDEBAR_COLLAPSED_KEY = 'search-filters-sidebar-collapsed';
 
 export function isTableOnlyType(type: ResultType): boolean {
   return TABLE_ONLY_TYPE_SET.has(type);

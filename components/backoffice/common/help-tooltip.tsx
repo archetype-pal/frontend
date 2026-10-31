@@ -22,7 +22,7 @@ interface HelpTooltipProps {
  * <Label>Hair type <HelpTooltip field="manuscript.hair_type" /></Label>
  * ```
  */
-export function HelpTooltip({ field, entry, className }: HelpTooltipProps) {
+function HelpTooltip({ field, entry, className }: HelpTooltipProps) {
   const t = useTranslations('backoffice');
   const help = entry ?? helpTexts[field];
   if (!help) return null;

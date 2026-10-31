@@ -11,6 +11,8 @@
  * `</span>` without tracking a stack. Non-TEI markup passes through verbatim.
  */
 
+import { escapeXmlAttr as escapeAttr } from '@/lib/markup-escape';
+
 const TEI_TO_DPT: Record<string, string> = {
   seg: 'clause',
   persname: 'person',
@@ -73,15 +75,6 @@ export function correspToGraphIds(raw: string): string {
     .filter((token) => token.startsWith('gid-'))
     .map((token) => token.slice('gid-'.length))
     .join(',');
-}
-
-function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
 }
 
 function openSpan(dpt: string, attrs: Record<string, string>): string {

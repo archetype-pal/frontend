@@ -1,5 +1,7 @@
 'use client';
 
+import { normalizeRotation } from '@/hooks/use-viewer-image-adjustments';
+import { newId } from '@/lib/id';
 import React, { useEffect, useRef } from 'react';
 import type OpenSeadragon from 'openseadragon';
 import '@recogito/annotorious/dist/annotorious.min.css';
@@ -49,10 +51,6 @@ export type ViewerImageAdjustments = {
   saturation: number;
 };
 
-function normalizeRotation(degrees: number): number {
-  return ((degrees % 360) + 360) % 360;
-}
-
 function buildViewerImageFilter(adjustments: ViewerImageAdjustments): string {
   const { brightness, contrast, saturation } = adjustments;
 
@@ -63,13 +61,7 @@ function buildViewerImageFilter(adjustments: ViewerImageAdjustments): string {
   return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
 }
 
-const createDraftAnnotationId = () => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `#${crypto.randomUUID()}`;
-  }
-
-  return `#${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-};
+const createDraftAnnotationId = () => `#${newId()}`;
 
 const withDraftAnnotationId = (annotation: Annotation): Annotation => {
   if (annotation.id && annotation.type === 'Annotation') return annotation;

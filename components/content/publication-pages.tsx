@@ -21,8 +21,6 @@ import { BackofficeLink } from '@/components/common/backoffice-link';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
-export const dynamic = 'force-dynamic';
-
 export async function fetchPublicationBySlug(slug: string): Promise<Publication | null> {
   try {
     return await getPublicationItem(slug);

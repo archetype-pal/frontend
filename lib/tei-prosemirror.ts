@@ -15,6 +15,12 @@
  * losing data on documents it can't represent.
  */
 
+import {
+  decodeEntities,
+  escapeXmlAttr as escapeAttr,
+  escapeXmlText as escapeText,
+} from '@/lib/markup-escape';
+
 export interface StackEntry {
   el: string;
   attrs: Record<string, string>;
@@ -63,47 +69,6 @@ type Token =
   | { kind: 'open'; el: string; attrs: Record<string, string>; selfClose: boolean }
   | { kind: 'close'; el: string }
   | { kind: 'text'; text: string };
-
-function decodeEntities(value: string): string {
-  return value.replace(/&(#x?[0-9a-fA-F]+|amp|lt|gt|quot|apos);/g, (whole, body: string) => {
-    switch (body) {
-      case 'amp':
-        return '&';
-      case 'lt':
-        return '<';
-      case 'gt':
-        return '>';
-      case 'quot':
-        return '"';
-      case 'apos':
-        return "'";
-      default:
-        if (body[0] === '#') {
-          const code =
-            body[1] === 'x' || body[1] === 'X'
-              ? parseInt(body.slice(2), 16)
-              : parseInt(body.slice(1), 10);
-          return Number.isFinite(code) ? String.fromCodePoint(code) : whole;
-        }
-        return whole;
-    }
-  });
-}
-
-function escapeText(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function escapeAttr(value: string): string {
-  // Mirrors the backend's html.escape(quote=True), which produced the stored
-  // TEI — so attribute values round-trip (incl. &#x27; in pasted style attrs).
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
 
 function parseAttrs(raw: string): Record<string, string> {
   const attrs: Record<string, string> = {};

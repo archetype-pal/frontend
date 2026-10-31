@@ -19,6 +19,8 @@
  * same contract the msDesc composer honours for area fragments.
  */
 
+import { escapeXmlText as escapeText } from '@/lib/markup-escape';
+
 export const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
 /** `type` on the wrapper — a TEI `<div>` is a text division; this says which. */
@@ -114,8 +116,4 @@ export function wrapTeiDescription(prose: string): string {
 export function teiDescriptionFromText(text: string): string {
   const trimmed = text.trim();
   return wrapTeiDescription(trimmed === '' ? '' : `<p>${escapeText(trimmed)}</p>`);
-}
-
-function escapeText(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

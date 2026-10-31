@@ -12,7 +12,7 @@ import type { AnnotationCreationKind } from '@/types/annotation-viewer';
 import { isTextRegionAnnotation } from './manuscript-viewer-annotation-types';
 import { formatSavedAnnotationDescription } from './manuscript-viewer-collection';
 
-export interface SaveNotice {
+interface SaveNotice {
   kind: 'error' | 'saved';
   title: string;
   description: string;

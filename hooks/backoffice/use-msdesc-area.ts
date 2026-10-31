@@ -30,7 +30,7 @@ import {
  * without a network (see `use-msdesc-area.test.tsx`).
  */
 
-export type MsDescValidationStatus = 'idle' | 'pending' | 'valid' | 'invalid' | 'unknown';
+type MsDescValidationStatus = 'idle' | 'pending' | 'valid' | 'invalid' | 'unknown';
 
 export interface MsDescValidation {
   status: MsDescValidationStatus;

@@ -1,5 +1,6 @@
 'use client';
 
+import { isEditableTarget } from '@/hooks/use-hotkeys';
 import { type Dispatch, type SetStateAction, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
@@ -49,11 +50,7 @@ export function KeyboardShortcutsDialog({ open, onOpenChange }: KeyboardShortcut
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      // Only trigger on "?" when not in an input/textarea/contenteditable
-      const target = e.target as HTMLElement;
-      const isInput =
-        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      if (e.key === '?' && !isInput && !e.ctrlKey && !e.metaKey) {
+      if (e.key === '?' && !isEditableTarget(e.target) && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         onOpenChange(true);
       }

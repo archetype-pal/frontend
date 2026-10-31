@@ -1,32 +1,16 @@
 import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
-import { getServerAuthToken } from '@/lib/auth-token-server';
+import { authorizeSuperuser, getServerAuthToken } from '@/lib/auth-token-server';
 import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
 
 const MANAGEMENT_PAGES_PATH = '/api/v1/management/pages/';
 
-async function verifySuperuser(token: string): Promise<boolean> {
-  try {
-    const res = await authFetch('/api/v1/auth/profile', token);
-    if (!res.ok) return false;
-    const user = await res.json();
-    return user.is_superuser === true;
-  } catch {
-    return false;
-  }
-}
-
 type RouteParams = { params: Promise<{ slug: string }> };
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const token = await getServerAuthToken();
-  if (!token) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  }
-  if (!(await verifySuperuser(token))) {
-    return NextResponse.json({ error: 'Superuser access required' }, { status: 403 });
-  }
+  const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());
+  if (refusal) return refusal;
 
   const { slug } = await params;
   const res = await authFetch(`${MANAGEMENT_PAGES_PATH}${encodeURIComponent(slug)}/`, token);
@@ -37,13 +21,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!isSameOriginRequest(request)) return crossOriginRefusal();
-  const token = await getServerAuthToken();
-  if (!token) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  }
-  if (!(await verifySuperuser(token))) {
-    return NextResponse.json({ error: 'Superuser access required' }, { status: 403 });
-  }
+  const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());
+  if (refusal) return refusal;
 
   let body: unknown;
   try {
@@ -72,13 +51,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!isSameOriginRequest(request)) return crossOriginRefusal();
-  const token = await getServerAuthToken();
-  if (!token) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  }
-  if (!(await verifySuperuser(token))) {
-    return NextResponse.json({ error: 'Superuser access required' }, { status: 403 });
-  }
+  const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());
+  if (refusal) return refusal;
 
   const { slug } = await params;
   const res = await authFetch(`${MANAGEMENT_PAGES_PATH}${encodeURIComponent(slug)}/`, token, {

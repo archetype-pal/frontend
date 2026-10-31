@@ -36,7 +36,11 @@ import { useCollectionItemSelection } from '@/hooks/collection/use-collection-it
 import { getImageDetailUrl as buildImageDetailUrl } from '@/lib/media-url';
 import { cn } from '@/lib/utils';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
-import { getCollectionGridCardLabels } from '@/lib/collection-display';
+import {
+  getCollectionGridCardLabels,
+  getCollectionItemKey,
+  isCollectionEditorialAnnotation,
+} from '@/lib/collection-display';
 import {
   COLLECTION_SHARE_QUERY_PARAM,
   parseAnonymousCollectionShareParam,
@@ -91,10 +95,6 @@ function createRenderWindow(key: string): CollectionRenderWindow {
   };
 }
 
-function getCollectionItemKey(item: Pick<CollectionItem, 'id' | 'type'>): string {
-  return `${item.type}:${item.id}`;
-}
-
 function getAnonymousSharePayloadFromHash(): string {
   if (typeof window === 'undefined') return '';
 
@@ -129,10 +129,6 @@ function getImageDetailUrl(item: CollectionItem): string {
   return buildImageDetailUrl(item) ?? '#';
 }
 
-function isEditorialAnnotation(item: CollectionItem): boolean {
-  return item.type === 'graph' && item.annotation_type === 'editorial';
-}
-
 /** Card for a graph item: thumbnail URL with bounds (no upscaling). */
 function CollectionGraphCard({
   item,
@@ -154,7 +150,7 @@ function CollectionGraphCard({
   const t = useTranslations('collection');
   const infoUrl = (item.image_iiif || '').trim();
   const imageUrl = useIiifThumbnailUrl(infoUrl, item.coordinates ?? undefined);
-  const isEditorial = isEditorialAnnotation(item);
+  const isEditorial = isCollectionEditorialAnnotation(item);
   const accessibleTitle = subtitle ? `${title} · ${subtitle}` : title;
 
   return (
@@ -318,14 +314,14 @@ function CollectionPageContent() {
   } = useCollectionViewState(items, clearDisplayedCollection);
   const images = filteredItems.filter((item) => item.type === 'image');
   const annotations = filteredItems.filter(
-    (item) => item.type === 'graph' && !isEditorialAnnotation(item)
+    (item) => item.type === 'graph' && !isCollectionEditorialAnnotation(item)
   );
-  const editorialAnnotations = filteredItems.filter(isEditorialAnnotation);
+  const editorialAnnotations = filteredItems.filter(isCollectionEditorialAnnotation);
   const allImages = items.filter((item) => item.type === 'image');
   const allAnnotations = items.filter(
-    (item) => item.type === 'graph' && !isEditorialAnnotation(item)
+    (item) => item.type === 'graph' && !isCollectionEditorialAnnotation(item)
   );
-  const allEditorialAnnotations = items.filter(isEditorialAnnotation);
+  const allEditorialAnnotations = items.filter(isCollectionEditorialAnnotation);
   const hasAnnotations = allAnnotations.length + allEditorialAnnotations.length > 0;
   const renderWindowKey = [
     activeCollection.id,

@@ -32,7 +32,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Segmented, type SegmentedOption } from '@/components/ui/segmented';
 
-export interface HandOption {
+interface HandOption {
   key: number | null;
   name: string;
 }

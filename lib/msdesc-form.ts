@@ -91,7 +91,7 @@ export interface MsTextLang {
   text: string;
 }
 
-export interface MsLocus {
+interface MsLocus {
   from?: string;
   to?: string;
   text: string;
@@ -153,7 +153,7 @@ export interface MsSupportDesc {
   condition?: string;
 }
 
-export interface MsLayout {
+interface MsLayout {
   columns?: string;
   writtenLines?: string;
   rulingMedium?: string;
@@ -177,7 +177,7 @@ export interface MsHandNote {
   innerXml: string;
 }
 
-export interface MsHandDesc {
+interface MsHandDesc {
   hands?: string;
   handNotes: MsHandNote[];
 }
@@ -187,12 +187,12 @@ export interface MsDecoNote {
   innerXml: string;
 }
 
-export interface MsDecoDesc {
+interface MsDecoDesc {
   summaryInnerXml?: string;
   decoNotes: MsDecoNote[];
 }
 
-export interface MsBinding {
+interface MsBinding {
   notBefore?: string;
   notAfter?: string;
   contemporary?: string;
@@ -237,7 +237,7 @@ export interface MsOrigPlace {
   settlement?: MsKeyedText;
 }
 
-export interface MsProvenance {
+interface MsProvenance {
   notAfter?: string;
   when?: string;
   innerXml: string;
@@ -390,7 +390,7 @@ const HISTORY_SHAPE: ElementShape = {
   },
 };
 
-export const MSDESC_AREA_SHAPES: Record<MsDescAreaId, ElementShape> = {
+const MSDESC_AREA_SHAPES: Record<MsDescAreaId, ElementShape> = {
   msIdentifier: MS_IDENTIFIER_SHAPE,
   msContents: MS_CONTENTS_SHAPE,
   physDesc: PHYS_DESC_SHAPE,

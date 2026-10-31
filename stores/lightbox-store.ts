@@ -1,3 +1,4 @@
+import { newId } from '@/lib/id';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -83,16 +84,10 @@ export interface LightboxState {
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 const pendingPersist = new Map<string, LightboxImage>();
 
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
-
-function createWorkspaceId(): string {
-  return `workspace-${generateId()}`;
-}
+const createWorkspaceId = () => newId('workspace');
 
 function createImageId(): string {
-  return `image-${generateId()}`;
+  return `image-${newId()}`;
 }
 
 // Initialize store with data from IndexedDB. Throws on failure so caller can set error (fail loud).

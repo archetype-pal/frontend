@@ -1,5 +1,5 @@
 import { optionalAuthFetch, proxyFetch } from '@/lib/api-fetch';
-import { BackofficeApiError } from '@/services/backoffice/api-client';
+import { throwIfNotOk } from '@/services/backoffice/api-client';
 
 export type ImageTextStatus = 'Draft' | 'Review' | 'Live' | 'Reviewed';
 
@@ -188,10 +188,7 @@ export async function createImageText(payload: CreateImageTextPayload): Promise<
       ...payload,
     }),
   });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new BackofficeApiError(response.status, body as Record<string, unknown>);
-  }
+  await throwIfNotOk(response);
   return response.json();
 }
 

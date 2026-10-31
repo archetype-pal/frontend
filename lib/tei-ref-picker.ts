@@ -60,7 +60,7 @@ export const REF_PICKER_KINDS: readonly ResourceKind[] = [
  * entry points choose the first enabled category, and the search route/proxy
  * redirect this link if the Manuscripts category is disabled.
  */
-export const PLACE_SEARCH_RESULT_TYPE = 'manuscripts';
+const PLACE_SEARCH_RESULT_TYPE = 'manuscripts';
 
 /**
  * A `@target`-only site-search link for a place name (`docs/tei.md` §3.4: Place has no

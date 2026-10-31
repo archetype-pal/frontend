@@ -22,7 +22,7 @@
  */
 
 import { proxyFetch } from '@/lib/api-fetch';
-import { BackofficeApiError } from '@/services/backoffice/api-client';
+import { throwIfNotOk } from '@/services/backoffice/api-client';
 
 interface PaginatedDrfResponse<T> {
   next?: string | null;
@@ -37,10 +37,7 @@ export async function walkPaginated<T>(
   const out: T[] = [];
   while (path) {
     const response = await fetcher(path);
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      throw new BackofficeApiError(response.status, body as Record<string, unknown>);
-    }
+    await throwIfNotOk(response);
     const data: unknown = await response.json();
     if (Array.isArray(data)) {
       out.push(...(data as T[]));
@@ -61,7 +58,8 @@ export async function walkPaginated<T>(
   return out;
 }
 
-function toRelativePath(next: string | null): string | null {
+/** DRF's `next` link is absolute; the proxy and apiFetch want the path. */
+export function toRelativePath(next: string | null): string | null {
   if (!next) return null;
   try {
     const u = new URL(next);

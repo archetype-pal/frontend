@@ -53,14 +53,18 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new BackofficeApiError(res.status, body as Record<string, unknown>);
-  }
+  await throwIfNotOk(res);
 
   // DELETE responses may have no body
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+/** Turn a failed response into a BackofficeApiError carrying the parsed body. */
+export async function throwIfNotOk(res: Response): Promise<void> {
+  if (res.ok) return;
+  const body = await res.json().catch(() => ({}));
+  throw new BackofficeApiError(res.status, body as Record<string, unknown>);
 }
 
 /** GET with auth. Pass `init` (e.g. `{ cache: 'no-store' }`) for fresh reads. */
@@ -100,10 +104,7 @@ async function apiRequestFormData<T>(path: string, method: string, formData: For
     body: formData,
   });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new BackofficeApiError(res.status, body as Record<string, unknown>);
-  }
+  await throwIfNotOk(res);
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

@@ -31,7 +31,7 @@ export const HIDDEN_SORT_FIELDS = new Set(['id']);
  * location first, then shelfmark/locus, then dates, then the scribal fields.
  * Attributes absent from this list sort after it, alphabetically by label.
  */
-export const SORT_FIELD_ORDER: string[] = [
+const SORT_FIELD_ORDER: string[] = [
   'repository_city',
   'repository_name',
   'shelfmark',
