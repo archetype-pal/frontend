@@ -19,15 +19,13 @@ import { useAuth } from '@/contexts/auth-context';
 import { createPage, getMenuHeadings } from '@/services/backoffice/pages';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
-import { isReservedPageSlug, resolvePageText } from '@/lib/pages';
+import { ABOUT_HEADING_VALUE, isReservedPageSlug, resolvePageText } from '@/lib/pages';
 import { coerceLocale } from '@/lib/locale';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { slugify } from '@/lib/slugify';
 
 // Radix Select can't hold a null value; this stands for "no custom heading".
-const ABOUT_HEADING_VALUE = '__about';
-
 export default function NewPagePage() {
   const router = useRouter();
   const t = useTranslations('backoffice');

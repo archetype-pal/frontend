@@ -18,7 +18,7 @@ import type {
 } from '@/components/manuscript/manuscript-annotorious';
 import type { A9sWithMeta, AnnotationCreationKind, PopupRecord } from '@/types/annotation-viewer';
 
-const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
+export const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
 
 interface UsePopupSelectionArgs {
   // popup collection (useManuscriptPopups)

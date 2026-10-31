@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authFetch } from '@/lib/api-fetch';
 import { authorizeSuperuser, getServerAuthToken } from '@/lib/auth-token-server';
 import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
-
-const MANAGEMENT_HEADINGS_PATH = '/api/v1/management/menu-headings/';
+import { MANAGEMENT_HEADINGS_PATH } from '@/lib/backoffice/management-paths';
 
 export async function GET() {
   const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());

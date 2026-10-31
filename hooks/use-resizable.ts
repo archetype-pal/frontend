@@ -14,8 +14,9 @@ export interface UseResizableOptions {
   maxHeight?: number;
 }
 
-const KEYBOARD_STEP = 16;
-const KEYBOARD_STEP_LARGE = 64;
+/** Pixels per arrow-key press on a resize handle; Shift multiplies it. */
+export const KEYBOARD_STEP = 16;
+export const KEYBOARD_STEP_LARGE = 64;
 const VIEWPORT_MARGIN = 16;
 
 function clampValue(value: number, min: number, max: number): number {

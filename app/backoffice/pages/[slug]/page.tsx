@@ -35,6 +35,7 @@ import { getPage, getMenuHeadings, updatePage, deletePage } from '@/services/bac
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
 import {
+  ABOUT_HEADING_VALUE,
   isReservedPageSlug,
   resolvePageText,
   type LocalizedText,
@@ -47,8 +48,6 @@ import { useAutosave } from '@/hooks/backoffice/use-autosave';
 import { slugify } from '@/lib/slugify';
 
 // Radix Select can't hold a null value; this stands for "no custom heading".
-const ABOUT_HEADING_VALUE = '__about';
-
 export default function PageEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const { isAuthenticated } = useAuth();
