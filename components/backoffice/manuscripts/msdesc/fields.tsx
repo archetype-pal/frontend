@@ -16,6 +16,7 @@ import {
 import { MSDESC_VOCABS, msdescVocabLabelKey } from '@/lib/msdesc-vocab';
 import type { MsDescVocabId, MsDescVocabValue } from '@/lib/msdesc-vocab';
 import { cn } from '@/lib/utils';
+import type { MsKeyedText } from '@/lib/msdesc-form';
 
 /**
  * Shared field primitives for the msDesc area forms (roadmap 2.2-UI):
@@ -25,6 +26,14 @@ import { cn } from '@/lib/utils';
  */
 
 const NONE_VALUE = '__none';
+
+/** An empty input means "absent" in the form model, never an empty string. */
+export const opt = (value: string): string | undefined => (value === '' ? undefined : value);
+
+/** `{key?, text}` phrase leaf, pruned to absent when both parts are empty. */
+export function pruneKeyedText(next: MsKeyedText): MsKeyedText | undefined {
+  return next.text === '' && next.key === undefined ? undefined : next;
+}
 
 export function MsField({
   label,
