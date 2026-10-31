@@ -23,6 +23,7 @@ import { isReservedPageSlug, resolvePageText } from '@/lib/pages';
 import { coerceLocale } from '@/lib/locale';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
+import { slugify } from '@/lib/slugify';
 
 // Radix Select can't hold a null value; this stands for "no custom heading".
 const ABOUT_HEADING_VALUE = '__about';
@@ -43,20 +44,14 @@ export default function NewPagePage() {
     enabled: isAuthenticated,
   });
 
-  const generateSlug = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-
   const handleTitleChange = (value: string) => {
     setTitle(value);
     if (!slugLocked) {
-      setSlug(generateSlug(value));
+      setSlug(slugify(value));
     }
   };
 
-  const resolvedSlug = slug || generateSlug(title);
+  const resolvedSlug = slug || slugify(title);
   const reserved = isReservedPageSlug(resolvedSlug);
 
   const createMut = useMutation({
@@ -109,7 +104,7 @@ export default function NewPagePage() {
               onClick={() => {
                 const next = !slugLocked;
                 setSlugLocked(next);
-                if (!next) setSlug(generateSlug(title));
+                if (!next) setSlug(slugify(title));
               }}
             >
               {slugLocked ? t('pagesNew.slugUnlock') : t('pagesNew.slugLock')}

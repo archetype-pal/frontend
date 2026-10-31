@@ -46,6 +46,7 @@ import { useAutosave } from '@/hooks/backoffice/use-autosave';
 import { renderPublicationHtml } from '@/lib/publication-html';
 import { hasLegacyRichPublicationHtml } from '@/lib/legacy-publication-html';
 import { getPublicationRoutes } from '@/lib/publications';
+import { slugify } from '@/lib/slugify';
 
 export default function PublicationEditorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -81,12 +82,6 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
   const [keywords, setKeywords] = useState('');
   const [dirty, setDirty] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-
-  const generateSlug = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
 
   useEffect(() => {
     if (pub) {
@@ -326,7 +321,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
             value={title}
             onChange={(e) => {
               setTitle(e.target.value);
-              if (!slugLocked) setPubSlug(generateSlug(e.target.value));
+              if (!slugLocked) setPubSlug(slugify(e.target.value));
               markDirty();
             }}
           />
@@ -343,7 +338,7 @@ export default function PublicationEditorPage({ params }: { params: Promise<{ sl
               onClick={() => {
                 const next = !slugLocked;
                 setSlugLocked(next);
-                if (!next) setPubSlug(generateSlug(title));
+                if (!next) setPubSlug(slugify(title));
               }}
             >
               {slugLocked

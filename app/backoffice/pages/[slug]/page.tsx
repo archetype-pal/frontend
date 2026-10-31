@@ -44,6 +44,7 @@ import { coerceLocale } from '@/lib/locale';
 import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import { useAutosave } from '@/hooks/backoffice/use-autosave';
+import { slugify } from '@/lib/slugify';
 
 // Radix Select can't hold a null value; this stands for "no custom heading".
 const ABOUT_HEADING_VALUE = '__about';
@@ -83,12 +84,6 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
   const [includeInQuickLink, setIncludeInQuickLink] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-
-  const generateSlug = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
 
   useEffect(() => {
     if (page) {
@@ -293,7 +288,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
                 const next = !slugLocked;
                 setSlugLocked(next);
                 if (!next) {
-                  setPageSlug(generateSlug(title.en));
+                  setPageSlug(slugify(title.en));
                   markDirty();
                 }
               }}
