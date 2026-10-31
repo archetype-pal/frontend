@@ -1,11 +1,9 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ModelLabelsProvider } from '@/contexts/model-labels-context';
 import ManuscriptsPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const { getHistoricalItems, downloadBlob } = vi.hoisted(() => ({
   getHistoricalItems: vi.fn(),
@@ -17,16 +15,7 @@ vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 vi.mock('@/services/backoffice/manuscripts', () => ({ getHistoricalItems }));
 vi.mock('@/lib/download', () => ({ downloadBlob }));
 
-function renderPage() {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <ModelLabelsProvider>
-        <ManuscriptsPage />
-      </ModelLabelsProvider>
-    </QueryClientProvider>
-  );
-}
+const renderPage = () => renderWithQueryClient(<ManuscriptsPage />, { modelLabels: true });
 
 describe('<ManuscriptsPage>', () => {
   beforeEach(() => {

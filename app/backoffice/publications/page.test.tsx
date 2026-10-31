@@ -1,10 +1,9 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PublicationsPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const { getPublications } = vi.hoisted(() => ({ getPublications: vi.fn() }));
 
@@ -17,14 +16,7 @@ vi.mock('@/services/backoffice/publications', () => ({
   deletePublication: vi.fn(),
 }));
 
-function renderPage() {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <PublicationsPage />
-    </QueryClientProvider>
-  );
-}
+const renderPage = () => renderWithQueryClient(<PublicationsPage />);
 
 /** Picks an option of a filter bar select: the status filter comes first, then the type. */
 function pick(filterIndex: number, option: string) {

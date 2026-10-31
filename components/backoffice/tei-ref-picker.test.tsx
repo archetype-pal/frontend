@@ -13,6 +13,7 @@ vi.mock('@/services/tei-ref-search', () => ({
 
 import { TeiRefPicker } from './tei-ref-picker';
 import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 /**
  * Regression cover for the picker's transient state. The dialog is opened from
@@ -80,17 +81,14 @@ describe('TeiRefPicker — transient state survives parent re-renders', () => {
   });
 
   it('seeds the query from the selection', () => {
-    const client = createTestQueryClient();
-    render(
-      <QueryClientProvider client={client}>
-        <TeiRefPicker
-          open
-          onOpenChange={() => {}}
-          onPick={() => {}}
-          kinds={['person']}
-          seedText="Kelso"
-        />
-      </QueryClientProvider>
+    renderWithQueryClient(
+      <TeiRefPicker
+        open
+        onOpenChange={() => {}}
+        onPick={() => {}}
+        kinds={['person']}
+        seedText="Kelso"
+      />
     );
     expect((screen.getByPlaceholderText('Search scribes…') as HTMLInputElement).value).toBe(
       'Kelso'

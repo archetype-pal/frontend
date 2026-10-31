@@ -1,10 +1,9 @@
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MenuHeading } from '@/lib/pages';
 import { MenuHeadingsPanel } from './menu-headings-panel';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const services = vi.hoisted(() => ({
   getMenuHeadings: vi.fn(),
@@ -23,12 +22,7 @@ vi.mock('next-intl', () => ({
 const help: MenuHeading = { id: 1, slug: 'help', title: { en: 'Help', fr: 'Aide', de: '' } };
 
 function renderPanel() {
-  const client = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={client}>
-      <MenuHeadingsPanel enabled />
-    </QueryClientProvider>
-  );
+  return renderWithQueryClient(<MenuHeadingsPanel enabled />);
 }
 
 async function openNewHeadingDialog() {

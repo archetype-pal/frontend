@@ -1,12 +1,9 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TooltipProvider } from '@/components/ui/tooltip';
-
 import RepositoriesPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('sonner', () => import('@/test/mocks/sonner'));
@@ -38,14 +35,7 @@ vi.mock('@/services/backoffice/manuscripts', () => ({
 
 describe('<RepositoriesPage>', () => {
   it('disables delete, with the reason, on repositories that have linked items', async () => {
-    const client = createTestQueryClient();
-    render(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <RepositoriesPage />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
+    renderWithQueryClient(<RepositoriesPage />, { tooltip: true });
 
     const blocked = await screen.findByRole('button', {
       name: "Can't delete: this repository has 2 linked items. Move or delete them first.",

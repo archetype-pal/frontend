@@ -1,10 +1,9 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import CommentsPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const { getComments, getAllPublications, routerReplace, urlParams } = vi.hoisted(() => ({
   getComments: vi.fn(),
@@ -45,14 +44,7 @@ function comment(id: number) {
   };
 }
 
-function renderPage() {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <CommentsPage />
-    </QueryClientProvider>
-  );
-}
+const renderPage = () => renderWithQueryClient(<CommentsPage />);
 
 describe('<CommentsPage>', () => {
   beforeEach(() => {

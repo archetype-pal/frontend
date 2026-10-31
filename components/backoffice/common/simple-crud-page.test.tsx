@@ -1,13 +1,10 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { Tag } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TooltipProvider } from '@/components/ui/tooltip';
-
 import { SimpleCrudPage } from './simple-crud-page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('sonner', () => import('@/test/mocks/sonner'));
@@ -21,27 +18,23 @@ const FORMATS: Format[] = Array.from({ length: 25 }, (_, i) => ({
 
 describe('<SimpleCrudPage>', () => {
   it('shows 20 rows a page and pages through the rest', async () => {
-    const client = createTestQueryClient();
-    render(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <SimpleCrudPage<Format>
-            queryKey={['formats']}
-            queryFn={async () => FORMATS}
-            createFn={vi.fn()}
-            updateFn={vi.fn()}
-            deleteFn={vi.fn()}
-            icon={Tag}
-            title="Formats"
-            description="Formats"
-            singularLabel="Format"
-            pluralLabel="Formats"
-            searchColumn="name"
-            fields={[{ key: 'name', label: 'Name' }]}
-            deleteDescription="Delete"
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
+    renderWithQueryClient(
+      <SimpleCrudPage<Format>
+        queryKey={['formats']}
+        queryFn={async () => FORMATS}
+        createFn={vi.fn()}
+        updateFn={vi.fn()}
+        deleteFn={vi.fn()}
+        icon={Tag}
+        title="Formats"
+        description="Formats"
+        singularLabel="Format"
+        pluralLabel="Formats"
+        searchColumn="name"
+        fields={[{ key: 'name', label: 'Name' }]}
+        deleteDescription="Delete"
+      />,
+      { tooltip: true }
     );
 
     expect(await screen.findByText('Format 20')).toBeTruthy();

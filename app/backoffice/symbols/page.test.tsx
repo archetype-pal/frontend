@@ -1,7 +1,6 @@
 /** @vitest-environment jsdom */
 import * as React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
@@ -26,17 +25,9 @@ vi.mock('@/services/backoffice/symbols', () => ({
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 import SymbolsPage from './page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
-function renderPage() {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <SymbolsPage />
-    </QueryClientProvider>
-  );
-  return client;
-}
+const renderPage = () => renderWithQueryClient(<SymbolsPage />).client;
 
 describe('SymbolsPage', () => {
   it('shows an error with Retry when the structure fails to load', async () => {

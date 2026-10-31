@@ -42,6 +42,7 @@ vi.mock('next/dynamic', () => ({
 
 import { HandDescriptionsSection } from './hand-descriptions-section';
 import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const DESCRIPTION: HandDescription = {
   id: 7,
@@ -52,15 +53,8 @@ const DESCRIPTION: HandDescription = {
 };
 
 function renderSection(onDirtyChange = vi.fn(), descriptions = [DESCRIPTION]) {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <HandDescriptionsSection
-        handId={3}
-        descriptions={descriptions}
-        onDirtyChange={onDirtyChange}
-      />
-    </QueryClientProvider>
+  renderWithQueryClient(
+    <HandDescriptionsSection handId={3} descriptions={descriptions} onDirtyChange={onDirtyChange} />
   );
   return { onDirtyChange };
 }

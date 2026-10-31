@@ -1,15 +1,13 @@
 /** @vitest-environment jsdom */
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ComponentType } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ModelLabelsProvider } from '@/contexts/model-labels-context';
 import AnnotationsPage from './annotations/page';
 import ManuscriptsPage from './manuscripts/page';
 import PhysicalVolumesPage from './physical-volumes/page';
 import TrashPage from './trash/page';
-import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 const services = vi.hoisted(() => {
   const page = () => Promise.resolve({ count: 120, next: null, previous: null, results: [] });
@@ -39,16 +37,7 @@ vi.mock('@/services/backoffice/annotations', () => ({
   purgeGraph: vi.fn(),
 }));
 
-function renderPage(Page: ComponentType) {
-  const client = createTestQueryClient();
-  render(
-    <QueryClientProvider client={client}>
-      <ModelLabelsProvider>
-        <Page />
-      </ModelLabelsProvider>
-    </QueryClientProvider>
-  );
-}
+const renderPage = (Page: ComponentType) => renderWithQueryClient(<Page />, { modelLabels: true });
 
 describe('sorting a backoffice list on the server', () => {
   beforeEach(() => vi.clearAllMocks());
