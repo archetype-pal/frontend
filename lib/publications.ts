@@ -66,3 +66,14 @@ export function getPublicationRoutes(
     })
   );
 }
+
+/**
+ * A publication date for readers, e.g. "3 March 2025". Empty for a null,
+ * empty or malformed value so the UI never shows the literal "Invalid Date".
+ */
+export function formatPublicationDate(value: string | null): string {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}

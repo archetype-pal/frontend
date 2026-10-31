@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { formatPublicationDate } from '@/lib/publications';
 
 interface Author {
   first_name: string;
@@ -27,19 +28,6 @@ interface ArticleListProps {
 const joinPath = (base: string, part: string) =>
   `${base.replace(/\/+$/, '')}/${part.replace(/^\/+/, '')}`;
 
-// Format a date string, returning '' for null/empty/malformed input so the UI
-// never surfaces the literal 'Invalid Date' to readers.
-const formatDate = (value: string) => {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-};
-
 export default function ArticleList({ title, articles = [], moreLink, limit }: ArticleListProps) {
   const t = useTranslations('content');
   const resolvedTitle = title ?? t('blog.defaultTitle');
@@ -57,7 +45,7 @@ export default function ArticleList({ title, articles = [], moreLink, limit }: A
       {displayed.length > 0 ? (
         <ul className="divide-y divide-border">
           {displayed.map((article) => {
-            const formattedDate = formatDate(article.published_at);
+            const formattedDate = formatPublicationDate(article.published_at);
             const authorName =
               article.author && (article.author.first_name || article.author.last_name)
                 ? [article.author.first_name, article.author.last_name].filter(Boolean).join(' ')
