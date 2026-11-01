@@ -11,6 +11,7 @@ import {
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { Repository } from '@/types/backoffice';
 import { SimpleCrudPage } from '@/components/backoffice/common/simple-crud-page';
+import { PlaceCombobox } from '@/components/backoffice/common/place-combobox';
 
 export default function RepositoriesPage() {
   const t = useTranslations('backoffice');
@@ -22,7 +23,7 @@ export default function RepositoriesPage() {
         createRepository({
           name: String(payload.name ?? ''),
           label: String(payload.label ?? ''),
-          place: String(payload.place ?? ''),
+          place: payload.place as number | null,
           url: null,
           type: null,
         })
@@ -49,7 +50,18 @@ export default function RepositoriesPage() {
         {
           key: 'place',
           label: t('repositories.fieldPlace'),
-          placeholder: t('repositories.fieldPlacePlaceholder'),
+          required: false,
+          parse: (value) => (value ? Number(value) : null),
+          sortValue: (row) => row.place_display ?? '',
+          editor: ({ id, value, onChange, row }) => (
+            <PlaceCombobox
+              id={id}
+              aria-label={row ? t('repositories.placeOf', { name: row.name }) : undefined}
+              value={value ? Number(value) : null}
+              selectedLabel={row?.place_display}
+              onChange={(placeId) => onChange(placeId === null ? '' : String(placeId))}
+            />
+          ),
         },
       ]}
       deleteDescription={t('repositories.deleteDescription')}

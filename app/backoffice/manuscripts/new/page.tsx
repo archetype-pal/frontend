@@ -205,7 +205,7 @@ export default function NewManuscriptPage() {
               <SelectContent>
                 {repositories.map((r) => (
                   <SelectItem key={r.id} value={String(r.id)}>
-                    {r.label || r.name} ({r.place})
+                    {r.label || r.name} ({r.place_display})
                   </SelectItem>
                 ))}
               </SelectContent>

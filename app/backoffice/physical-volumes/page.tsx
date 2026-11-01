@@ -187,7 +187,7 @@ export default function PhysicalVolumesPage() {
               <SelectItem value="__all">{t('physicalVolumes.filterAllRepositories')}</SelectItem>
               {repositories.map((r) => (
                 <SelectItem key={r.id} value={String(r.id)}>
-                  {r.label || r.name} ({r.place})
+                  {r.label || r.name} ({r.place_display})
                 </SelectItem>
               ))}
             </SelectContent>

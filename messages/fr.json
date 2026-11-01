@@ -2453,7 +2453,7 @@
       "fieldLabel": "Libellé",
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Lieu",
-      "fieldPlacePlaceholder": "Londres",
+      "placeOf": "Lieu de {name}",
       "deleteDescription": "Ce dépôt ne contient aucun élément.",
       "deleteBlocked": "Suppression impossible : ce dépôt a {count, plural, one {# élément lié} other {# éléments liés}}. Déplacez-les ou supprimez-les d'abord."
     },

@@ -107,7 +107,8 @@ export interface Repository {
   id: number;
   name: string;
   label: string;
-  place: string;
+  place: number | null;
+  place_display: string | null;
   url: string | null;
   type: string | null;
   current_item_count?: number;

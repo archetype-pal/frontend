@@ -31,6 +31,7 @@ interface PlaceComboboxProps {
   selectedLabel?: string | null;
   /** Id for the trigger button, so a `<Label htmlFor>` names the control. */
   id?: string;
+  'aria-label'?: string;
   className?: string;
 }
 
@@ -44,6 +45,7 @@ export function PlaceCombobox({
   onChange,
   selectedLabel,
   id,
+  'aria-label': ariaLabel,
   className,
 }: PlaceComboboxProps) {
   const { isAuthenticated } = useAuth();
@@ -99,6 +101,7 @@ export function PlaceCombobox({
       <PopoverTrigger asChild>
         <Button
           id={id}
+          aria-label={ariaLabel}
           type="button"
           variant="outline"
           // Radix's PopoverTrigger sets aria-controls while the list is open.
