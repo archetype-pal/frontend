@@ -30,6 +30,7 @@ import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { AdminHandListItem } from '@/types/backoffice';
 import { useDates } from '@/hooks/backoffice/use-lookups';
+import { PlaceCombobox } from '@/components/backoffice/common/place-combobox';
 
 export default function ScribeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslations('backoffice');
@@ -112,10 +113,13 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="scribe-scriptorium">{t('scribesDetail.labelScriptorium')}</Label>
-          <Input
+          <PlaceCombobox
             id="scribe-scriptorium"
             value={form.scriptorium}
-            onChange={(e) => setForm({ scriptorium: e.target.value })}
+            selectedLabel={
+              form.scriptorium === scribe.scriptorium ? scribe.scriptorium_display : undefined
+            }
+            onChange={(placeId) => setForm({ scriptorium: placeId })}
           />
         </div>
         <div className="space-y-1.5">

@@ -2796,7 +2796,7 @@
       "description": "Manage the shared list of places",
       "fieldName": "Name",
       "fieldNamePlaceholder": "e.g. Worcester",
-      "deleteDescription": "Hands linked to this place will no longer have a place."
+      "deleteDescription": "Hands, repositories and scribes linked to this place will no longer have it."
     },
     "importTei": {
       "validatorUnreachable": "Could not reach the validator",

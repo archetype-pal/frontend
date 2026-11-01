@@ -59,7 +59,9 @@ describe('<PlacesPage>', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete place' })[1]);
 
     expect(
-      screen.getByText('Hands linked to this place will no longer have a place.')
+      screen.getByText(
+        'Hands, repositories and scribes linked to this place will no longer have it.'
+      )
     ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 

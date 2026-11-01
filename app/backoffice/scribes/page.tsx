@@ -65,10 +65,12 @@ export default function ScribesPage() {
       size: 120,
     },
     {
-      accessorKey: 'scriptorium',
+      accessorKey: 'scriptorium_display',
       header: t('scribes.colScriptorium'),
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">{row.original.scriptorium || '—'}</span>
+        <span className="text-sm text-muted-foreground">
+          {row.original.scriptorium_display ?? '—'}
+        </span>
       ),
       size: 120,
     },

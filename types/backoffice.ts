@@ -224,7 +224,8 @@ export interface AdminScribeListItem {
   name: string;
   period: number | null;
   period_display: string | null;
-  scriptorium: string;
+  scriptorium: number | null;
+  scriptorium_display: string | null;
   hand_count: number;
 }
 

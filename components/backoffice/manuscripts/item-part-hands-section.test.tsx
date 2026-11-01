@@ -189,13 +189,13 @@ describe('ItemPartHandsSection', () => {
                 id: 31,
                 name: 'Anonymous',
                 period_display: 'Early 12th c.',
-                scriptorium: 'St Andrews',
+                scriptorium_display: 'St Andrews',
               },
               {
                 id: 32,
                 name: 'Anonymous',
                 period_display: 'Late 12th c.',
-                scriptorium: 'Holyrood',
+                scriptorium_display: 'Holyrood',
               },
             ]
           : hands
@@ -226,7 +226,7 @@ describe('formatScribeOptionLabel', () => {
       formatScribeOptionLabel({
         name: 'Unknown',
         period_display: 'Early 12th c.',
-        scriptorium: 'St Andrews',
+        scriptorium_display: 'St Andrews',
       })
     ).toBe('Unknown (Early 12th c. · St Andrews)');
   });
@@ -236,7 +236,7 @@ describe('formatScribeOptionLabel', () => {
       formatScribeOptionLabel({
         name: 'Unknown',
         period_display: 'Early 12th c.',
-        scriptorium: '',
+        scriptorium_display: '',
       })
     ).toBe('Unknown (Early 12th c.)');
 
@@ -244,7 +244,7 @@ describe('formatScribeOptionLabel', () => {
       formatScribeOptionLabel({
         name: 'Unknown',
         period_display: 'Early 12th c.',
-        scriptorium: null,
+        scriptorium_display: null,
       })
     ).toBe('Unknown (Early 12th c.)');
   });
@@ -254,7 +254,7 @@ describe('formatScribeOptionLabel', () => {
       formatScribeOptionLabel({
         name: 'Unknown',
         period_display: null,
-        scriptorium: 'Kelso',
+        scriptorium_display: 'Kelso',
       })
     ).toBe('Unknown (Kelso)');
   });
@@ -264,7 +264,7 @@ describe('formatScribeOptionLabel', () => {
       formatScribeOptionLabel({
         name: 'Unknown',
         period_display: null,
-        scriptorium: '',
+        scriptorium_display: '',
       })
     ).toBe('Unknown');
   });
@@ -274,7 +274,7 @@ describe('formatScribeOptionLabel', () => {
       formatScribeOptionLabel({
         name: 'Unknown',
         period_display: 'Early 12th c.',
-        scriptorium: '   ',
+        scriptorium_display: '   ',
       })
     ).toBe('Unknown (Early 12th c.)');
   });

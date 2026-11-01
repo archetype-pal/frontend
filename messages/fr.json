@@ -2796,7 +2796,7 @@
       "description": "Gérer la liste commune des lieux",
       "fieldName": "Nom",
       "fieldNamePlaceholder": "p. ex. Worcester",
-      "deleteDescription": "Les mains liées à ce lieu n'auront plus de lieu."
+      "deleteDescription": "Les mains, dépôts et scribes liés à ce lieu ne l'auront plus."
     },
     "importTei": {
       "validatorUnreachable": "Impossible de joindre le validateur",

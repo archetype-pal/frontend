@@ -2796,7 +2796,7 @@
       "description": "Verwalten Sie die gemeinsame Liste der Orte",
       "fieldName": "Name",
       "fieldNamePlaceholder": "z. B. Worcester",
-      "deleteDescription": "Mit diesem Ort verknüpfte Hände haben danach keinen Ort mehr."
+      "deleteDescription": "Mit diesem Ort verknüpfte Hände, Bibliotheken und Schreiber haben ihn danach nicht mehr."
     },
     "importTei": {
       "validatorUnreachable": "Der Validator konnte nicht erreicht werden",
