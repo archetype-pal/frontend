@@ -226,6 +226,7 @@ export function ManuscriptViewer({
     [historical.descriptions]
   );
   const catalogueNumbers = historical.catalogue_numbers ?? [];
+  const origins = historical.origins ?? [];
   const totalAnnotations = orderedImages.reduce((sum, img) => sum + annotationCount(img), 0);
 
   // Structured TEI description (roadmap 5.2). The API only ever serves
@@ -587,6 +588,13 @@ export function ManuscriptViewer({
             ) : null}
             {nonEmpty(historical.dating_notes) ? (
               <DetailRow term="Dating notes">{historical.dating_notes}</DetailRow>
+            ) : null}
+            {origins.length > 0 ? (
+              <DetailRow term="Origin">
+                {origins
+                  .map((origin) => (origin.dubitable ? `${origin.place} (?)` : origin.place))
+                  .join(', ')}
+              </DetailRow>
             ) : null}
           </dl>
 

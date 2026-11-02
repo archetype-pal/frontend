@@ -32,6 +32,7 @@ export interface HistoricalItem {
   dating_notes?: string | null;
   catalogue_numbers: CatalogueNumber[];
   descriptions: Description[];
+  origins?: { place: string; dubitable: boolean }[];
 }
 
 export interface CurrentItem {
