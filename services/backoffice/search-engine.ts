@@ -21,8 +21,7 @@ export interface SearchEngineStats {
   error?: string;
 }
 
-export type TaskAction =
-  'reindex' | 'clear' | 'clean_and_reindex' | 'reindex_all' | 'clear_and_rebuild_all';
+export type TaskAction = 'reindex' | 'clear' | 'reindex_all';
 
 export interface TaskActionResponse {
   task_id?: string;

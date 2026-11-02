@@ -17,7 +17,6 @@ import {
   Loader2,
   Database,
   Activity,
-  Zap,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -191,28 +190,18 @@ export default function SearchEnginePage() {
       const actionLabels: Record<string, string> = {
         reindex: t('searchEngine.actionReindex'),
         clear: t('searchEngine.actionClear'),
-        clean_and_reindex: t('searchEngine.actionCleanReindex'),
       };
       const label = `${actionLabels[action]} ${index.label}`;
 
-      if (action === 'clear' || action === 'clean_and_reindex') {
+      if (action === 'clear') {
         setConfirmDialog({
           open: true,
-          title:
-            action === 'clear'
-              ? t('searchEngine.confirmClearTitle', { label: index.label })
-              : t('searchEngine.confirmCleanReindexTitle', { label: index.label }),
-          description:
-            action === 'clear'
-              ? t('searchEngine.confirmClearDesc', {
-                  count: index.meilisearch_count.toLocaleString(),
-                  label: index.label,
-                })
-              : t('searchEngine.confirmCleanReindexDesc', {
-                  label: index.label,
-                  count: index.db_count.toLocaleString(),
-                }),
-          variant: action === 'clear' ? 'destructive' : 'default',
+          title: t('searchEngine.confirmClearTitle', { label: index.label }),
+          description: t('searchEngine.confirmClearDesc', {
+            count: index.meilisearch_count.toLocaleString(),
+            label: index.label,
+          }),
+          variant: 'destructive',
           onConfirm: () => {
             actionMutation.mutate({ action, indexType: index.index_type, label });
             setConfirmDialog((d) => ({ ...d, open: false }));
@@ -233,22 +222,6 @@ export default function SearchEnginePage() {
       variant: 'default',
       onConfirm: () => {
         actionMutation.mutate({ action: 'reindex_all', label: t('searchEngine.reindexAllButton') });
-        setConfirmDialog((d) => ({ ...d, open: false }));
-      },
-    });
-  }, [actionMutation, t]);
-
-  const handleClearAndRebuildAll = useCallback(() => {
-    setConfirmDialog({
-      open: true,
-      title: t('searchEngine.confirmClearRebuildAllTitle'),
-      description: t('searchEngine.confirmClearRebuildAllDesc'),
-      variant: 'destructive',
-      onConfirm: () => {
-        actionMutation.mutate({
-          action: 'clear_and_rebuild_all',
-          label: t('searchEngine.clearRebuildAllButton'),
-        });
         setConfirmDialog((d) => ({ ...d, open: false }));
       },
     });
@@ -334,14 +307,6 @@ export default function SearchEnginePage() {
           <Button onClick={handleReindexAll} disabled={actionMutation.isPending || isUnreachable}>
             <RefreshCw className="h-4 w-4 mr-2" />
             {t('searchEngine.reindexAllButton')}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleClearAndRebuildAll}
-            disabled={actionMutation.isPending || isUnreachable}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            {t('searchEngine.clearRebuildAllButton')}
           </Button>
         </div>
       </div>
@@ -599,10 +564,6 @@ function IndexTable({
                     <DropdownMenuItem onClick={() => onAction('reindex', index)}>
                       <RefreshCw className="h-3.5 w-3.5 mr-2" />
                       {t('searchEngine.actionReindex')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onAction('clean_and_reindex', index)}>
-                      <Zap className="h-3.5 w-3.5 mr-2" />
-                      {t('searchEngine.actionCleanReindex')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
