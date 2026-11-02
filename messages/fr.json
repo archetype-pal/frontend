@@ -2668,6 +2668,16 @@
       "labelRemoveFailed": "Échec de la suppression de {label}",
       "noLabel": "Aucun(e) {label}",
       "deleteCatalogueNumberAria": "Supprimer le numéro de catalogue",
+      "origins": "Origines",
+      "origin": "Origine",
+      "originPlaceAria": "Lieu d'origine {n}",
+      "originDoubtful": "Douteuse",
+      "originDoubtfulAria": "L'origine {n} est douteuse",
+      "removeOriginAria": "Supprimer l'origine {n}",
+      "originEvidenceAria": "Preuve de l'origine {n}",
+      "newOriginPlaceAria": "Lieu de la nouvelle origine",
+      "addEvidencePlaceholder": "Ajouter une preuve...",
+      "evidenceOptionalPlaceholder": "Preuve (facultative)",
       "addUrlPlaceholder": "Ajouter une URL...",
       "sourcePlaceholder": "Référence bibliographique",
       "numberPlaceholder": "Numéro",
@@ -2796,7 +2806,7 @@
       "description": "Gérer la liste commune des lieux",
       "fieldName": "Nom",
       "fieldNamePlaceholder": "p. ex. Worcester",
-      "deleteDescription": "Les mains, dépôts et scribes liés à ce lieu ne l'auront plus."
+      "deleteDescription": "Les mains, dépôts et scribes liés à ce lieu ne l'auront plus. Un lieu qui est l'origine d'un manuscrit ne peut pas être supprimé."
     },
     "importTei": {
       "validatorUnreachable": "Impossible de joindre le validateur",

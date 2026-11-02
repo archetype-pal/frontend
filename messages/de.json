@@ -2668,6 +2668,16 @@
       "labelRemoveFailed": "{label} konnte nicht entfernt werden",
       "noLabel": "Kein {label}",
       "deleteCatalogueNumberAria": "Katalognummer löschen",
+      "origins": "Herkunft",
+      "origin": "Herkunftsort",
+      "originPlaceAria": "Herkunftsort {n}",
+      "originDoubtful": "Unsicher",
+      "originDoubtfulAria": "Herkunftsort {n} ist unsicher",
+      "removeOriginAria": "Herkunftsort {n} entfernen",
+      "originEvidenceAria": "Beleg für Herkunftsort {n}",
+      "newOriginPlaceAria": "Ort des neuen Herkunftsorts",
+      "addEvidencePlaceholder": "Beleg hinzufügen...",
+      "evidenceOptionalPlaceholder": "Beleg (optional)",
       "addUrlPlaceholder": "URL hinzufügen...",
       "sourcePlaceholder": "Bibliografische Referenz",
       "numberPlaceholder": "Nummer",
@@ -2796,7 +2806,7 @@
       "description": "Verwalten Sie die gemeinsame Liste der Orte",
       "fieldName": "Name",
       "fieldNamePlaceholder": "z. B. Worcester",
-      "deleteDescription": "Mit diesem Ort verknüpfte Hände, Bibliotheken und Schreiber haben ihn danach nicht mehr."
+      "deleteDescription": "Mit diesem Ort verknüpfte Hände, Bibliotheken und Schreiber haben ihn danach nicht mehr. Ein Ort, der Herkunftsort einer Handschrift ist, kann nicht gelöscht werden."
     },
     "importTei": {
       "validatorUnreachable": "Der Validator konnte nicht erreicht werden",

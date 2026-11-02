@@ -16,6 +16,7 @@ interface InlineEditProps {
   className?: string;
   inputClassName?: string;
   disabled?: boolean;
+  ariaLabel?: string;
 }
 
 /**
@@ -31,6 +32,7 @@ export function InlineEdit({
   className,
   inputClassName,
   disabled = false,
+  ariaLabel,
 }: InlineEditProps) {
   const t = useTranslations('backoffice');
   const [editing, setEditing] = useState(false);
@@ -91,6 +93,7 @@ export function InlineEdit({
           onKeyDown={handleKeyDown}
           onBlur={save}
           disabled={saving}
+          aria-label={ariaLabel}
           className={cn('h-7 text-sm', inputClassName)}
         />
         <Button
@@ -124,6 +127,7 @@ export function InlineEdit({
       type="button"
       onClick={() => !disabled && setEditing(true)}
       disabled={disabled}
+      aria-label={ariaLabel}
       className={cn(
         'group inline-flex items-center gap-1.5 rounded px-1 py-0.5 text-sm transition-colors hover:bg-accent',
         !value && 'text-muted-foreground italic',

@@ -134,6 +134,15 @@ export interface CatalogueNumber {
   url: string | null;
 }
 
+export interface HistoricalItemOrigin {
+  id: number;
+  historical_item: number;
+  place: number;
+  place_display: string;
+  evidence: string;
+  dubitable: boolean;
+}
+
 export interface HistoricalItemDescription {
   id: number;
   historical_item: number;
@@ -214,6 +223,7 @@ export interface HistoricalItemDetail {
   dating_notes: string;
   catalogue_numbers: CatalogueNumber[];
   descriptions: HistoricalItemDescription[];
+  origins: HistoricalItemOrigin[];
   item_parts: ItemPartNested[];
 }
 

@@ -60,7 +60,7 @@ describe('<PlacesPage>', () => {
 
     expect(
       screen.getByText(
-        'Hands, repositories and scribes linked to this place will no longer have it.'
+        "Hands, repositories and scribes linked to this place will no longer have it. A place that is a manuscript's origin cannot be deleted."
       )
     ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));

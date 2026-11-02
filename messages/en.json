@@ -2668,6 +2668,16 @@
       "labelRemoveFailed": "Failed to remove {label}",
       "noLabel": "No {label}",
       "deleteCatalogueNumberAria": "Delete catalogue number",
+      "origins": "Origins",
+      "origin": "Origin",
+      "originPlaceAria": "Place of origin {n}",
+      "originDoubtful": "Doubtful",
+      "originDoubtfulAria": "Origin {n} is doubtful",
+      "removeOriginAria": "Remove origin {n}",
+      "originEvidenceAria": "Evidence for origin {n}",
+      "newOriginPlaceAria": "Place of the new origin",
+      "addEvidencePlaceholder": "Add evidence...",
+      "evidenceOptionalPlaceholder": "Evidence (optional)",
       "addUrlPlaceholder": "Add URL...",
       "sourcePlaceholder": "Bibliographic Reference",
       "numberPlaceholder": "Number",
@@ -2796,7 +2806,7 @@
       "description": "Manage the shared list of places",
       "fieldName": "Name",
       "fieldNamePlaceholder": "e.g. Worcester",
-      "deleteDescription": "Hands, repositories and scribes linked to this place will no longer have it."
+      "deleteDescription": "Hands, repositories and scribes linked to this place will no longer have it. A place that is a manuscript's origin cannot be deleted."
     },
     "importTei": {
       "validatorUnreachable": "Could not reach the validator",
