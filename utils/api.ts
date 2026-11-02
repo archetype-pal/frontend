@@ -186,7 +186,7 @@ export class PublicationNotFoundError extends Error {
 }
 
 export async function getPublicationItem(slug: string): Promise<Publication> {
-  const res = await apiFetch(`/api/v1/media/publications/${slug}`);
+  const res = await apiFetch(`/api/v1/media/publications/${slug}/`);
   if (res.status === 404) throw new PublicationNotFoundError();
   if (!res.ok) throw new Error('Failed to fetch publication item');
 
