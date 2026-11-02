@@ -115,8 +115,7 @@ Notes:
 - Missing required env values will fail startup: `next.config.mjs` checks all
   four, `lib/env.ts` the three URLs.
 - `next.config.mjs` rewrites `/iiif-proxy/*` to `NEXT_PUBLIC_IIIF_UPSTREAM`,
-  `/iiif-proxy/scans/*` to the API, and `/media/*` to the API when the site and
-  API origins differ.
+  and `/media/*` to the API when the site and API origins differ.
 
 ## Backend Coordination
 
