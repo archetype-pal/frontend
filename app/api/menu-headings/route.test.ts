@@ -16,7 +16,7 @@ vi.mock('@/lib/auth-token-server', async (importOriginal) => ({
 
 import { NextRequest } from 'next/server';
 import { GET as LIST, POST } from './route';
-import { DELETE, GET, PATCH } from './[slug]/route';
+import { DELETE, PATCH } from './[slug]/route';
 
 const PROFILE_PATH = '/api/v1/auth/profile';
 
@@ -48,7 +48,7 @@ function request(method: string, site = 'same-origin'): NextRequest {
   return new NextRequest('http://site.test/api/menu-headings/help', {
     method,
     headers: { 'sec-fetch-site': site },
-    body: method === 'GET' || method === 'DELETE' ? undefined : '{"title":{"en":"Help"}}',
+    body: method === 'DELETE' ? undefined : '{"title":{"en":"Help"}}',
   });
 }
 
@@ -58,10 +58,7 @@ const writes = [
   ['DELETE /api/menu-headings/[slug]', () => DELETE(request('DELETE'), params)],
 ] as const;
 
-const reads = [
-  ['GET /api/menu-headings', () => LIST()],
-  ['GET /api/menu-headings/[slug]', () => GET(request('GET'), params)],
-] as const;
+const reads = [['GET /api/menu-headings', () => LIST()]] as const;
 
 describe('menu-heading writes from another origin', () => {
   it.each([

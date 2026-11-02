@@ -7,17 +7,6 @@ import { MANAGEMENT_HEADINGS_PATH } from '@/lib/backoffice/management-paths';
 
 type RouteParams = { params: Promise<{ slug: string }> };
 
-export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());
-  if (refusal) return refusal;
-
-  const { slug } = await params;
-  const res = await authFetch(`${MANAGEMENT_HEADINGS_PATH}${encodeURIComponent(slug)}/`, token);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return NextResponse.json(data, { status: res.status });
-  return NextResponse.json(data);
-}
-
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!isSameOriginRequest(request)) return crossOriginRefusal();
   const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());
