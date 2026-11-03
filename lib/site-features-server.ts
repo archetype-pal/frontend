@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { isRecord } from '@/lib/is-record';
 import { apiFetch, authFetch } from './api-fetch';
 import {
@@ -13,12 +14,6 @@ import {
 } from './site-features';
 
 const SITE_FEATURES_PATH = '/api/v1/app-settings/';
-
-/**
- * Cache tag shared with the PUT route below: `revalidateTag(SITE_FEATURES_TAG)`
- * there invalidates the entry this `next: { tags }` writes here.
- */
-export const SITE_FEATURES_TAG = 'site-features';
 
 let lastGood: SiteFeaturesConfig | null = null;
 
@@ -37,16 +32,15 @@ function degradedRead(): SiteFeaturesRead {
  * last-known-good is per-process and lost on restart: it bounds the window in
  * which a blip re-enables everything an admin turned off, it does not close it.
  *
- * This fetch is on the critical path of every page render, so `revalidate: 60`
- * (backstop) plus the tag the PUT handler purges (immediate) keeps it off the
- * backend on every request.
+ * Read fresh for every request, never from Next's data cache, so a save shows
+ * on the next page and nothing has to purge a cached copy. Within a request
+ * the read is shared: the root layout, a section's gate and its page make one
+ * call between them.
  */
-export async function readSiteFeatures(): Promise<SiteFeaturesRead> {
+export const readSiteFeatures = cache(async (): Promise<SiteFeaturesRead> => {
   const defaults = getDefaultConfig();
   try {
-    const res = await apiFetch(SITE_FEATURES_PATH, {
-      next: { revalidate: 60, tags: [SITE_FEATURES_TAG] },
-    });
+    const res = await apiFetch(SITE_FEATURES_PATH, { cache: 'no-store' });
     if (!res.ok) return degradedRead(); // apiFetch already logged the non-2xx above.
     const raw = await res.json();
     // If the response is `null`, an array, or a primitive, we'd crash on
@@ -104,7 +98,7 @@ export async function readSiteFeatures(): Promise<SiteFeaturesRead> {
   } catch {
     return degradedRead();
   }
-}
+});
 
 /** Upserts the given config via the backend's superuser-only PUT; throws on failure. */
 export async function writeSiteFeatures(

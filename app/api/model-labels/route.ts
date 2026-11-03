@@ -1,8 +1,8 @@
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeSuperuser, getServerAuthToken } from '@/lib/auth-token-server';
 import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
-import { readModelLabels, writeModelLabels, SITE_LABELS_TAG } from '@/lib/model-labels-server';
+import { readModelLabels, writeModelLabels } from '@/lib/model-labels-server';
 import {
   DEFAULT_MODEL_LABELS,
   normalizeLocalizedValue,
@@ -64,8 +64,6 @@ export async function PUT(request: NextRequest) {
       { status }
     );
   }
-  // `{ expire: 0 }` hard-expires the tag; a named cacheLife profile only marks it stale.
-  revalidateTag(SITE_LABELS_TAG, { expire: 0 });
   revalidatePath('/', 'layout');
   // The upsert landed; 204 says so without inventing a config the client would cache.
   return config ? NextResponse.json(config) : new NextResponse(null, { status: 204 });

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { apiFetch, authFetch } from './api-fetch';
 import {
   getDefaultModelLabelsConfig,
@@ -17,12 +18,6 @@ function storedLabels(raw: unknown): Partial<Record<ModelLabelKey, unknown>> | n
 }
 
 /**
- * Cache tag shared with the PUT route below: `revalidateTag(SITE_LABELS_TAG)`
- * there invalidates the entry this `next: { tags }` writes here.
- */
-export const SITE_LABELS_TAG = 'site-labels';
-
-/**
  * Model labels are backend-owned (`SiteLabel` rows, superuser-editable via the
  * backoffice); they previously lived in a container-local JSON file that
  * survived neither a restart nor a second replica. Any failure — network
@@ -30,29 +25,28 @@ export const SITE_LABELS_TAG = 'site-labels';
  * SSR never 500s over a backend hiccup, flagged `degraded` so the GET route can
  * refuse to serve them as if they were the stored labels.
  *
- * The root layout awaits this on every render, hence the revalidation window
- * (backstop) plus `revalidateTag` on write (immediate) — see the PUT handler in
- * `app/api/model-labels/route.ts`.
+ * Read fresh for every request, never from Next's data cache, so a save shows
+ * on the next page; within a request the read is shared.
  */
-export async function readModelLabels(): Promise<ModelLabelsConfig & { degraded?: boolean }> {
-  const defaults = getDefaultModelLabelsConfig();
-  try {
-    const res = await apiFetch(SITE_LABELS_PATH, {
-      next: { revalidate: 60, tags: [SITE_LABELS_TAG] },
-    });
-    if (!res.ok) return { ...defaults, degraded: true }; // apiFetch already logged the non-2xx.
-    const raw = await res.json();
-    const labels = storedLabels(raw);
-    if (!labels) {
-      // A 200 with no stored labels isn't an HTTP-layer failure, so apiFetch never sees it.
-      console.error(`[API] GET ${SITE_LABELS_PATH} → 200 without a usable labels map`, raw);
+export const readModelLabels = cache(
+  async (): Promise<ModelLabelsConfig & { degraded?: boolean }> => {
+    const defaults = getDefaultModelLabelsConfig();
+    try {
+      const res = await apiFetch(SITE_LABELS_PATH, { cache: 'no-store' });
+      if (!res.ok) return { ...defaults, degraded: true }; // apiFetch already logged the non-2xx.
+      const raw = await res.json();
+      const labels = storedLabels(raw);
+      if (!labels) {
+        // A 200 with no stored labels isn't an HTTP-layer failure, so apiFetch never sees it.
+        console.error(`[API] GET ${SITE_LABELS_PATH} → 200 without a usable labels map`, raw);
+        return { ...defaults, degraded: true };
+      }
+      return { labels: normalizeModelLabels(labels) };
+    } catch {
       return { ...defaults, degraded: true };
     }
-    return { labels: normalizeModelLabels(labels) };
-  } catch {
-    return { ...defaults, degraded: true };
   }
-}
+);
 
 /**
  * Upserts only the given keys via the backend's superuser-only PUT; throws if

@@ -1,8 +1,8 @@
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeSuperuser, getServerAuthToken } from '@/lib/auth-token-server';
 import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
-import { readSiteFeatures, writeSiteFeatures, SITE_FEATURES_TAG } from '@/lib/site-features-server';
+import { readSiteFeatures, writeSiteFeatures } from '@/lib/site-features-server';
 import {
   mergeBranding,
   mergeFeatureFlags,
@@ -84,9 +84,6 @@ export async function PUT(request: NextRequest) {
     console.error('[site-features] backend write failed', err);
     return NextResponse.json({ error: 'Failed to update site features' }, { status: 502 });
   }
-  // `{ expire: 0 }` purges the cached fetch entry; a named cache-life profile
-  // would only mark it stale, and a stale entry still serves the old body.
-  revalidateTag(SITE_FEATURES_TAG, { expire: 0 });
   revalidatePath('/', 'layout');
   // Return the normalized config (with sectionOrder canonicalized) so the
   // client's cache reflects what's actually on disk.
