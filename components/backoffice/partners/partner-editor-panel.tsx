@@ -9,6 +9,7 @@ import { ImageUploadZone } from '@/components/backoffice/common/image-upload-zon
 import { getCarouselImageUrl } from '@/utils/api';
 import type { PartnerItem } from '@/types/backoffice';
 import { Input } from '@/components/ui/input';
+import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 
 interface PartnerEditorPanelProps {
   /** The item being edited, or null for "create new" mode. */
@@ -55,23 +56,12 @@ export function PartnerEditorPanel({ item, saving, onSave, onCancel }: PartnerEd
     });
   }, [canSave, name, url, logoFile, logoPath, onSave]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      // Caps Lock makes `e.key` come through as 'S', so lower-case the
-      // letter before comparing — otherwise Cmd/Ctrl+S silently fails to
-      // save for caps-locked users.
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        handleSave();
-      }
-    },
-    [handleSave]
-  );
+  useKeyboardShortcut('mod+s', handleSave);
 
   const currentLogoUrl = logoPath ? getCarouselImageUrl(logoPath) : null;
 
   return (
-    <div className="space-y-5" onKeyDown={handleKeyDown}>
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
           {isNew ? t('partners.newItemTitle') : t('partners.editItemTitle')}
