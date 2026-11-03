@@ -1,42 +1,16 @@
 import { revalidatePath } from 'next/cache';
-import { NextRequest, NextResponse } from 'next/server';
-import { authFetch } from '@/lib/api-fetch';
-import { authorizeSuperuser, getServerAuthToken } from '@/lib/auth-token-server';
-import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
-import { MANAGEMENT_HEADINGS_PATH } from '@/lib/backoffice/management-paths';
+import type { NextRequest } from 'next/server';
+import {
+  MANAGEMENT_HEADINGS_PATH,
+  readFromManagement,
+  writeToManagement,
+} from '@/lib/backoffice/management-route';
 
-export async function GET() {
-  const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());
-  if (refusal) return refusal;
-
-  const res = await authFetch(MANAGEMENT_HEADINGS_PATH, token);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return NextResponse.json(data, { status: res.status });
-  return NextResponse.json(data);
+export function GET() {
+  return readFromManagement(MANAGEMENT_HEADINGS_PATH);
 }
 
-export async function POST(request: NextRequest) {
-  if (!isSameOriginRequest(request)) return crossOriginRefusal();
-  const { token, refusal } = await authorizeSuperuser(await getServerAuthToken());
-  if (refusal) return refusal;
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const res = await authFetch(MANAGEMENT_HEADINGS_PATH, token, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return NextResponse.json(data, { status: res.status });
-
-  // Headings render in the header on every page of the site, so bust the
-  // whole layout the same way page writes do.
-  revalidatePath('/', 'layout');
-  return NextResponse.json(data, { status: 201 });
+// Headings render in the header on every page of the site.
+export function POST(request: NextRequest) {
+  return writeToManagement(request, MANAGEMENT_HEADINGS_PATH, () => revalidatePath('/', 'layout'));
 }
