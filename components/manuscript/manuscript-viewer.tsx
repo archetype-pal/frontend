@@ -8,7 +8,6 @@ import { useAuth } from '@/contexts/auth-context';
 
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { cn } from '@/lib/utils';
-import { getSavedImageAllographIds } from '@/lib/manuscript-viewer-data';
 import { useResizable } from '@/hooks/use-resizable';
 import { AnnotationFilterPanel } from './annotation-filter-panel';
 import { AnnotationSettingsPanel } from './annotation-settings-panel';
@@ -42,6 +41,7 @@ import { getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
 
 import { dbIdFromA9s } from '@/lib/anno-mapping';
 import { useViewerAnnotationLoader } from '@/hooks/manuscript/use-viewer-annotation-loader';
+import { useImageAllographs } from '@/hooks/manuscript/use-image-allographs';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
@@ -280,13 +280,6 @@ export default function ManuscriptViewer({
       resetEditorFrom,
       viewerApiRef,
     });
-  // The allographs on this image's saved graphs scope the allograph filter;
-  // they are unknown until this image's annotations have loaded.
-  const imageAllographIdsLoaded = annotationsLoadedFor === imageId;
-  const imageAllographIds = React.useMemo(
-    () => (imageAllographIdsLoaded ? getSavedImageAllographIds(initialA9sAnnots) : []),
-    [imageAllographIdsLoaded, initialA9sAnnots]
-  );
 
   const {
     isInCollection,
@@ -447,43 +440,15 @@ export default function ManuscriptViewer({
     viewerApiRef,
   });
 
-  const allographsForThisImage = React.useMemo(() => {
-    if (!allographs.length) return [];
-
-    if (!imageAllographIds.length) return allographs;
-
-    const idSet = new Set(imageAllographIds);
-    return allographs.filter((a) => idSet.has(a.id));
-  }, [allographs, imageAllographIds]);
-
-  const headerAllographsForThisImage = React.useMemo(() => {
-    if (!imageAllographIdsLoaded || !allographs.length || !imageAllographIds.length) return [];
-
-    const idSet = new Set(imageAllographIds);
-    return allographs.filter((a) => idSet.has(a.id));
-  }, [allographs, imageAllographIds, imageAllographIdsLoaded]);
-
-  React.useEffect(() => {
-    if (!filteredAllograph) return;
-    if (!imageAllographIdsLoaded) return;
-    if (headerAllographsForThisImage.some((allograph) => allograph.id === filteredAllograph.id)) {
-      return;
-    }
-
-    setFilteredAllograph(undefined);
-    setHoveredAllograph(undefined);
-  }, [
-    headerAllographsForThisImage,
-    filteredAllograph,
-    imageAllographIdsLoaded,
-    setFilteredAllograph,
-    setHoveredAllograph,
-  ]);
-
-  const availableAllographFilterIds = React.useMemo(
-    () => allographsForThisImage.map((allograph) => allograph.id),
-    [allographsForThisImage]
-  );
+  const { allographsForThisImage, headerAllographsForThisImage, availableAllographFilterIds } =
+    useImageAllographs({
+      allographs,
+      annotations: initialA9sAnnots,
+      loaded: annotationsLoadedFor === imageId,
+      filteredAllograph,
+      setFilteredAllograph,
+      setHoveredAllograph,
+    });
 
   const availableHandFilterIds = React.useMemo(
     () => handsForThisImage.map((hand) => hand.id),
