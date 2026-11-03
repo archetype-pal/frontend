@@ -40,7 +40,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { createImageText, validateTei, type TeiValidationError } from '@/services/image-texts';
+import {
+  createImageText,
+  validateTei,
+  type CreateImageTextPayload,
+  type TeiValidationError,
+} from '@/services/image-texts';
 import {
   describeCreateError,
   ExistingTextNotice,
@@ -120,14 +125,10 @@ export function NewImageTextDialog({
     });
   }, [open, defaultItemImage, defaultType]);
 
+  // The payload is built at the click: the handler sees the form as rendered,
+  // while a `mutationFn` closure is swapped in by an effect and can lag a render.
   const createMut = useMutation({
-    mutationFn: () =>
-      createImageText({
-        item_image: Number(itemImage),
-        type,
-        language,
-        ...(fromTeiFile ? { content: tei?.content ?? '' } : {}),
-      }),
+    mutationFn: (payload: CreateImageTextPayload) => createImageText(payload),
     onSuccess: (saved) => {
       const toastKey = fromTeiFile ? 'importTei.toastImported' : 'imageTexts.toastCreated';
       toast.success(t(toastKey, { type: saved.type.toLowerCase(), id: saved.id }));
@@ -137,9 +138,9 @@ export function NewImageTextDialog({
       onOpenChange(false);
       router.push(`/backoffice/image-texts/${saved.id}`);
     },
-    onError: (err) => {
+    onError: (err, sent) => {
       toast.error(t(fromTeiFile ? 'importTei.toastImportFailed' : 'imageTexts.toastCreateFailed'), {
-        description: describeCreateError(err, t, itemImageNumber, type),
+        description: describeCreateError(err, t, sent.item_image, sent.type),
       });
     },
   });
@@ -215,7 +216,18 @@ export function NewImageTextDialog({
           >
             {tCommon('cancel')}
           </Button>
-          <Button size="sm" disabled={!canSubmit} onClick={() => createMut.mutate()}>
+          <Button
+            size="sm"
+            disabled={!canSubmit}
+            onClick={() =>
+              createMut.mutate({
+                item_image: itemImageNumber,
+                type,
+                language,
+                ...(fromTeiFile ? { content: tei?.content ?? '' } : {}),
+              })
+            }
+          >
             {createMut.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
             {t(copy.submit)}
           </Button>
