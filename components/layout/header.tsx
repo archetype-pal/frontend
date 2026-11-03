@@ -490,7 +490,7 @@ export default function Header({
                 <LanguageSwitcher />
                 {isAuthenticated ? (
                   <>
-                    {user?.is_superuser && (
+                    {user?.capabilities?.manage && (
                       <Button
                         asChild
                         variant="ghost"
