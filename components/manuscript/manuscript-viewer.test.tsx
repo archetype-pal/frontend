@@ -54,7 +54,6 @@ vi.mock('@/contexts/collection-context', () => ({
   useCollection: () => ({
     items: [],
     collections: [{ id: 'default', name: 'Collection', items: [] }],
-    canManageCollections: true,
     addItem: vi.fn(),
     removeItem: vi.fn(),
     isInCollection: () => false,
