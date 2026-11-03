@@ -62,7 +62,7 @@ describe('/about/[slug] with the About section switched off', () => {
     mockState.aboutEnabled = false;
   });
 
-  it("still renders a page under a custom heading (proxy.ts doesn't gate /about/*)", async () => {
+  it('still renders a page under a custom heading, which About does not own', async () => {
     mockState.page = page('help');
     await expect(renderPage()).resolves.toBeTruthy();
   });
