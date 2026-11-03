@@ -39,9 +39,7 @@ describe('readSiteFeatures', () => {
     );
     const config = await readSiteFeatures();
     expect(config.features.manuscriptDescriptions).toBe(false);
-    expect(apiFetch).toHaveBeenCalledWith('/api/v1/app-settings/', {
-      next: { revalidate: 60, tags: ['site-features'] },
-    });
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/app-settings/', { cache: 'no-store' });
   });
 
   it('defaults every flag to enabled when the backend response has no `features` key', async () => {

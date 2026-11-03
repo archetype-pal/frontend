@@ -2,8 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultModelLabelsConfig, type ModelLabelsConfig } from '@/lib/model-labels';
 
-const { revalidateTag } = vi.hoisted(() => ({ revalidateTag: vi.fn() }));
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag }));
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 const { apiFetch, authFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),
@@ -29,7 +28,6 @@ beforeEach(() => {
 
   apiFetch.mockReset();
   authFetch.mockReset();
-  revalidateTag.mockReset();
   getServerAuthToken.mockReset();
   getServerAuthToken.mockResolvedValue('su-token');
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -105,16 +103,7 @@ describe('PUT /api/model-labels', () => {
     expect(JSON.parse(authFetch.mock.calls[1][2].body).labels).toEqual({});
   });
 
-  it('hard-expires the cache tag on success', async () => {
-    await PUT(
-      putRequest({
-        labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } },
-      })
-    );
-    expect(revalidateTag).toHaveBeenCalledWith('site-labels', { expire: 0 });
-  });
-
-  it('acknowledges a write whose response carries no labels, and still purges the tag', async () => {
+  it('acknowledges a write whose response carries no labels', async () => {
     authFetch.mockImplementation(async (path: string) =>
       path === '/api/v1/auth/profile'
         ? jsonResponse({ is_superuser: true })
@@ -128,7 +117,6 @@ describe('PUT /api/model-labels', () => {
     );
 
     expect(response.status).toBe(204);
-    expect(revalidateTag).toHaveBeenCalledWith('site-labels', { expire: 0 });
   });
 
   it('propagates an upstream 4xx with its reason', async () => {

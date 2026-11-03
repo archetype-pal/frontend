@@ -10,8 +10,7 @@ const { apiFetch, authFetch } = vi.hoisted(() => ({
 
 vi.mock('./api-fetch', () => ({ apiFetch, authFetch }));
 
-const { readModelLabels, writeModelLabels, SITE_LABELS_TAG } =
-  await import('./model-labels-server');
+const { readModelLabels, writeModelLabels } = await import('./model-labels-server');
 
 beforeEach(() => {
   apiFetch.mockReset();
@@ -20,7 +19,7 @@ beforeEach(() => {
 });
 
 describe('readModelLabels', () => {
-  it('returns the backend labels merged over defaults, from a tagged fetch', async () => {
+  it('returns the backend labels merged over defaults, read fresh', async () => {
     apiFetch.mockResolvedValueOnce(
       jsonResponse({
         labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } },
@@ -36,9 +35,7 @@ describe('readModelLabels', () => {
     });
     expect(config.labels.appManuscripts).toEqual(DEFAULT_MODEL_LABELS.appManuscripts);
     expect(config.degraded).toBeUndefined();
-    expect(apiFetch).toHaveBeenCalledWith('/api/v1/site-labels/', {
-      next: { revalidate: 60, tags: [SITE_LABELS_TAG] },
-    });
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/site-labels/', { cache: 'no-store' });
   });
 
   it.each([

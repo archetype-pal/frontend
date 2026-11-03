@@ -4,7 +4,7 @@ import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 const { apiFetch, authFetch } = vi.hoisted(() => ({
   apiFetch: vi.fn(),
@@ -19,7 +19,6 @@ vi.mock('@/lib/auth-token-server', async (importOriginal) => ({
   getServerAuthToken,
 }));
 
-import { revalidateTag } from 'next/cache';
 import type { NextRequest } from 'next/server';
 import { GET, PUT } from './route';
 import { jsonResponse } from '@/test/responses';
@@ -218,13 +217,6 @@ describe('a degraded read is never passed off as the stored config', () => {
     const response = await PUT(putRequest(getDefaultConfig()));
     expect(response.status).toBe(503);
     expect(authFetch.mock.calls.some(([path]) => path === '/api/v1/app-settings/')).toBe(false);
-  });
-});
-
-describe('PUT /api/app-settings — cache invalidation', () => {
-  it('purges the cached read rather than only marking it stale', async () => {
-    await PUT(putRequest(getDefaultConfig()));
-    expect(revalidateTag).toHaveBeenCalledWith('site-features', { expire: 0 });
   });
 });
 
