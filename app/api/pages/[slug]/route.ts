@@ -4,6 +4,7 @@ import { authFetch } from '@/lib/api-fetch';
 import { authorizeSuperuser, getServerAuthToken } from '@/lib/auth-token-server';
 import { crossOriginRefusal, isSameOriginRequest } from '@/lib/same-origin';
 import { MANAGEMENT_PAGES_PATH } from '@/lib/backoffice/management-paths';
+import { pageHref } from '@/lib/pages';
 
 type RouteParams = { params: Promise<{ slug: string }> };
 
@@ -40,10 +41,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!res.ok) return NextResponse.json(data, { status: res.status });
 
   revalidatePath('/', 'layout');
-  revalidatePath(`/about/${slug}`);
+  revalidatePath(pageHref(slug));
   // The slug itself may have just changed — revalidate the new one too.
   if (typeof data?.slug === 'string' && data.slug !== slug) {
-    revalidatePath(`/about/${data.slug}`);
+    revalidatePath(pageHref(data.slug));
   }
   return NextResponse.json(data);
 }
@@ -64,6 +65,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 
   revalidatePath('/', 'layout');
-  revalidatePath(`/about/${slug}`);
+  revalidatePath(pageHref(slug));
   return new NextResponse(null, { status: 204 });
 }
