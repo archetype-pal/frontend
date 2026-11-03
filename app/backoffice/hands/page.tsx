@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import type { SortingState } from '@tanstack/react-table';
 import { PenTool, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,12 +12,9 @@ import {
   sortableHeader,
   type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
-import { DataPagination } from '@/components/ui/data-pagination';
 import { getHands } from '@/services/backoffice/scribes';
-import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { toOrdering } from '@/lib/backoffice/ordering';
-import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+import { useServerList } from '@/hooks/backoffice/use-server-list';
 import type { AdminHandListItem } from '@/types/backoffice';
 
 function buildColumns(t: ReturnType<typeof useTranslations>): DataTableColumn<AdminHandListItem>[] {
@@ -99,18 +94,8 @@ export default function HandsPage() {
   const t = useTranslations('backoffice');
   const { isAuthenticated } = useAuth();
   const columns = buildColumns(t);
-  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = usePageSize('hands', 20);
-  const tableRef = useRef<HTMLDivElement>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const ordering = toOrdering(sorting, ORDERING_FIELDS);
-
-  const queryParams = {
-    limit: pageSize,
-    offset: page * pageSize,
-    ...(search ? { search } : {}),
-    ...(ordering ? { ordering } : {}),
-  };
+  const list = useServerList('hands', 20, ORDERING_FIELDS);
+  const queryParams = list.params;
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.hands.list(queryParams),
@@ -132,37 +117,16 @@ export default function HandsPage() {
       </div>
 
       <DataTable
-        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
+        {...list.searchProps}
         searchPlaceholder={t('hands.searchPlaceholder')}
-        pagination={false}
-        sorting={sorting}
-        onSortingChange={(next) => {
-          setSorting(next);
-          setPage(0);
-        }}
+        {...list.tableProps(data?.count)}
       />
-
-      {data && (
-        <DataPagination
-          scrollTargetRef={tableRef}
-          totalItems={data.count}
-          page={page + 1}
-          pageSize={pageSize}
-          onPageChange={(p) => setPage(p - 1)}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(0);
-          }}
-        />
-      )}
     </div>
   );
 }
