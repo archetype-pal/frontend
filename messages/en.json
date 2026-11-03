@@ -1287,6 +1287,8 @@
       "labelName": "Name",
       "labelPlace": "Place",
       "selectNoDate": "None",
+      "labelDisplayOrder": "Display order",
+      "displayOrderHint": "Lower comes first among this part's hands; the first is the viewer's default for a new annotation.",
       "selectPlacePlaceholder": "Select place...",
       "searchPlacePlaceholder": "Search places...",
       "noPlacesFound": "No places found.",

@@ -51,6 +51,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       name: h.name,
       place: h.place,
       date: h.date,
+      display_order: h.display_order,
       item_part_images: h.item_part_images ?? [],
     }),
     saveFn: (hid, form) => updateHand(hid, form),
@@ -202,6 +203,23 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="hand-display-order">{t('handsDetail.labelDisplayOrder')}</Label>
+          <Input
+            id="hand-display-order"
+            type="number"
+            min={0}
+            step={1}
+            value={form.display_order}
+            aria-describedby="hand-display-order-hint"
+            onChange={(e) =>
+              setForm({ display_order: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })
+            }
+          />
+          <p id="hand-display-order-hint" className="text-xs text-muted-foreground">
+            {t('handsDetail.displayOrderHint')}
+          </p>
         </div>
       </div>
 
