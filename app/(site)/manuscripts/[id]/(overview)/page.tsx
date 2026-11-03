@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { Manuscript, ManuscriptImage } from '@/types/manuscript';
-import { ManuscriptViewer } from './manuscript-viewer';
+import { ManuscriptViewer } from '../manuscript-viewer';
+import { loadManuscript } from './manuscript';
 import { notFound } from 'next/navigation';
 import { apiFetch } from '@/lib/api-fetch';
 import { fetchHands } from '@/services/manuscripts';
@@ -11,21 +12,11 @@ import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
 
+/** The part, or null when it could not be read, which the page reports. */
 async function getManuscript(id: string): Promise<Manuscript | null> {
-  try {
-    const response = await apiFetch(`/api/v1/manuscripts/item-parts/${id}/`);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        notFound();
-      }
-      return null;
-    }
-
-    return response.json();
-  } catch {
-    return null;
-  }
+  const manuscript = await loadManuscript(id).catch(() => undefined);
+  if (manuscript === null) notFound();
+  return manuscript ?? null;
 }
 
 async function getManuscriptImages(id: string): Promise<ManuscriptImage[]> {

@@ -23,8 +23,7 @@ vi.mock('@/services/manuscripts', () => ({
     id: 9,
     item_part: 5,
     locus: 'fol. 1r',
-    number_of_annotations: 14,
-    number_of_image_annotations: 12,
+    number_of_annotations: 12,
   }),
   fetchManuscript: async () => null,
 }));

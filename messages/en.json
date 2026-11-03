@@ -746,7 +746,6 @@
       "sharedCollectionErrorTitle": "Could not load collection",
       "sharedCollectionErrorDesc": "The public collection link could not be loaded. Please try again.",
       "openYourCollection": "Open your collection",
-      "toastLocalCollectionsUnavailable": "Local collections are not available in this browser session.",
       "toastSaveSharedCollectionFailed": "Could not save this shared collection.",
       "toastSavedSharedCollection": "Saved {name} to your collections",
       "emptySharedDesc": "This shared collection has no public items.",

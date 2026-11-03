@@ -746,7 +746,6 @@
       "sharedCollectionErrorTitle": "Impossible de charger la collection",
       "sharedCollectionErrorDesc": "Le lien de collection publique n'a pas pu être chargé. Veuillez réessayer.",
       "openYourCollection": "Ouvrir votre collection",
-      "toastLocalCollectionsUnavailable": "Les collections locales ne sont pas disponibles dans cette session de navigateur.",
       "toastSaveSharedCollectionFailed": "Impossible d'enregistrer cette collection partagée.",
       "toastSavedSharedCollection": "{name} enregistrée dans vos collections",
       "emptySharedDesc": "Cette collection partagée ne contient aucun élément public.",

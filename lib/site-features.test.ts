@@ -17,6 +17,7 @@ import {
   mergeFeatureFlags,
   mergeThemeColors,
   normalizeSectionOrder,
+  parseSiteFeatures,
   resolveNavOrder,
   type FeatureKey,
   type SectionKey,
@@ -303,5 +304,18 @@ describe('feature metadata', () => {
       expect(typeof siteFeatures.featureDescriptions[key]).toBe('string');
       expect(siteFeatures.featureDescriptions[key].length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('parseSiteFeatures', () => {
+  it('is null for a body that is not a settings object', () => {
+    for (const junk of [null, [], 'oops', 7]) expect(parseSiteFeatures(junk)).toBeNull();
+  });
+
+  it('reads a stored document over the defaults', () => {
+    const config = parseSiteFeatures({ sections: { lightbox: false } });
+    expect(config?.sections.lightbox).toBe(false);
+    expect(config?.sections.search).toBe(true);
+    expect(config?.theme).toEqual(getDefaultThemeColors());
   });
 });

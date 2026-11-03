@@ -20,7 +20,7 @@ export interface UseGraphEditFlowOpts {
 
 export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) {
   const { isAuthenticated, user } = useAuth();
-  const isSuperuser = Boolean(user?.is_superuser);
+  const canEditEditorial = Boolean(user?.capabilities?.annotate_editorially);
   const t = useTranslations('search');
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -44,9 +44,9 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
           return;
         }
 
-        // The write API hides editorial graphs from non-superusers, so every
-        // save of one would 404. Leave them out of the edit instead.
-        const graphs = isSuperuser
+        // The write API hides editorial graphs from users who may not annotate
+        // editorially, so every save of one would 404. Leave them out instead.
+        const graphs = canEditEditorial
           ? fetched
           : fetched.filter((g) => g.annotation_type !== 'editorial');
         if (graphs.length === 0) {
@@ -109,7 +109,7 @@ export function useGraphEditFlow({ onGraphDeleted }: UseGraphEditFlowOpts = {}) 
         setIsHydrating(false);
       }
     },
-    [allographs, isSuperuser, t, isAuthenticated]
+    [allographs, canEditEditorial, t, isAuthenticated]
   );
 
   const deleteOne = React.useCallback(

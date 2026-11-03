@@ -746,7 +746,6 @@
       "sharedCollectionErrorTitle": "Sammlung konnte nicht geladen werden",
       "sharedCollectionErrorDesc": "Der öffentliche Sammlungslink konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
       "openYourCollection": "Ihre Sammlung öffnen",
-      "toastLocalCollectionsUnavailable": "Lokale Sammlungen sind in dieser Browsersitzung nicht verfügbar.",
       "toastSaveSharedCollectionFailed": "Diese geteilte Sammlung konnte nicht gespeichert werden.",
       "toastSavedSharedCollection": "{name} in Ihren Sammlungen gespeichert",
       "emptySharedDesc": "Diese geteilte Sammlung enthält keine öffentlichen Elemente.",

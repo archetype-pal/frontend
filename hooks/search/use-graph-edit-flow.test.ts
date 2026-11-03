@@ -8,7 +8,15 @@ import * as manuscriptsService from '@/services/manuscripts';
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({
     isAuthenticated: true,
-    user: { id: 1, is_staff: true, is_superuser: false },
+    user: {
+      id: 1,
+      capabilities: {
+        annotate: true,
+        annotate_editorially: false,
+        read_drafts: true,
+        manage: false,
+      },
+    },
   }),
 }));
 
@@ -62,7 +70,7 @@ describe('useGraphEditFlow', () => {
     expect(result.current.hands[0].name).toBe('Hand 1');
   });
 
-  it('leaves editorial graphs out of the edit for a non-superuser', async () => {
+  it('leaves editorial graphs out of the edit for a user who may not annotate editorially', async () => {
     vi.spyOn(annotationsService, 'fetchGraphsByIds').mockResolvedValue([
       {
         id: 101,
@@ -100,7 +108,7 @@ describe('useGraphEditFlow', () => {
     expect(result.current.editingGraphs.map((g) => g.id)).toEqual([101]);
   });
 
-  it('does not open the dialog when a non-superuser selected only editorial graphs', async () => {
+  it('does not open the dialog when such a user selected only editorial graphs', async () => {
     vi.spyOn(annotationsService, 'fetchGraphsByIds').mockResolvedValue([
       {
         id: 102,

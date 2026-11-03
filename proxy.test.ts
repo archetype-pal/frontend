@@ -2,146 +2,53 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Re-imported per test (after `vi.resetModules`) so the module-scope config
-// cache starts empty each time.
-let proxy: typeof import('./proxy').proxy;
+import { AUTH_TOKEN_COOKIE } from '@/lib/auth-token-cookie';
+import { proxy } from './proxy';
 
-beforeEach(async () => {
-  vi.resetModules();
-  ({ proxy } = await import('./proxy'));
+const fetchMock = vi.fn();
+
+beforeEach(() => {
+  fetchMock.mockReset();
+  vi.stubGlobal('fetch', fetchMock);
 });
 
 afterEach(() => {
-  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
-describe('proxy section gating', () => {
-  it('keeps a disabled section blocked once the config read starts failing', async () => {
-    vi.useFakeTimers();
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
+describe('proxy', () => {
+  it('sets the CSP and its nonce on a page, without reading any configuration', () => {
+    const response = proxy(new NextRequest('http://localhost:3000/lightbox'));
 
-    fetchMock.mockResolvedValueOnce(
-      new Response(JSON.stringify({ sections: { lightbox: false }, searchCategories: {} }))
-    );
-    const first = await proxy(new NextRequest('http://localhost:3000/lightbox'));
-    expect(first.headers.get('x-middleware-rewrite')).toContain('/not-found');
-
-    vi.advanceTimersByTime(11_000);
-    fetchMock.mockRejectedValueOnce(new Error('backend down'));
-    const second = await proxy(new NextRequest('http://localhost:3000/lightbox'));
-    expect(second.headers.get('x-middleware-rewrite')).toContain('/not-found');
+    const nonce = response.headers.get('x-nonce');
+    expect(nonce).toBeTruthy();
+    expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('location')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('still throttles config fetches to one per TTL while the backend is down', async () => {
-    vi.useFakeTimers();
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
+  it('leaves search routing to the search pages', () => {
+    const response = proxy(new NextRequest('http://localhost:3000/search?keyword=Kelso'));
 
-    fetchMock.mockResolvedValueOnce(
-      new Response(JSON.stringify({ sections: {}, searchCategories: {} }))
-    );
-    await proxy(new NextRequest('http://localhost:3000/'));
-
-    vi.advanceTimersByTime(11_000);
-    fetchMock.mockRejectedValue(new Error('backend down'));
-    await proxy(new NextRequest('http://localhost:3000/'));
-    await proxy(new NextRequest('http://localhost:3000/'));
-    await proxy(new NextRequest('http://localhost:3000/'));
-
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(response.headers.get('location')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
-});
 
-describe('proxy search category redirects', () => {
-  it('redirects the search index to the first enabled category before rendering', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          sections: {},
-          searchCategories: { manuscripts: { enabled: false }, images: { enabled: true } },
-        })
-      )
-    );
-
-    const response = await proxy(new NextRequest('http://localhost:3000/search?keyword=Kelso'));
+  it('sends a signed-out backoffice request to the sign-in page', () => {
+    const response = proxy(new NextRequest('http://localhost:3000/backoffice/scribes'));
 
     expect(response.headers.get('location')).toBe(
-      'http://localhost:3000/search/images?keyword=Kelso'
+      'http://localhost:3000/login?next=%2Fbackoffice%2Fscribes'
     );
+    expect(response.headers.get('Content-Security-Policy')).toBeTruthy();
   });
 
-  it('redirects a disabled search category to the first enabled category', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
+  it('lets a backoffice request with the auth cookie through', () => {
+    const request = new NextRequest('http://localhost:3000/backoffice', {
+      headers: { cookie: `${AUTH_TOKEN_COOKIE}=token` },
+    });
 
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          sections: {},
-          searchCategories: { manuscripts: { enabled: false }, images: { enabled: true } },
-        })
-      )
-    );
-
-    const response = await proxy(
-      new NextRequest('http://localhost:3000/search/manuscripts?keyword=Kelso')
-    );
-
-    expect(response.headers.get('location')).toBe(
-      'http://localhost:3000/search/images?keyword=Kelso'
-    );
-  });
-
-  it('redirects an invalid search category to the first enabled category', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          sections: {},
-          searchCategories: { manuscripts: { enabled: false }, images: { enabled: true } },
-        })
-      )
-    );
-
-    const response = await proxy(new NextRequest('http://localhost:3000/search/i?keyword=Kelso'));
-
-    expect(response.headers.get('location')).toBe(
-      'http://localhost:3000/search/images?keyword=Kelso'
-    );
-  });
-
-  it('rewrites to not-found only when every configured category is disabled', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          sections: {},
-          searchCategories: {
-            manuscripts: { enabled: false },
-            images: { enabled: false },
-            scribes: { enabled: false },
-            hands: { enabled: false },
-            graphs: { enabled: false },
-            texts: { enabled: false },
-            clauses: { enabled: false },
-            people: { enabled: false },
-            places: { enabled: false },
-          },
-        })
-      )
-    );
-
-    const response = await proxy(new NextRequest('http://localhost:3000/search/manuscripts'));
-
-    expect(response.headers.get('x-middleware-rewrite')).toContain('/not-found');
+    expect(proxy(request).headers.get('location')).toBeNull();
   });
 });

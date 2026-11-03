@@ -25,16 +25,17 @@ export function BackofficeShell({ children }: { children: React.ReactNode }) {
     if (isReady && !user) router.replace('/login');
   }, [isReady, user, router]);
 
-  // Staff guard — the whole backoffice is staff-only. Once the profile loads,
-  // bounce a non-staff (but authenticated) user back to the public site. This
-  // gates every backoffice page centrally, so individual pages need no guard.
+  // The backoffice is the management API's front end, so it is for users who may
+  // manage. Once the profile loads, bounce anyone else back to the public site.
+  // This gates every backoffice page centrally, so individual pages need no guard.
+  const canManage = Boolean(user?.capabilities?.manage);
   useEffect(() => {
-    if (user && !user.is_staff) {
+    if (user && !canManage) {
       router.replace('/');
     }
-  }, [user, router]);
+  }, [user, canManage, router]);
 
-  if (!user?.is_staff) {
+  if (!canManage) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

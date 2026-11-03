@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.replace(user.is_superuser ? '/backoffice' : '/');
+      router.replace(user.capabilities?.manage ? '/backoffice' : '/');
     }
   }, [user, router]);
 
@@ -34,7 +34,7 @@ export default function LoginPage() {
 
     try {
       const profile = await login(username, password);
-      router.push(profile.is_superuser ? '/backoffice' : '/');
+      router.push(profile.capabilities?.manage ? '/backoffice' : '/');
     } catch (error) {
       setError((error as Error).message);
     } finally {

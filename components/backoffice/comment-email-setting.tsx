@@ -16,12 +16,12 @@ export function CommentEmailSetting() {
   const { user } = useAuth();
   const t = useTranslations('backoffice');
   const queryClient = useQueryClient();
-  const isSuperuser = Boolean(user?.is_superuser);
+  const canManage = Boolean(user?.capabilities?.manage);
 
   const { data, error } = useQuery({
     queryKey: backofficeKeys.commentEmailSetting(),
     queryFn: getCommentEmailSetting,
-    enabled: isSuperuser,
+    enabled: canManage,
   });
 
   const save = useMutation({
@@ -30,7 +30,7 @@ export function CommentEmailSetting() {
     onError: (err) => toastApiError(t('comments.emailSettingFailed'), err),
   });
 
-  if (!isSuperuser) return null;
+  if (!canManage) return null;
   const email = user?.email;
 
   return (

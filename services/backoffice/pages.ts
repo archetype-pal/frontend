@@ -1,27 +1,18 @@
-import { throwIfNotOk } from './api-client';
+import { backofficeDelete, backofficeGet, backofficePatch, backofficePost } from './api-client';
 import type { MenuHeading, Page, PageListItem } from '@/lib/pages';
 
-// Pages go through Next's own `/api/pages` proxy (not straight to Django
-// like most other backoffice resources) so that creating/editing/deleting a
-// page can bust the Next route cache for the About menu/sidebar, which is
-// rendered on every page of the site. See app/api/pages/route.ts.
-const PAGES_API_PATH = '/api/pages';
-// Menu headings go through `/api/menu-headings` for the same reason.
-const MENU_HEADINGS_API_PATH = '/api/menu-headings';
+const PAGES_PATH = '/api/v1/management/pages/';
+const MENU_HEADINGS_PATH = '/api/v1/management/menu-headings/';
 
-async function parseOrThrow<T>(res: Response): Promise<T> {
-  await throwIfNotOk(res);
-  return res.json() as Promise<T>;
-}
+const pagePath = (slug: string) => `${PAGES_PATH}${encodeURIComponent(slug)}/`;
+const headingPath = (slug: string) => `${MENU_HEADINGS_PATH}${encodeURIComponent(slug)}/`;
 
 export function getPages(): Promise<PageListItem[]> {
-  return fetch(PAGES_API_PATH).then((res) => parseOrThrow<PageListItem[]>(res));
+  return backofficeGet<PageListItem[]>(PAGES_PATH);
 }
 
 export function getPage(slug: string): Promise<Page> {
-  return fetch(`${PAGES_API_PATH}/${encodeURIComponent(slug)}`).then((res) =>
-    parseOrThrow<Page>(res)
-  );
+  return backofficeGet<Page>(pagePath(slug));
 }
 
 export type PageWritePayload = Partial<
@@ -32,58 +23,34 @@ export type PageWritePayload = Partial<
 >;
 
 export function createPage(data: PageWritePayload): Promise<Page> {
-  return fetch(PAGES_API_PATH, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  }).then((res) => parseOrThrow<Page>(res));
+  return backofficePost<Page>(PAGES_PATH, data);
 }
 
 export function updatePage(slug: string, data: PageWritePayload): Promise<Page> {
-  return fetch(`${PAGES_API_PATH}/${encodeURIComponent(slug)}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  }).then((res) => parseOrThrow<Page>(res));
+  return backofficePatch<Page>(pagePath(slug), data);
 }
 
-export async function deletePage(slug: string): Promise<void> {
-  const res = await fetch(`${PAGES_API_PATH}/${encodeURIComponent(slug)}`, {
-    method: 'DELETE',
-  });
-  if (res.status === 204) return;
-  await parseOrThrow<void>(res);
+export function deletePage(slug: string): Promise<void> {
+  return backofficeDelete(pagePath(slug));
 }
 
 export function getMenuHeadings(): Promise<MenuHeading[]> {
-  return fetch(MENU_HEADINGS_API_PATH).then((res) => parseOrThrow<MenuHeading[]>(res));
+  return backofficeGet<MenuHeading[]>(MENU_HEADINGS_PATH);
 }
 
 export type MenuHeadingWritePayload = Partial<Pick<MenuHeading, 'slug' | 'title'>>;
 
 export function createMenuHeading(data: MenuHeadingWritePayload): Promise<MenuHeading> {
-  return fetch(MENU_HEADINGS_API_PATH, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  }).then((res) => parseOrThrow<MenuHeading>(res));
+  return backofficePost<MenuHeading>(MENU_HEADINGS_PATH, data);
 }
 
 export function updateMenuHeading(
   slug: string,
   data: MenuHeadingWritePayload
 ): Promise<MenuHeading> {
-  return fetch(`${MENU_HEADINGS_API_PATH}/${encodeURIComponent(slug)}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  }).then((res) => parseOrThrow<MenuHeading>(res));
+  return backofficePatch<MenuHeading>(headingPath(slug), data);
 }
 
-export async function deleteMenuHeading(slug: string): Promise<void> {
-  const res = await fetch(`${MENU_HEADINGS_API_PATH}/${encodeURIComponent(slug)}`, {
-    method: 'DELETE',
-  });
-  if (res.status === 204) return;
-  await parseOrThrow<void>(res);
+export function deleteMenuHeading(slug: string): Promise<void> {
+  return backofficeDelete(headingPath(slug));
 }
