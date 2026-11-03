@@ -30,7 +30,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
     // The page also lists the custom menu headings for the nav-order editor.
-    String(input).startsWith('/api/menu-headings')
+    String(input) === '/api/proxy/api/v1/management/menu-headings'
       ? new Response('[]', { status: 200 })
       : init?.method === 'PUT'
         ? (putResponse ?? new Response(String(init.body), { status: 200 }))
@@ -126,7 +126,9 @@ describe('<SiteFeaturesPage>', () => {
     const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT');
     expect(put?.[0]).toBe(SETTINGS_URL);
     expect(JSON.parse(put?.[1].body).searchCategories.images.enabled).toBe(false);
-    expect(fetchMock.mock.calls[0][0]).toBe(SETTINGS_URL);
+    expect(fetchMock.mock.calls.some(([url, init]) => url === SETTINGS_URL && !init?.method)).toBe(
+      true
+    );
   });
 
   it("shows Django's reason when it refuses a save", async () => {
