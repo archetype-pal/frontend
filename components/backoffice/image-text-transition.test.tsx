@@ -22,4 +22,17 @@ describe('<TransitionPopover>', () => {
     await waitFor(() => expect(screen.queryByDisplayValue('ready')).toBeNull());
     expect(onTransition).toHaveBeenCalledTimes(2);
   });
+
+  it('moves a selection to Review by default when there is no current status', async () => {
+    const onTransition = vi.fn().mockResolvedValue({});
+    render(<TransitionPopover label="Move" onTransition={onTransition} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }));
+    expect(screen.queryByText('Current')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '→ Review' }));
+
+    await waitFor(() =>
+      expect(onTransition).toHaveBeenCalledWith({ to_status: 'Review', note: undefined })
+    );
+  });
 });
