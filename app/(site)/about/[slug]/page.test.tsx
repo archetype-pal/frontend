@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDefaultConfig } from '@/lib/site-features';
 import type { MenuHeading, Page } from '@/lib/pages';
 import AboutPage from './page';
+import AboutPageLayout from './layout';
 
 const mockState = vi.hoisted(() => ({
   page: null as Page | null,
@@ -86,5 +87,21 @@ describe('/about/[slug] with the About section on', () => {
   it('404s a missing page', async () => {
     mockState.page = null;
     await expect(renderPage()).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+});
+
+describe('/about/[slug] layout', () => {
+  const renderLayout = () =>
+    AboutPageLayout({ children: 'page', params: Promise.resolve({ slug: 'how-to-use' }) });
+
+  it('404s before the loading screen when the page is hidden', async () => {
+    mockState.aboutEnabled = false;
+    mockState.page = page(null);
+    await expect(renderLayout()).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('renders the page when it is visible', async () => {
+    mockState.page = page('help');
+    await expect(renderLayout()).resolves.toBe('page');
   });
 });
