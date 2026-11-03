@@ -26,7 +26,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { TransitionPopover } from '@/components/backoffice/image-text-transition';
 import { TeiTextEditor } from '@/components/backoffice/tei-text-editor';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
@@ -50,7 +50,6 @@ import {
 } from '@/services/backoffice/image-text-history';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
-const STATUSES: ImageTextStatus[] = ['Draft', 'Review', 'Live', 'Reviewed'];
 const TYPES = ['Transcription', 'Translation'];
 
 export default function ImageTextEditorPage({ params }: { params: Promise<{ textId: string }> }) {
@@ -236,10 +235,10 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
             {t('imageTexts.deleteButton')}
           </Button>
           <PreviewAsPublicDialog textId={textId} currentStatus={status} />
-          <TransitionAction
+          <TransitionPopover
             currentStatus={status}
-            pending={transitionMut.isPending}
-            onTransition={(payload) => transitionMut.mutate(payload)}
+            label={t('imageTexts.transitionButton')}
+            onTransition={transitionMut.mutateAsync}
           />
           <Button
             size="sm"
@@ -344,94 +343,6 @@ export default function ImageTextEditorPage({ params }: { params: Promise<{ text
 
       <HistoryPanel history={history} />
     </div>
-  );
-}
-
-function TransitionAction({
-  currentStatus,
-  pending,
-  onTransition,
-}: {
-  currentStatus: ImageTextStatus;
-  pending: boolean;
-  onTransition: (payload: TransitionPayload) => void;
-}) {
-  const t = useTranslations('backoffice');
-  const NEXT: Record<ImageTextStatus, ImageTextStatus> = {
-    Draft: 'Review',
-    Review: 'Live',
-    Live: 'Reviewed',
-    Reviewed: 'Live',
-  };
-  const [open, setOpen] = useState(false);
-  const [target, setTarget] = useState<ImageTextStatus>(NEXT[currentStatus]);
-  const [note, setNote] = useState('');
-
-  return (
-    <Popover
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (next) {
-          setTarget(NEXT[currentStatus]);
-          setNote('');
-        }
-      }}
-    >
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
-          {t('imageTexts.transitionButton')}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 space-y-3">
-        <div className="text-xs">
-          <p className="text-muted-foreground">{t('imageTexts.transitionCurrent')}</p>
-          <p className="font-medium">{currentStatus}</p>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">{t('imageTexts.transitionTargetLabel')}</Label>
-          <Select value={target} onValueChange={(v) => setTarget(v as ImageTextStatus)}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUSES.filter((s) => s !== currentStatus).map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">{t('imageTexts.transitionNoteLabel')}</Label>
-          <Input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t('imageTexts.transitionNotePlaceholder')}
-            className="h-8 text-xs"
-          />
-        </div>
-        <div className="flex justify-end gap-2 pt-1">
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setOpen(false)}>
-            {t('imageTexts.transitionCancel')}
-          </Button>
-          <Button
-            size="sm"
-            className="h-7 text-xs"
-            disabled={pending}
-            onClick={() => {
-              onTransition({ to_status: target, note: note.trim() || undefined });
-              setOpen(false);
-            }}
-          >
-            {pending
-              ? t('imageTexts.transitionSaving')
-              : t('imageTexts.transitionApply', { target })}
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }
 
