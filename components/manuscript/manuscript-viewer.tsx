@@ -88,8 +88,8 @@ export default function ManuscriptViewer({
   capabilities,
 }: ManuscriptViewerProps): React.JSX.Element {
   const viewerCapabilities = React.useMemo(
-    () => capabilities ?? getViewerCapabilities(mode),
-    [capabilities, mode]
+    () => capabilities ?? getViewerCapabilities(),
+    [capabilities]
   );
 
   const { isAuthenticated } = useAuth();
