@@ -10,7 +10,7 @@ import { makeGraph } from '@/test/annotation-fixtures';
 // summary line. Network-bound pieces (crops, the API, the router) are faked.
 
 const mockState = vi.hoisted(() => ({
-  user: null as { is_staff: boolean } | null,
+  user: null as { capabilities: { annotate: boolean } } | null,
   refresh: vi.fn(),
   crop: vi.fn(),
 }));
@@ -232,7 +232,7 @@ describe('AnnotationGallery states', () => {
   });
 
   it('pauses editing when the hand or allograph names failed to load', () => {
-    mockState.user = { is_staff: true };
+    mockState.user = { capabilities: { annotate: true } };
     renderGallery({ supportingDataIncomplete: true });
 
     expect(screen.getByRole('alert').textContent).toContain('editing is paused');
@@ -243,8 +243,8 @@ describe('AnnotationGallery states', () => {
     expect(toggle.getAttribute('aria-checked')).toBe('false');
   });
 
-  it('lets staff switch to editing mode with the A key', () => {
-    mockState.user = { is_staff: true };
+  it('lets a user who may annotate switch to editing mode with the A key', () => {
+    mockState.user = { capabilities: { annotate: true } };
     renderGallery();
 
     fireEvent.keyDown(window, { key: 'a' });
@@ -310,7 +310,7 @@ describe('AnnotationGallery export', () => {
 
 describe('AnnotationGallery delete', () => {
   it('hides a deleted graph without a confirm and brings it back on Undo', () => {
-    mockState.user = { is_staff: true };
+    mockState.user = { capabilities: { annotate: true } };
     const confirmSpy = vi.spyOn(window, 'confirm');
     renderGallery();
     fireEvent.keyDown(window, { key: 'a' });
@@ -362,7 +362,7 @@ describe('AnnotationGallery crops', () => {
 
 describe('AnnotationGallery edit sheet', () => {
   it('passes a failed allograph fetch to the sheet, and fetches again on retry', async () => {
-    mockState.user = { is_staff: true };
+    mockState.user = { capabilities: { annotate: true } };
     fetchAllographsMock.mockRejectedValueOnce(new Error('500'));
     renderGallery();
     fireEvent.keyDown(window, { key: 'a' });

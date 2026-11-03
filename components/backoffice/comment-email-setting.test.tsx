@@ -41,7 +41,10 @@ async function loadedSwitch() {
 }
 
 beforeEach(() => {
-  authState.user = { is_superuser: true, email: 'ali@example.org' };
+  authState.user = {
+    capabilities: { annotate: true, annotate_editorially: true, read_drafts: true, manage: true },
+    email: 'ali@example.org',
+  };
   getSettingMock.mockReset().mockResolvedValue({ email_enabled: true });
   setSettingMock.mockReset();
   toastErrorMock.mockReset();
@@ -109,7 +112,10 @@ describe('<CommentEmailSetting>', () => {
   });
 
   it('cannot be switched when the account has no email address', async () => {
-    authState.user = { is_superuser: true, email: '' };
+    authState.user = {
+      capabilities: { annotate: true, annotate_editorially: true, read_drafts: true, manage: true },
+      email: '',
+    };
     renderSetting();
 
     const toggle = await screen.findByRole('switch', {
@@ -135,8 +141,16 @@ describe('<CommentEmailSetting>', () => {
     expect(toggle.hasAttribute('disabled')).toBe(true);
   });
 
-  it('is not shown to staff who are not superusers', () => {
-    authState.user = { is_superuser: false, is_staff: true, email: 'staff@example.org' };
+  it('is not shown to a user who may not manage', () => {
+    authState.user = {
+      capabilities: {
+        annotate: true,
+        annotate_editorially: false,
+        read_drafts: true,
+        manage: false,
+      },
+      email: 'staff@example.org',
+    };
     renderSetting();
 
     expect(screen.queryByRole('switch')).toBeNull();
