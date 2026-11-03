@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
@@ -8,25 +8,35 @@ import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { toast } from 'sonner';
 import SiteFeaturesPage from './page';
 import { renderWithQueryClient } from '@/test/render';
+import { jsonResponse } from '@/test/responses';
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 
+const SETTINGS_URL = '/api/proxy/api/v1/app-settings';
+
 let getStatus: number;
+let putResponse: Response | null;
 let responseConfig: SiteFeaturesConfig;
+const fetchMock = vi.fn();
 
 beforeEach(() => {
   getStatus = 200;
+  putResponse = null;
   responseConfig = getDefaultConfig();
-  vi.stubGlobal('fetch', async (input: RequestInfo | URL) =>
+  fetchMock.mockReset();
+  vi.stubGlobal('fetch', fetchMock);
+  fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
     // The page also lists the custom menu headings for the nav-order editor.
     String(input).startsWith('/api/menu-headings')
       ? new Response('[]', { status: 200 })
-      : getStatus === 200
-        ? new Response(JSON.stringify(responseConfig), { status: 200 })
-        : new Response(JSON.stringify({ error: 'unavailable' }), { status: getStatus })
+      : init?.method === 'PUT'
+        ? (putResponse ?? new Response(String(init.body), { status: 200 }))
+        : getStatus === 200
+          ? new Response(JSON.stringify(responseConfig), { status: 200 })
+          : new Response(JSON.stringify({ detail: 'unavailable' }), { status: getStatus })
   );
 });
 
@@ -34,7 +44,7 @@ const renderPage = () => renderWithQueryClient(<SiteFeaturesPage />);
 
 describe('<SiteFeaturesPage>', () => {
   it('shows an error state instead of an editable form full of defaults', async () => {
-    getStatus = 503;
+    getStatus = 500;
     renderPage();
 
     expect(await screen.findByText('Failed to load site customisation')).toBeTruthy();
@@ -105,5 +115,32 @@ describe('<SiteFeaturesPage>', () => {
     expect(screen.getAllByText('Date').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Locus').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Tags').length).toBeGreaterThan(0);
+  });
+
+  it("reads Django's settings and saves the edited document back to it", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole('switch', { name: 'searchCategoryImages' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT');
+    expect(put?.[0]).toBe(SETTINGS_URL);
+    expect(JSON.parse(put?.[1].body).searchCategories.images.enabled).toBe(false);
+    expect(fetchMock.mock.calls[0][0]).toBe(SETTINGS_URL);
+  });
+
+  it("shows Django's reason when it refuses a save", async () => {
+    putResponse = jsonResponse(
+      { searchCategories: ['At least one search category must stay enabled.'] },
+      400
+    );
+    renderPage();
+    fireEvent.click(await screen.findByRole('switch', { name: 'searchCategoryImages' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    expect(vi.mocked(toast.error).mock.calls[0][1]).toEqual({
+      description: 'searchCategories: At least one search category must stay enabled.',
+    });
   });
 });
