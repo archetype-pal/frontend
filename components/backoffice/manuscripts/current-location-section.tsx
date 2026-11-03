@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -17,12 +17,8 @@ import {
 } from '@/components/ui/select';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
-import { CurrentItemCombobox } from './current-item-combobox';
-import {
-  createItemPart,
-  updateItemPart,
-  createCurrentItem,
-} from '@/services/backoffice/manuscripts';
+import { PartLocationFields, usePartLocation } from './part-location-fields';
+import { createItemPart, createCurrentItem } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
@@ -199,46 +195,11 @@ function SinglePartLocation({
   historicalItemId: number;
   part: ItemPartNested;
 }) {
-  const { isAuthenticated } = useAuth();
   const t = useTranslations('backoffice');
-  const queryClient = useQueryClient();
-  const [currentItemId, setCurrentItemId] = useState<number | null>(part.current_item);
-  const [locus, setLocus] = useState(part.current_item_locus);
-  const [customLabel, setCustomLabel] = useState(part.custom_label);
-  const [dirty, setDirty] = useState(false);
-
-  const saveMut = useMutation({
-    mutationFn: async () => {
-      if (!isAuthenticated) throw new Error('No token');
-
-      if (
-        currentItemId !== part.current_item ||
-        locus !== part.current_item_locus ||
-        customLabel !== part.custom_label
-      ) {
-        await updateItemPart(part.id, {
-          current_item: currentItemId,
-          current_item_locus: locus,
-          custom_label: customLabel,
-        });
-      }
-    },
-    onSuccess: () => {
-      toast.success(t('manuscriptsDetail.locationUpdated'));
-      queryClient.invalidateQueries({
-        queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
-      });
-      setDirty(false);
-    },
-    onError: (err) => {
-      toastApiError(t('manuscriptsDetail.locationUpdateFailed'), err);
-    },
+  const { location, change, dirty, save } = usePartLocation(part, historicalItemId, {
+    saved: t('manuscriptsDetail.locationUpdated'),
+    failed: t('manuscriptsDetail.locationUpdateFailed'),
   });
-
-  const handleCurrentItemChange = (id: number | null) => {
-    setCurrentItemId(id);
-    setDirty(true);
-  };
 
   return (
     <div className="space-y-3">
@@ -251,54 +212,20 @@ function SinglePartLocation({
           <Button
             size="sm"
             className="h-7 text-xs"
-            onClick={() => saveMut.mutate()}
-            disabled={saveMut.isPending}
+            onClick={() => save.mutate()}
+            disabled={save.isPending}
           >
-            {saveMut.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {save.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
             {t('manuscriptsDetail.saveLocation')}
           </Button>
         )}
       </div>
       <div className="rounded-md border p-4 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="space-y-1.5 sm:col-span-2">
-            <FieldLabel helpField="itemPart.currentItem">
-              {t('manuscriptsDetail.physicalVolume')}
-            </FieldLabel>
-            <CurrentItemCombobox
-              value={currentItemId}
-              onChange={handleCurrentItemChange}
-              selectedLabel={part.current_item_display}
-              className="w-full"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <FieldLabel helpField="itemPart.locus">{t('manuscriptsNew.fieldLocus')}</FieldLabel>
-            <Input
-              value={locus}
-              onChange={(e) => {
-                setLocus(e.target.value);
-                setDirty(true);
-              }}
-              placeholder={t('manuscriptsNew.locusPlaceholder')}
-              className="h-9"
-            />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <FieldLabel helpField="itemPart.customLabel">
-            {t('manuscriptsDetail.customLabel')}
-          </FieldLabel>
-          <Input
-            value={customLabel}
-            onChange={(e) => {
-              setCustomLabel(e.target.value);
-              setDirty(true);
-            }}
-            placeholder={t('manuscriptsDetail.customLabelPlaceholder')}
-            className="h-9"
-          />
-        </div>
+        <PartLocationFields
+          location={location}
+          onChange={change}
+          selectedLabel={part.current_item_display}
+        />
       </div>
     </div>
   );
