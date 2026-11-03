@@ -5,10 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
-  MSDESC_AREA_PALETTES,
   MSDESC_AREAS,
-  MSDESC_PHRASE_LEAVES,
-  MSDESC_PROSE_LEAVES,
   MSDESC_VOCABS,
   msdescAreaLabelKey,
   msdescVocabLabelKey,
@@ -84,20 +81,7 @@ describe('msdesc vocab', () => {
     }
   });
 
-  it('area ids are the four msDesc areas, each with a non-empty palette', () => {
+  it('area ids are the four msDesc areas', () => {
     expect(MSDESC_AREAS).toEqual(['msIdentifier', 'msContents', 'physDesc', 'history']);
-    expect(Object.keys(MSDESC_AREA_PALETTES).sort()).toEqual([...MSDESC_AREAS].sort());
-    for (const area of MSDESC_AREAS) {
-      expect(MSDESC_AREA_PALETTES[area].length).toBeGreaterThan(0);
-    }
-  });
-
-  it('leaf classification contains the four phrase-content leaves', () => {
-    expect(MSDESC_PHRASE_LEAVES).toEqual(['author', 'origPlace', 'origDate', 'title']);
-    // Prose and phrase classifications must stay disjoint: a leaf is either
-    // rich-editable or form-edited via the @key shim, never both.
-    for (const leaf of MSDESC_PHRASE_LEAVES) {
-      expect(MSDESC_PROSE_LEAVES).not.toContain(leaf);
-    }
   });
 });

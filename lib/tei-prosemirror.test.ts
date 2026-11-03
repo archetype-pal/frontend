@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { docToTei, indexLinkableElements, teiToDoc } from '@/lib/tei-prosemirror';
+import {
+  docToTei,
+  indexLinkableElements,
+  roundTripsExactly,
+  teiToDoc,
+} from '@/lib/tei-prosemirror';
 
 function roundTrip(tei: string): string {
   return docToTei(teiToDoc(tei));
@@ -72,6 +77,21 @@ function indexByText(tei: string): Record<number, string> {
   for (const { index, text } of map.values()) out[index] = text.replace(/\s+/g, ' ').trim();
   return out;
 }
+
+describe('roundTripsExactly', () => {
+  it('passes TEI the model holds byte for byte', () => {
+    expect(roundTripsExactly('<p><seg type="address">Omnibus</seg></p>')).toBe(true);
+  });
+
+  it('fails TEI the model would reshape, such as a container around the paragraphs', () => {
+    expect(roundTripsExactly('<provenance><p>x</p></provenance>')).toBe(false);
+  });
+
+  it('fails, rather than throws, on input the parser rejects', () => {
+    expect(() => roundTripsExactly('<p><seg>')).not.toThrow();
+    expect(roundTripsExactly('<p><seg>')).toBe(false);
+  });
+});
 
 describe('indexLinkableElements', () => {
   it('numbers linkable elements in document start-tag order', () => {

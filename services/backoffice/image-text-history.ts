@@ -1,5 +1,5 @@
 import { backofficeGet } from './api-client';
-import type { ImageTextStatus } from './review-queue';
+import type { ImageTextStatus } from '@/types/image-text';
 
 export interface StatusTransitionRow {
   id: number;

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import {
   Brackets,
   ChevronDown,
@@ -27,13 +26,19 @@ import {
   currentStack,
   linkTargetAt,
   retypeTei,
-  teiEditorExtensions,
   teiElementLabel,
   unwrapTei,
   wrapTei,
   type EditorLinkSelection,
 } from '@/lib/tei-tiptap';
-import { docToTei, teiToDoc, type PMDoc, type StackEntry } from '@/lib/tei-prosemirror';
+import { teiEditorSchema } from '@/lib/tei-editor-schema';
+import {
+  docToTei,
+  roundTripsExactly,
+  teiToDoc,
+  type PMDoc,
+  type StackEntry,
+} from '@/lib/tei-prosemirror';
 import { cn } from '@/lib/utils';
 
 interface TeiRichEditorProps {
@@ -151,27 +156,14 @@ export default function TeiRichEditor({
 }: TeiRichEditorProps) {
   const t = useTranslations('backoffice');
   const lastEmitted = React.useRef<string | null>(null);
+  // The gate is this editor's own, not only its host's: content that does not
+  // survive the model byte for byte is never loaded, so editing cannot drop it.
+  const representable = React.useMemo(() => roundTripsExactly(value), [value]);
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: [
-      StarterKit.configure({
-        bold: false,
-        italic: false,
-        strike: false,
-        code: false,
-        codeBlock: false,
-        heading: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
-        blockquote: false,
-        horizontalRule: false,
-        hardBreak: false,
-      }),
-      ...teiEditorExtensions,
-    ],
-    content: teiToDoc(value) as unknown as Record<string, unknown>,
+    extensions: teiEditorSchema,
+    content: (representable ? teiToDoc(value) : teiToDoc('')) as unknown as Record<string, unknown>,
     editorProps: {
       attributes: {
         class:
@@ -186,13 +178,13 @@ export default function TeiRichEditor({
   });
 
   React.useEffect(() => {
-    if (!editor) return;
+    if (!editor || !representable) return;
     if (value === lastEmitted.current) return;
     editor.commands.setContent(teiToDoc(value) as unknown as Record<string, unknown>, {
       emitUpdate: false,
     });
     lastEmitted.current = value;
-  }, [editor, value]);
+  }, [editor, representable, value]);
 
   // Live selection context: the element stack the caret/selection sits in, the
   // innermost element (for retype/unwrap), and whether anything is selected.
@@ -214,7 +206,7 @@ export default function TeiRichEditor({
     };
   }, [editor, onLinkTargetChange]);
 
-  if (!editor) return null;
+  if (!editor || !representable) return null;
 
   const innermost = stack.length > 0 ? stack[stack.length - 1] : null;
   const inClause = innermost?.el === 'seg';

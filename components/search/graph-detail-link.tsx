@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { getGraphDetailUrl, resolveGraphDetailUrl, type GraphRouteInput } from '@/lib/media-url';
 
 type GraphDetailLinkProps = {
@@ -12,81 +13,35 @@ type GraphDetailLinkProps = {
   title?: string;
 };
 
-const resolvedHrefCache = new Map<string, string | null>();
-const pendingHrefCache = new Map<string, Promise<string | null>>();
-
-async function resolveGraphHrefCached(graph: GraphRouteInput): Promise<string | null> {
-  const directHref = getGraphDetailUrl(graph);
-  if (directHref) return directHref;
-
-  const cacheKey = String(graph.id);
-  if (resolvedHrefCache.has(cacheKey)) {
-    return resolvedHrefCache.get(cacheKey) ?? null;
-  }
-
-  const pending = pendingHrefCache.get(cacheKey);
-  if (pending) return pending;
-
-  const request = resolveGraphDetailUrl(graph)
-    .then((href) => {
-      resolvedHrefCache.set(cacheKey, href ?? null);
-      pendingHrefCache.delete(cacheKey);
-      return href ?? null;
-    })
-    .catch(() => {
-      pendingHrefCache.delete(cacheKey);
-      return null;
-    });
-
-  pendingHrefCache.set(cacheKey, request);
-  return request;
-}
-
 export function GraphDetailLink({ graph, className, children, title }: GraphDetailLinkProps) {
   const router = useRouter();
   // The direct href is fully derivable from `graph`, so compute it during render.
   const directHref = getGraphDetailUrl(graph);
-  // The async-resolved href is an override that must reset whenever `graph` changes.
-  const [resolvedHref, setResolvedHref] = React.useState<string | null>(null);
-  const [prevGraph, setPrevGraph] = React.useState(graph);
-  if (prevGraph !== graph) {
-    setPrevGraph(graph);
-    setResolvedHref(null);
-  }
-  const [resolving, setResolving] = React.useState(false);
+  // Otherwise the image is looked up. A lookup that finds nothing is an error,
+  // not a cached null, so a network blip does not leave a dead link: the next
+  // mount or click asks again.
+  const {
+    data: resolvedHref,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ['graph-detail-href', String(graph.id)],
+    queryFn: async () => {
+      const href = await resolveGraphDetailUrl(graph);
+      if (!href) throw new Error(`No detail page for graph ${graph.id}`);
+      return href;
+    },
+    enabled: directHref === null,
+    staleTime: Infinity,
+    retry: false,
+  });
 
-  const href = directHref ?? resolvedHref;
-
-  React.useEffect(() => {
-    if (getGraphDetailUrl(graph)) return;
-
-    let cancelled = false;
-    void resolveGraphHrefCached(graph).then((resolved) => {
-      if (!cancelled && resolved) setResolvedHref(resolved);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [graph]);
+  const href = directHref ?? resolvedHref ?? null;
 
   const handleClick = React.useCallback(async () => {
-    if (href) {
-      router.push(href);
-      return;
-    }
-    if (resolving) return;
-
-    setResolving(true);
-    try {
-      const resolved = await resolveGraphHrefCached(graph);
-      if (resolved) {
-        setResolvedHref(resolved);
-        router.push(resolved);
-      }
-    } finally {
-      setResolving(false);
-    }
-  }, [graph, href, resolving, router]);
+    const { data } = await refetch();
+    if (data) router.push(data);
+  }, [refetch, router]);
 
   if (href) {
     return (
@@ -102,8 +57,8 @@ export function GraphDetailLink({ graph, className, children, title }: GraphDeta
       onClick={() => void handleClick()}
       className={className}
       title={title}
-      aria-busy={resolving}
-      disabled={resolving}
+      aria-busy={isFetching}
+      disabled={isFetching}
     >
       {children}
     </button>

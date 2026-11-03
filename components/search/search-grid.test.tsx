@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+import { renderWithQueryClient } from '@/test/render';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchGrid } from './search-grid';
 import type { ClauseListItem, GraphListItem, ManuscriptListItem } from '@/types/search';
@@ -66,14 +67,16 @@ describe('SearchGrid text-only mode (frontend#74)', () => {
   });
 
   it('crops a clause thumbnail to its annotation region when thumbnails are on', () => {
-    render(<SearchGrid results={[clause]} resultType="clauses" />);
+    renderWithQueryClient(<SearchGrid results={[clause]} resultType="clauses" />);
 
     expect(screen.getByRole('img')).toBeTruthy();
     expect(thumbnailUrlSpy).toHaveBeenCalledWith(clause.thumbnail_iiif, '{"type":"Feature"}');
   });
 
   it('renders no image and asks for no IIIF info when thumbnails are off', () => {
-    render(<SearchGrid results={[clause]} resultType="clauses" showThumbnails={false} />);
+    renderWithQueryClient(
+      <SearchGrid results={[clause]} resultType="clauses" showThumbnails={false} />
+    );
 
     expect(screen.queryByRole('img')).toBeNull();
     // Hiding thumbnails has to skip the work, not just the markup: a bounded
@@ -83,14 +86,18 @@ describe('SearchGrid text-only mode (frontend#74)', () => {
   });
 
   it('keeps the collect and lightbox actions on a clause card without a thumbnail', () => {
-    render(<SearchGrid results={[clause]} resultType="clauses" showThumbnails={false} />);
+    renderWithQueryClient(
+      <SearchGrid results={[clause]} resultType="clauses" showThumbnails={false} />
+    );
 
     expect(screen.getByRole('button', { name: 'Add to collection' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open in Lightbox' })).toBeTruthy();
   });
 
   it('keeps the collect and lightbox actions on a graph card without a thumbnail', () => {
-    render(<SearchGrid results={[graph]} resultType="graphs" showThumbnails={false} />);
+    renderWithQueryClient(
+      <SearchGrid results={[graph]} resultType="graphs" showThumbnails={false} />
+    );
 
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.getByRole('button', { name: 'Add to collection' })).toBeTruthy();
@@ -98,7 +105,7 @@ describe('SearchGrid text-only mode (frontend#74)', () => {
   });
 
   it('keeps thumbnail hover actions as distinct row buttons', () => {
-    render(<SearchGrid results={[graph]} resultType="graphs" />);
+    renderWithQueryClient(<SearchGrid results={[graph]} resultType="graphs" />);
 
     const lightboxButton = screen.getByRole('button', { name: 'Open in Lightbox' });
     const collectionButton = screen.getByRole('button', { name: 'Add to collection' });
@@ -141,7 +148,7 @@ describe('SearchGrid manuscript compare selection (frontend#110)', () => {
 
   it('toggles the manuscript when its card checkbox is clicked', () => {
     const sel = selection();
-    render(
+    renderWithQueryClient(
       <SearchGrid results={[manuscript]} resultType="manuscripts" manuscriptSelection={sel} />
     );
 
@@ -151,7 +158,7 @@ describe('SearchGrid manuscript compare selection (frontend#110)', () => {
   });
 
   it('renders no checkbox without a selection', () => {
-    render(<SearchGrid results={[manuscript]} resultType="manuscripts" />);
+    renderWithQueryClient(<SearchGrid results={[manuscript]} resultType="manuscripts" />);
     expect(screen.queryByRole('checkbox')).toBeNull();
   });
 });

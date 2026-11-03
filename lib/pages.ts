@@ -50,14 +50,25 @@ export function pageHref(slug: string): string {
 }
 
 /**
- * Whether a page is listed under About: it has no heading, or its heading no
- * longer exists (the header and sidebar fall back to About for those too).
+ * The heading a page is listed under: its own while that heading exists, else
+ * null for About. A page whose heading was deleted falls back to About in the
+ * header, the about sidebar and the footer alike.
  */
+export function listedHeading(
+  menuHeading: string | null,
+  menuHeadings: readonly Pick<MenuHeading, 'slug'>[]
+): string | null {
+  return menuHeading && menuHeadings.some((heading) => heading.slug === menuHeading)
+    ? menuHeading
+    : null;
+}
+
+/** Whether a page is listed under About (see `listedHeading`). */
 export function isListedUnderAbout(
   menuHeading: string | null,
   menuHeadings: readonly Pick<MenuHeading, 'slug'>[]
 ): boolean {
-  return !menuHeadings.some((heading) => heading.slug === menuHeading);
+  return listedHeading(menuHeading, menuHeadings) === null;
 }
 
 // Slugs a DB-backed Page must not shadow (frontend route segments like

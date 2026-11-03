@@ -54,7 +54,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Search, Columns, Download, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { DataPagination } from '@/components/ui/data-pagination';
+import { DataPagination, type DataPaginationProps } from '@/components/ui/data-pagination';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
@@ -131,8 +131,10 @@ interface DataTableProps<TData extends RowData> {
   /** Callback fired when the search input changes (server-side search mode). */
   onSearchChange?: (value: string) => void;
   toolbarActions?: React.ReactNode;
-  /** Enable client-side pagination (default: true). */
+  /** Enable client-side pagination (default: true; off with `serverPagination`). */
   pagination?: boolean;
+  /** The pager of a server-paged list, which shows every row it is given. See `useServerList`. */
+  serverPagination?: ServerPagination;
   pageSize?: number;
   /** Remembers the chosen rows per page in this browser under this name. */
   pageSizeKey?: string;
@@ -161,9 +163,12 @@ interface DataTableProps<TData extends RowData> {
   /** Controlled sorting, for server ordering. */
   sorting?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
-  /** Ref to the table box, for an outside pager to scroll to. */
-  tableRef?: React.RefObject<HTMLDivElement | null>;
 }
+
+export type ServerPagination = Pick<
+  DataPaginationProps,
+  'totalItems' | 'page' | 'pageSize' | 'onPageChange' | 'onPageSizeChange'
+>;
 
 export function DataTable<TData extends RowData>({
   columns,
@@ -173,7 +178,8 @@ export function DataTable<TData extends RowData>({
   searchValue,
   onSearchChange,
   toolbarActions,
-  pagination = true,
+  pagination: clientPagination = true,
+  serverPagination,
   pageSize = 20,
   pageSizeKey,
   enableRowSelection = false,
@@ -192,8 +198,8 @@ export function DataTable<TData extends RowData>({
   isStale = false,
   sorting: serverSorting,
   onSortingChange,
-  tableRef,
 }: DataTableProps<TData>) {
+  const pagination = clientPagination && !serverPagination;
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
   const [localSorting, setLocalSorting] = useState<SortingState>([]);
@@ -212,8 +218,7 @@ export function DataTable<TData extends RowData>({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [activePreset, setActivePreset] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const ownTableRef = useRef<HTMLDivElement>(null);
-  const tableBoxRef = tableRef ?? ownTableRef;
+  const tableBoxRef = useRef<HTMLDivElement>(null);
 
   const hasSearch = !!(searchColumn || onSearchChange);
 
@@ -614,6 +619,9 @@ export function DataTable<TData extends RowData>({
               : undefined
           }
         />
+      )}
+      {serverPagination && !isLoading && (
+        <DataPagination {...serverPagination} scrollTargetRef={tableBoxRef} />
       )}
     </div>
   );

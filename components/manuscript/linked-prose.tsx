@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 
 import { apiFetch } from '@/lib/api-fetch';
@@ -41,9 +42,6 @@ interface HoverTarget {
 
 const PERSON_KEY_RE = /^person_(\d+)$/;
 
-/** Per-session gloss cache: the same person is hovered repeatedly in one page. */
-const glossCache = new Map<string, ScribeGloss>();
-
 export function LinkedProse({
   html,
   gloss,
@@ -64,40 +62,20 @@ export function LinkedProse({
   const [target, setTarget] = React.useState<HoverTarget | null>(null);
 
   const scribeId = target ? (PERSON_KEY_RE.exec(target.key)?.[1] ?? null) : null;
-  const [fetched, setFetched] = React.useState<{ id: string; gloss: ScribeGloss } | null>(null);
 
-  // Read the cache during render rather than syncing it into state — the same
-  // person is hovered repeatedly in one page, and a cached gloss should paint on
-  // the first frame instead of after a state round trip.
-  const data =
-    scribeId === null
-      ? null
-      : (glossCache.get(scribeId) ?? (fetched?.id === scribeId ? fetched.gloss : null));
-
-  // Plain fetch, not react-query: this renders inside the PUBLIC page, which has
-  // no QueryClientProvider, and a hover gloss is one cached GET — not worth
-  // making a server-rendered surface depend on a client cache.
-  React.useEffect(() => {
-    if (scribeId === null || glossCache.has(scribeId)) return;
-
-    let live = true;
-    void (async () => {
-      try {
-        const response = await apiFetch(`/api/v1/scribes/${scribeId}/`);
-        if (!response.ok) return;
-        const gloss = (await response.json()) as ScribeGloss;
-        glossCache.set(scribeId, gloss);
-        if (live) setFetched({ id: scribeId, gloss });
-      } catch {
-        // A gloss is an enhancement; the link itself still works.
-      }
-    })();
-    return () => {
-      live = false;
-    };
-  }, [scribeId]);
-
-  const isLoading = scribeId !== null && data === null;
+  // The same person is hovered repeatedly in one page, so a gloss is fetched once
+  // and kept; a failed fetch is not kept, so the next hover asks again.
+  const { data = null, isLoading } = useQuery({
+    queryKey: ['scribe-gloss', scribeId],
+    queryFn: async () => {
+      const response = await apiFetch(`/api/v1/scribes/${scribeId}/`);
+      if (!response.ok) throw new Error(`Scribe ${scribeId}: ${response.status}`);
+      return (await response.json()) as ScribeGloss;
+    },
+    enabled: scribeId !== null,
+    staleTime: Infinity,
+    retry: false,
+  });
 
   // Delegated, because the prose is injected as HTML and has no React nodes.
   React.useEffect(() => {
