@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { FolderOpen, Loader2, Trash2, X } from 'lucide-react';
+import { FolderOpen, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { ImageUploadZone } from '@/components/backoffice/common/image-upload-zone';
-import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { CarouselImagePickerDialog } from '@/components/backoffice/carousel/carousel-image-picker-dialog';
 import { getCarouselImageUrl, getCarouselPickerStartPath } from '@/utils/api';
 import type { CarouselItem } from '@/types/backoffice';
@@ -18,21 +16,11 @@ interface CarouselEditorPanelProps {
   item: CarouselItem | null;
   /** Whether a save mutation is in progress. */
   saving: boolean;
-  /** Whether a delete mutation is in progress. */
-  deleting: boolean;
   onSave: (data: { title: string; url: string; image?: File | string }) => void;
-  onDelete: () => void;
   onCancel: () => void;
 }
 
-export function CarouselEditorPanel({
-  item,
-  saving,
-  deleting,
-  onSave,
-  onDelete,
-  onCancel,
-}: CarouselEditorPanelProps) {
+export function CarouselEditorPanel({ item, saving, onSave, onCancel }: CarouselEditorPanelProps) {
   const t = useTranslations('backoffice');
   const isNew = !item;
 
@@ -40,7 +28,6 @@ export function CarouselEditorPanel({
   const [url, setUrl] = useState(item?.url ?? '');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePath, setImagePath] = useState(item?.image ?? '');
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // Reset form when the selected item changes
@@ -79,11 +66,8 @@ export function CarouselEditorPanel({
         e.preventDefault();
         handleSave();
       }
-      if (e.key === 'Escape') {
-        onCancel();
-      }
     },
-    [handleSave, onCancel]
+    [handleSave]
   );
 
   const currentImageUrl = imagePath ? getCarouselImageUrl(imagePath) : null;
@@ -173,33 +157,6 @@ export function CarouselEditorPanel({
         />
         <p className="text-xs text-muted-foreground">{t('carousel.urlHint')}</p>
       </div>
-
-      {!isNew && (
-        <>
-          <Separator />
-          <div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setConfirmDeleteOpen(true)}
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              {t('carousel.deleteItemButton')}
-            </Button>
-          </div>
-
-          <ConfirmDialog
-            open={confirmDeleteOpen}
-            onOpenChange={setConfirmDeleteOpen}
-            title={t('carousel.deleteTitle', { title: item.title })}
-            description={t('carousel.deleteDesc')}
-            confirmLabel={t('carousel.deleteConfirm')}
-            loading={deleting}
-            onConfirm={onDelete}
-          />
-        </>
-      )}
 
       <CarouselImagePickerDialog
         open={pickerOpen}

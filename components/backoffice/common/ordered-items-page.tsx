@@ -19,8 +19,9 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Plus, type LucideIcon } from 'lucide-react';
+import { Plus, Trash2, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import {
   BackofficeErrorState,
@@ -44,9 +45,7 @@ export interface OrderedItemEditorProps<T extends OrderedItem, P> {
   /** `null` while creating. */
   item: T | null;
   saving: boolean;
-  deleting: boolean;
   onSave: (data: P) => void;
-  onDelete: () => void;
   onCancel: () => void;
 }
 
@@ -255,12 +254,6 @@ export function OrderedItemsPage<T extends OrderedItem, P>({
     [panel, createMut, updateMut]
   );
 
-  const handleEditorDelete = useCallback(() => {
-    if (panel.kind === 'edit') {
-      deleteMut.mutate(panel.item.id);
-    }
-  }, [panel, deleteMut]);
-
   const closePanel = () => setPanel({ kind: 'preview' });
 
   // ── Loading / error states ─────────────────────────────────────────
@@ -346,29 +339,38 @@ export function OrderedItemsPage<T extends OrderedItem, P>({
         <div className="lg:col-span-3">
           <div className="rounded-lg border bg-card p-5">
             {panel.kind === 'preview' && renderPreview(sorted)}
-            {panel.kind === 'edit' &&
-              renderEditor({
-                item: panel.item,
-                saving: updateMut.isPending,
-                deleting: deleteMut.isPending,
-                onSave: handleEditorSave,
-                onDelete: handleEditorDelete,
-                onCancel: closePanel,
-              })}
+            {panel.kind === 'edit' && (
+              <>
+                {renderEditor({
+                  item: panel.item,
+                  saving: updateMut.isPending,
+                  onSave: handleEditorSave,
+                  onCancel: closePanel,
+                })}
+                <Separator className="my-5" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeleteTarget(panel.item)}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  {t('deleteItemButton')}
+                </Button>
+              </>
+            )}
             {panel.kind === 'create' &&
               renderEditor({
                 item: null,
                 saving: createMut.isPending,
-                deleting: false,
                 onSave: handleEditorSave,
-                onDelete: () => {},
                 onCancel: closePanel,
               })}
           </div>
         </div>
       </div>
 
-      {/* Standalone delete confirmation (triggered from card delete button) */}
+      {/* Delete confirmation, from a card or the editor */}
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}

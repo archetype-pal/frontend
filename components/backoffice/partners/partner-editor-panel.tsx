@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Trash2, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { ImageUploadZone } from '@/components/backoffice/common/image-upload-zone';
-import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getCarouselImageUrl } from '@/utils/api';
 import type { PartnerItem } from '@/types/backoffice';
 import { Input } from '@/components/ui/input';
@@ -17,21 +15,11 @@ interface PartnerEditorPanelProps {
   item: PartnerItem | null;
   /** Whether a save mutation is in progress. */
   saving: boolean;
-  /** Whether a delete mutation is in progress. */
-  deleting: boolean;
   onSave: (data: { name: string; url: string; logo?: File | string }) => void;
-  onDelete: () => void;
   onCancel: () => void;
 }
 
-export function PartnerEditorPanel({
-  item,
-  saving,
-  deleting,
-  onSave,
-  onDelete,
-  onCancel,
-}: PartnerEditorPanelProps) {
+export function PartnerEditorPanel({ item, saving, onSave, onCancel }: PartnerEditorPanelProps) {
   const t = useTranslations('backoffice');
   const isNew = !item;
 
@@ -39,7 +27,6 @@ export function PartnerEditorPanel({
   const [url, setUrl] = useState(item?.url ?? '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPath, setLogoPath] = useState(item?.logo ?? '');
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Reset form when the selected item changes
   useEffect(() => {
@@ -77,11 +64,8 @@ export function PartnerEditorPanel({
         e.preventDefault();
         handleSave();
       }
-      if (e.key === 'Escape') {
-        onCancel();
-      }
     },
-    [handleSave, onCancel]
+    [handleSave]
   );
 
   const currentLogoUrl = logoPath ? getCarouselImageUrl(logoPath) : null;
@@ -153,33 +137,6 @@ export function PartnerEditorPanel({
         />
         <p className="text-xs text-muted-foreground">{t('partners.urlHint')}</p>
       </div>
-
-      {!isNew && (
-        <>
-          <Separator />
-          <div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setConfirmDeleteOpen(true)}
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              {t('partners.deleteItemButton')}
-            </Button>
-          </div>
-
-          <ConfirmDialog
-            open={confirmDeleteOpen}
-            onOpenChange={setConfirmDeleteOpen}
-            title={t('partners.deleteTitle', { name: item.name })}
-            description={t('partners.deleteDesc')}
-            confirmLabel={t('partners.deleteConfirm')}
-            loading={deleting}
-            onConfirm={onDelete}
-          />
-        </>
-      )}
     </div>
   );
 }
