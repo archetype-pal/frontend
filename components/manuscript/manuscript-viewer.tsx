@@ -113,8 +113,6 @@ export default function ManuscriptViewer({
     manuscriptImage,
     manuscript,
     allographs,
-    imageAllographIds,
-    imageAllographIdsLoaded,
     hands,
     handsLoaded,
     imageHeight,
@@ -122,7 +120,6 @@ export default function ManuscriptViewer({
     error,
     setHands,
     setHandsLoaded,
-    setImageAllographIds,
   } = useViewerBaseData(imageId);
 
   const viewerApiRef = React.useRef<ViewerApi | null>(null);
@@ -283,6 +280,13 @@ export default function ManuscriptViewer({
       resetEditorFrom,
       viewerApiRef,
     });
+  // The allographs on this image's saved graphs scope the allograph filter;
+  // they are unknown until this image's annotations have loaded.
+  const imageAllographIdsLoaded = annotationsLoadedFor === imageId;
+  const imageAllographIds = React.useMemo(
+    () => (imageAllographIdsLoaded ? getSavedImageAllographIds(initialA9sAnnots) : []),
+    [imageAllographIdsLoaded, initialA9sAnnots]
+  );
 
   const {
     isInCollection,
@@ -767,7 +771,6 @@ export default function ManuscriptViewer({
       clearPopupCollection();
       viewerApiRef.current?.replaceAnnotations(outcome.seed);
       setInitialA9sAnnots(outcome.seed);
-      setImageAllographIds(getSavedImageAllographIds(outcome.seed));
     }
 
     if (notice) showActionNotification(notice);
@@ -777,7 +780,6 @@ export default function ManuscriptViewer({
     editorState,
     clearPopupCollection,
     setInitialA9sAnnots,
-    setImageAllographIds,
   ]);
 
   const handleAllographDialogOpenChange = React.useCallback(
