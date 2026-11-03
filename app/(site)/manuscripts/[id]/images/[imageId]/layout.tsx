@@ -1,44 +1,22 @@
 import * as React from 'react';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { ManuscriptTabs } from '@/components/manuscript/manuscript-tabs';
-import { BackofficeLink } from '@/components/common/backoffice-link';
-import { fetchManuscriptImage, fetchManuscript } from '@/services/manuscripts';
-import { fetchImageTextsForImage } from '@/services/image-texts';
-import { fetchOtherImages } from '@/services/manuscript-image-tabs';
-import { renderPublicDescription } from '@/lib/description-public';
-import { readSiteFeatures } from '@/lib/site-features-server';
-import { isSearchCategoryEnabled } from '@/lib/site-features';
-import { getLocale } from 'next-intl/server';
-import { readModelLabels } from '@/lib/model-labels-server';
-import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+import { notFound, redirect } from 'next/navigation';
+import { ImageHeader, ImageHeaderSkeleton } from './image-header';
+import { loadImage } from './image';
 
 interface LayoutProps {
   children: React.ReactNode;
   params: Promise<{ id: string; imageId: string }>;
 }
 
+// No loading.tsx sits above this layout, so the image is looked up before
+// anything streams: an unknown image is a real 404 and a moved one a real
+// redirect. A failed lookup throws to the part's error boundary. Only the
+// header's slower reads stream, behind their own skeleton.
 export default async function ManuscriptImageLayout({ children, params }: LayoutProps) {
   const { id, imageId } = await params;
 
-  let image;
-  try {
-    image = await fetchManuscriptImage(imageId);
-  } catch {
-    return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
-        Image not found.
-      </div>
-    );
-  }
+  const image = await loadImage(imageId);
+  if (!image) notFound();
 
   // A link saved before the image moved to another part still carries the old
   // part id. A layout cannot see which tab was asked for, so this lands on the
@@ -47,106 +25,11 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
     redirect(`/manuscripts/${image.item_part}/images/${imageId}`);
   }
 
-  const [manuscript, otherImages, visibleTexts, siteFeatures, locale, modelLabels] =
-    await Promise.all([
-      fetchManuscript(image.item_part).catch(() => null),
-      fetchOtherImages(image.item_part, image.id).catch(() => []),
-      fetchImageTextsForImage(imageId).catch(() => []),
-      readSiteFeatures(),
-      getLocale(),
-      readModelLabels(),
-    ]);
-
-  const label = manuscript?.display_label?.trim() || 'Unknown manuscript';
-  const locus = image.locus?.trim() || '';
-  const description = manuscript?.historical_item?.descriptions?.[0]?.content;
-  const manuscriptsSearchEnabled =
-    siteFeatures.sections.search !== false && isSearchCategoryEnabled(siteFeatures, 'manuscripts');
-  const manuscriptsLabel = resolveModelLabel(
-    modelLabels.labels.appManuscripts,
-    locale as ModelLabelLocale
-  );
-
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-border bg-card px-4 pb-0 pt-4 sm:px-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              {manuscriptsSearchEnabled ? (
-                <BreadcrumbLink asChild>
-                  <Link href="/search/manuscripts">{manuscriptsLabel}</Link>
-                </BreadcrumbLink>
-              ) : (
-                <BreadcrumbPage>{manuscriptsLabel}</BreadcrumbPage>
-              )}
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={`/manuscripts/${id}`}>{label}: Item overview</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            {locus ? (
-              <>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="capitalize">{locus}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </>
-            ) : null}
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        <div className="mt-3 flex items-start justify-between gap-4">
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
-            {label}
-            {locus ? (
-              <span className="font-normal capitalize text-muted-foreground"> · {locus}</span>
-            ) : null}
-          </h1>
-          {/* Reverse of the frontend "View in backoffice" link: editors get a jump
-              straight from the image viewer to this item's backoffice workspace.
-              Renders null for anonymous visitors. archetype-pal/frontend#77 */}
-          <BackofficeLink
-            kind="item-part"
-            id={id}
-            label="Edit in Backoffice"
-            className="mt-1 shrink-0"
-          />
-        </div>
-
-        {description ? (
-          // Descriptions are authored as HTML and can contain block elements
-          // (e.g. <p>). Render into a <div>, NOT a <p>: a <p> cannot legally
-          // nest a <p>, so the browser would reparent the injected markup into
-          // siblings and desync from the server HTML → hydration mismatch. The
-          // `[&_p]:inline` + `[&_p]:m-0` rules flow the inner blocks so the
-          // 2-line clamp still reads as a brief teaser.
-          <div
-            className="mt-2 line-clamp-2 max-w-3xl text-sm leading-relaxed text-muted-foreground [&_p]:m-0 [&_p]:inline"
-            dangerouslySetInnerHTML={{ __html: renderPublicDescription(description).html }}
-          />
-        ) : null}
-
-        <div className="mt-3">
-          <ManuscriptTabs
-            manuscriptId={id}
-            imageId={imageId}
-            counts={{
-              annotations: image.number_of_annotations ?? 0,
-              texts: visibleTexts.length,
-              otherImages: otherImages.length,
-            }}
-          />
-        </div>
-      </header>
+      <React.Suspense fallback={<ImageHeaderSkeleton />}>
+        <ImageHeader id={id} imageId={imageId} image={image} />
+      </React.Suspense>
 
       <div className="flex-1">{children}</div>
     </div>
