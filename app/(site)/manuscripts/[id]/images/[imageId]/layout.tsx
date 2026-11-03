@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { ManuscriptTabs } from '@/components/manuscript/manuscript-tabs';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { fetchManuscriptImage, fetchManuscript } from '@/services/manuscripts';
-import { fetchAnnotationsForImage } from '@/services/annotations';
 import { fetchImageTextsForImage } from '@/services/image-texts';
 import { fetchOtherImages } from '@/services/manuscript-image-tabs';
 import { renderPublicDescription } from '@/lib/description-public';
@@ -48,11 +47,10 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
     redirect(`/manuscripts/${image.item_part}/images/${imageId}`);
   }
 
-  const [manuscript, otherImages, imageGraphs, visibleTexts, siteFeatures, locale, modelLabels] =
+  const [manuscript, otherImages, visibleTexts, siteFeatures, locale, modelLabels] =
     await Promise.all([
       fetchManuscript(image.item_part).catch(() => null),
       fetchOtherImages(image.item_part, image.id).catch(() => []),
-      fetchAnnotationsForImage(imageId).catch(() => []),
       fetchImageTextsForImage(imageId).catch(() => []),
       readSiteFeatures(),
       getLocale(),
@@ -142,7 +140,7 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
             manuscriptId={id}
             imageId={imageId}
             counts={{
-              annotations: imageGraphs.length,
+              annotations: image.number_of_image_annotations ?? 0,
               texts: visibleTexts.length,
               otherImages: otherImages.length,
             }}
