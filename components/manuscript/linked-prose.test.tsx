@@ -1,6 +1,8 @@
 /** @vitest-environment jsdom */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { renderWithQueryClient } from '@/test/render';
 
 import { LinkedProse } from './linked-prose';
 
@@ -12,7 +14,9 @@ const PLACE_LINK =
   'data-ref-kind="place">Melrose</a>.</p>';
 
 function renderProse(html: string, gloss = true) {
-  return render(<LinkedProse html={html} gloss={gloss} className="tei-linked-prose" />);
+  return renderWithQueryClient(
+    <LinkedProse html={html} gloss={gloss} className="tei-linked-prose" />
+  );
 }
 
 afterEach(() => {
@@ -54,16 +58,33 @@ describe('LinkedProse', () => {
       'fetch',
       vi.fn(() => new Promise(() => {}))
     );
-    // A person the cache has not seen: glosses are cached for the session, which
-    // is right in a browser and would otherwise hide the loading state here.
-    renderProse(
-      PERSON_LINK.replaceAll('person_1', 'person_97').replaceAll('/scribes/1', '/scribes/97')
-    );
+    renderProse(PERSON_LINK);
 
     fireEvent.mouseOver(screen.getByRole('link', { name: 'William I' }));
     // The card appears immediately with what the page already knows.
     expect(await screen.findByRole('tooltip')).toBeTruthy();
     expect(screen.getAllByText('William I').length).toBeGreaterThan(1);
+  });
+
+  it('asks again on the next hover when a gloss failed to load', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('', { status: 503 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: 1, name: 'Barrow, Scribe Ab' }), { status: 200 })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    const { container } = renderProse(PERSON_LINK);
+    const link = screen.getByRole('link', { name: 'William I' });
+
+    fireEvent.mouseOver(link);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByText('Loading…')).toBeNull());
+    fireEvent.mouseOver(container.querySelector('p') as HTMLElement);
+    fireEvent.mouseOver(link);
+
+    expect(await screen.findByText('Barrow, Scribe Ab')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('does not gloss a place — there is no Place authority to gloss from', async () => {
