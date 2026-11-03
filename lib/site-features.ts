@@ -113,24 +113,6 @@ export const ALL_SECTION_KEYS: SectionKey[] = [
 export const ALL_FEATURE_KEYS: FeatureKey[] = ['manuscriptDescriptions'];
 
 /**
- * English source of truth for the flag names. The
- * admin UI renders the localized `backoffice.siteFeatures.features.*` keys
- * (exactly as the section toggles render `…siteFeatures.sections.*`); these
- * constants keep a locale-independent name next to the key union, and
- * `site-features.test.ts` pins them to the English catalogue so the two copies
- * cannot drift.
- */
-export const FEATURE_LABELS: Record<FeatureKey, string> = {
-  manuscriptDescriptions: 'Manuscript descriptions (TEI msDesc)',
-};
-
-/** One-line "what does this flag actually hide" text, shown under each toggle. */
-export const FEATURE_DESCRIPTIONS: Record<FeatureKey, string> = {
-  manuscriptDescriptions:
-    'Structured TEI descriptions: the description section on public manuscript pages and the msDesc editor in the manuscript workspace. Nothing is deleted — turning this back on restores everything. Search facets are configured separately under Search Categories.',
-};
-
-/**
  * Fold an untrusted `features` object (parsed config file, or a PUT payload)
  * onto a base map: only known keys with boolean values are applied, so unknown
  * keys never reach disk and a malformed value can't turn a flag into a string.
