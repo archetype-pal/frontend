@@ -29,6 +29,7 @@ import {
 } from '@/lib/viewer-capabilities';
 
 import type { ViewerApi, Annotation as A9sAnnotation } from './manuscript-annotorious';
+import type { HandType } from '@/types/hands';
 import type {
   ViewerCapabilities,
   ViewerMode,
@@ -43,7 +44,6 @@ import { dbIdFromA9s } from '@/lib/anno-mapping';
 import { useViewerAnnotationLoader } from '@/hooks/manuscript/use-viewer-annotation-loader';
 import { useImageAllographs } from '@/hooks/manuscript/use-image-allographs';
 import { formatAllographLabel } from '@/lib/allograph-labels';
-import { getDefaultHand, sortHandsByPriority } from '@/lib/hand-ordering';
 
 import { useAnnotationEditorState } from '@/hooks/use-annotation-editor-state';
 import { useAnnotationNotifications } from '@/hooks/manuscript/use-annotation-notifications';
@@ -241,7 +241,8 @@ export default function ManuscriptViewer({
     () => new Map(allographs.map((a) => [a.id, formatAllographLabel(a)])),
     [allographs]
   );
-  const handsForThisImage = React.useMemo(() => sortHandsByPriority(hands), [hands]);
+  // The API lists a part's hands in their display order; the first is the default.
+  const handsForThisImage = hands;
   const handNameById = React.useMemo(
     () => new Map(handsForThisImage.map((hand) => [hand.id, hand.name])),
     [handsForThisImage]
@@ -413,7 +414,7 @@ export default function ManuscriptViewer({
     setHoveredAnnotationId,
   } = editorUi;
 
-  const defaultHand = React.useMemo(() => getDefaultHand(handsForThisImage), [handsForThisImage]);
+  const defaultHand: HandType | undefined = handsForThisImage[0];
   const activeAssignmentHand =
     selectedHand === undefined ? defaultHand : (selectedHand ?? undefined);
   const activeHandLabel = activeAssignmentHand?.name ?? 'Any';

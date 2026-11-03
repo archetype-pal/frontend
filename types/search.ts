@@ -73,13 +73,6 @@ export interface HandListItem {
   place: string;
   date: string | null;
   description?: string;
-  num?: number | null;
-  order?: number | null;
-  ordering?: number | null;
-  sort_order?: number | null;
-  display_order?: number | null;
-  priority?: number | null;
-  is_default?: boolean | null;
 }
 
 interface AnnotatedSearchItem {
