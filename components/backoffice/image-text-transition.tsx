@@ -14,8 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useReviewers } from '@/hooks/backoffice/use-lookups';
 import type { TransitionPayload } from '@/services/backoffice/review-queue';
 import type { ImageTextStatus } from '@/types/image-text';
+import type { UserListItem } from '@/types/backoffice';
 
 export const IMAGE_TEXT_STATUSES: ImageTextStatus[] = ['Draft', 'Review', 'Live', 'Reviewed'];
 
@@ -28,11 +30,19 @@ const NEXT: Record<ImageTextStatus, ImageTextStatus> = {
   Reviewed: 'Live',
 };
 
+const NO_REVIEWER = '__none';
+
+function reviewerName(user: UserListItem): string {
+  const fullName = `${user.first_name} ${user.last_name}`.trim();
+  return fullName ? `${fullName} (${user.username})` : user.username;
+}
+
 /**
  * Moves a text, or a selection of texts when there is no `currentStatus`, to
- * another status, with an optional note for the history. Closes once
- * `onTransition` resolves; a rejection (which the caller reports) leaves it
- * open with the note kept.
+ * another status, with an optional note for the history. Sending to Review can
+ * name the reviewer, which the review queue shows. Closes once `onTransition`
+ * resolves; a rejection (which the caller reports) leaves it open with the
+ * note and the reviewer kept.
  */
 export function TransitionPopover({
   currentStatus,
@@ -51,12 +61,19 @@ export function TransitionPopover({
   const firstTarget = currentStatus ? NEXT[currentStatus] : 'Review';
   const [target, setTarget] = useState<ImageTextStatus>(firstTarget);
   const [note, setNote] = useState('');
+  const [reviewer, setReviewer] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
+  const toReview = target === 'Review';
+  const reviewers = useReviewers(open && toReview);
 
   async function apply() {
     setPending(true);
     try {
-      await onTransition({ to_status: target, note: note.trim() || undefined });
+      await onTransition({
+        to_status: target,
+        note: note.trim() || undefined,
+        ...(toReview && reviewer !== null ? { assignee: reviewer } : {}),
+      });
       setOpen(false);
     } catch {
       // Reported by the caller; stay open so the note is not lost.
@@ -73,6 +90,7 @@ export function TransitionPopover({
         if (next) {
           setTarget(firstTarget);
           setNote('');
+          setReviewer(null);
         }
       }}
     >
@@ -103,6 +121,41 @@ export function TransitionPopover({
             </SelectContent>
           </Select>
         </div>
+        {toReview && (
+          <div className="space-y-1.5">
+            <Label htmlFor="transition-reviewer" className="text-xs">
+              {t('imageTexts.transitionReviewerLabel')}
+            </Label>
+            <Select
+              value={reviewer === null ? NO_REVIEWER : String(reviewer)}
+              onValueChange={(v) => setReviewer(v === NO_REVIEWER ? null : Number(v))}
+              disabled={!reviewers.data}
+            >
+              <SelectTrigger
+                id="transition-reviewer"
+                className="h-8 text-xs"
+                aria-describedby="transition-reviewer-hint"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_REVIEWER}>
+                  {t('imageTexts.transitionReviewerNone')}
+                </SelectItem>
+                {(reviewers.data ?? []).map((user) => (
+                  <SelectItem key={user.id} value={String(user.id)}>
+                    {reviewerName(user)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p id="transition-reviewer-hint" className="text-[11px] text-muted-foreground">
+              {reviewers.isError
+                ? t('imageTexts.transitionReviewersFailed')
+                : t('imageTexts.transitionReviewerHint')}
+            </p>
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label className="text-xs">{t('imageTexts.transitionNoteLabel')}</Label>
           <Input
