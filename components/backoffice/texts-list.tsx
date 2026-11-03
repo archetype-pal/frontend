@@ -534,23 +534,16 @@ function BulkActionBar({
   onAskDelete: () => void;
 }) {
   const t = useTranslations('backoffice');
-  const [transitionOpen, setTransitionOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
-  const [toStatus, setToStatus] = useState<ImageTextStatus>('Review');
-  const [note, setNote] = useState('');
   const [language, setLanguage] = useState('');
 
   const transitionMut = useMutation({
-    mutationFn: () =>
-      bulkActionImageTexts({
-        ids,
-        action: 'transition',
-        payload: { to_status: toStatus, note: note.trim() || undefined },
-      }),
-    onSuccess: ({ affected }) => {
-      toast.success(t('textsList.toastBulkTransitioned', { count: affected, status: toStatus }));
-      setTransitionOpen(false);
-      setNote('');
+    mutationFn: (payload: TransitionPayload) =>
+      bulkActionImageTexts({ ids, action: 'transition', payload }),
+    onSuccess: ({ affected }, payload) => {
+      toast.success(
+        t('textsList.toastBulkTransitioned', { count: affected, status: payload.to_status })
+      );
       onCleared();
       onInvalidated();
     },
@@ -580,59 +573,11 @@ function BulkActionBar({
     <div className="mx-6 flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-xs">
       <span className="font-medium">{t('textsList.selectedCount', { count: ids.length })}</span>
       <div className="ml-auto flex items-center gap-2">
-        <Popover open={transitionOpen} onOpenChange={setTransitionOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-7 text-xs">
-              {t('imageTexts.transitionButton')}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-72 space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t('imageTexts.transitionTargetLabel')}</Label>
-              <Select value={toStatus} onValueChange={(v) => setToStatus(v as ImageTextStatus)}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {IMAGE_TEXT_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t('imageTexts.transitionNoteLabel')}</Label>
-              <Input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder={t('imageTexts.transitionNotePlaceholder')}
-                className="h-8 text-xs"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setTransitionOpen(false)}
-              >
-                {t('imageTexts.transitionCancel')}
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-xs"
-                disabled={transitionMut.isPending}
-                onClick={() => transitionMut.mutate()}
-              >
-                {transitionMut.isPending
-                  ? t('imageTexts.transitionSaving')
-                  : t('imageTexts.transitionApply', { target: toStatus })}
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <TransitionPopover
+          compact
+          label={t('imageTexts.transitionButton')}
+          onTransition={transitionMut.mutateAsync}
+        />
 
         <Popover open={languageOpen} onOpenChange={setLanguageOpen}>
           <PopoverTrigger asChild>

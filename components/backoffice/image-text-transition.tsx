@@ -29,9 +29,10 @@ const NEXT: Record<ImageTextStatus, ImageTextStatus> = {
 };
 
 /**
- * Moves a text to another status, with an optional note for its history.
- * Closes once `onTransition` resolves; a rejection (which the caller reports)
- * leaves it open with the note kept.
+ * Moves a text, or a selection of texts when there is no `currentStatus`, to
+ * another status, with an optional note for the history. Closes once
+ * `onTransition` resolves; a rejection (which the caller reports) leaves it
+ * open with the note kept.
  */
 export function TransitionPopover({
   currentStatus,
@@ -39,7 +40,7 @@ export function TransitionPopover({
   compact = false,
   onTransition,
 }: {
-  currentStatus: ImageTextStatus;
+  currentStatus?: ImageTextStatus;
   label: string;
   /** The smaller trigger of a table row. */
   compact?: boolean;
@@ -47,7 +48,8 @@ export function TransitionPopover({
 }) {
   const t = useTranslations('backoffice');
   const [open, setOpen] = useState(false);
-  const [target, setTarget] = useState<ImageTextStatus>(NEXT[currentStatus]);
+  const firstTarget = currentStatus ? NEXT[currentStatus] : 'Review';
+  const [target, setTarget] = useState<ImageTextStatus>(firstTarget);
   const [note, setNote] = useState('');
   const [pending, setPending] = useState(false);
 
@@ -69,7 +71,7 @@ export function TransitionPopover({
       onOpenChange={(next) => {
         setOpen(next);
         if (next) {
-          setTarget(NEXT[currentStatus]);
+          setTarget(firstTarget);
           setNote('');
         }
       }}
@@ -80,10 +82,12 @@ export function TransitionPopover({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 space-y-3">
-        <div className="text-xs">
-          <p className="text-muted-foreground">{t('imageTexts.transitionCurrent')}</p>
-          <p className="font-medium">{currentStatus}</p>
-        </div>
+        {currentStatus && (
+          <div className="text-xs">
+            <p className="text-muted-foreground">{t('imageTexts.transitionCurrent')}</p>
+            <p className="font-medium">{currentStatus}</p>
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label className="text-xs">{t('imageTexts.transitionTargetLabel')}</Label>
           <Select value={target} onValueChange={(v) => setTarget(v as ImageTextStatus)}>
