@@ -2,18 +2,14 @@ import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ScribeViewer } from './scribe-viewer';
+import { loadScribe } from './scribe';
 import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail';
 import { apiFetch } from '@/lib/api-fetch';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 async function getScribe(id: string): Promise<ScribeDetail> {
-  const response = await apiFetch(`/api/v1/scribes/${id}/`);
-  if (!response.ok) {
-    if (response.status === 404) notFound();
-    throw new Error('Failed to fetch scribe');
-  }
-  return response.json();
+  return (await loadScribe(id)) ?? notFound();
 }
 
 async function getScribeHands(scribeId: string): Promise<ScribeHand[]> {
