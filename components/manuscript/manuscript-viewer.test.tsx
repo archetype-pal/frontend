@@ -81,7 +81,6 @@ const fetchBaseData = vi.fn(async () => ({
   allographs: [] as Allograph[],
   imageHeight: 2000,
 }));
-const fetchImageAllographIds = vi.fn(async () => [] as number[]);
 
 vi.mock('@/lib/manuscript-viewer-data', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/manuscript-viewer-data')>();
@@ -89,7 +88,6 @@ vi.mock('@/lib/manuscript-viewer-data', async (importOriginal) => {
   return {
     ...actual,
     fetchManuscriptViewerBaseData: (...args: unknown[]) => fetchBaseData(...(args as [])),
-    fetchImageAllographIds: (...args: unknown[]) => fetchImageAllographIds(...(args as [])),
   };
 });
 
@@ -137,6 +135,13 @@ const allographB = {
   components: [],
   positions: [],
 };
+
+/** A saved image annotation; the header picker offers the allographs these carry. */
+const savedImageAnnotation = (id: string, allographId?: number, x = 0) => ({
+  id,
+  target: { selector: { type: 'FragmentSelector', value: `xywh=pixel:${x},${x},10,10` } },
+  _meta: { annotationType: 'image', allographId },
+});
 
 function backendGraph(id: number, allographId: number): BackendGraph {
   return {
@@ -366,15 +371,18 @@ describe('ManuscriptViewer smoke test', () => {
       allographs: [allographA, allographB],
       imageHeight: 2000,
     });
-    fetchImageAllographIds.mockResolvedValueOnce([allographA.id]);
+    vi.mocked(buildInitialViewerAnnotations).mockResolvedValueOnce([
+      savedImageAnnotation('db:image-a', allographA.id),
+    ] as never);
 
     render(<ManuscriptViewer imageId="4432" mode="public" />);
     await screen.findByRole('button', { name: 'Image tools' });
-    await waitFor(() => expect(fetchImageAllographIds).toHaveBeenCalledWith('4432'));
 
     fireEvent.click(await screen.findByRole('combobox'));
     expect(await screen.findByText('a, Caroline')).toBeTruthy();
     await waitFor(() => expect(screen.queryByText('b, Anglicana')).toBeNull());
+    // The picker's allographs come from the loaded annotations, not a second fetch.
+    expect(annotationServiceMocks.fetchAnnotationsForImage).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByText('a, Caroline'));
     const eyeButton = await screen.findByRole('button', {
@@ -386,12 +394,8 @@ describe('ManuscriptViewer smoke test', () => {
     expect(screen.getByText('Allograph: a, Caroline')).toBeTruthy();
   });
 
-  it('keeps the header allograph picker empty without filtering annotations when image ids are empty', async () => {
-    const imageAnnotation = {
-      id: 'db:image-a',
-      target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
-      _meta: { annotationType: 'image', allographId: allographA.id },
-    };
+  it('keeps the header allograph picker empty without filtering annotations when no saved graph has an allograph', async () => {
+    const imageAnnotation = savedImageAnnotation('db:image-a');
 
     fetchBaseData.mockResolvedValueOnce({
       image: fakeImage,
@@ -399,12 +403,11 @@ describe('ManuscriptViewer smoke test', () => {
       allographs: [allographA, allographB],
       imageHeight: 2000,
     });
-    fetchImageAllographIds.mockResolvedValueOnce([]);
     vi.mocked(buildInitialViewerAnnotations).mockResolvedValueOnce([imageAnnotation] as never);
 
     render(<ManuscriptViewer imageId="4432" mode="public" />);
     await screen.findByRole('button', { name: 'Image tools' });
-    await waitFor(() => expect(fetchImageAllographIds).toHaveBeenCalledWith('4432'));
+    await waitFor(() => expect(annotoriousPropsRef.current?.annotationFilter).toBeTruthy());
 
     expect(screen.queryByRole('combobox')).toBeNull();
 
@@ -422,7 +425,9 @@ describe('ManuscriptViewer smoke test', () => {
       allographs: [allographA, allographB],
       imageHeight: 2000,
     });
-    fetchImageAllographIds.mockResolvedValueOnce([allographA.id]);
+    vi.mocked(buildInitialViewerAnnotations).mockResolvedValueOnce([
+      savedImageAnnotation('db:101', allographA.id),
+    ] as never);
     annotationServiceMocks.fetchAnnotationsForImage.mockImplementation(
       async (_imageId, _allograph, type) =>
         type === 'image' ? [backendGraph(101, allographA.id), backendGraph(102, allographB.id)] : []
@@ -493,7 +498,6 @@ describe('ManuscriptViewer smoke test', () => {
       allographs: [allographA, allographB],
       imageHeight: 2000,
     });
-    fetchImageAllographIds.mockResolvedValueOnce([allographA.id, allographB.id]);
     vi.mocked(buildInitialViewerAnnotations).mockResolvedValueOnce([
       {
         id: 'db:image-a',
@@ -548,7 +552,6 @@ describe('ManuscriptViewer smoke test', () => {
       allographs: [allographA],
       imageHeight: 2000,
     });
-    fetchImageAllographIds.mockResolvedValueOnce([allographA.id]);
     vi.mocked(buildInitialViewerAnnotations).mockResolvedValueOnce([
       {
         id: 'db:image-1',
@@ -564,7 +567,6 @@ describe('ManuscriptViewer smoke test', () => {
 
     render(<ManuscriptViewer imageId="4432" mode="public" />);
     await screen.findByRole('button', { name: 'Image tools' });
-    await waitFor(() => expect(fetchImageAllographIds).toHaveBeenCalledWith('4432'));
 
     fireEvent.click(await screen.findByRole('combobox'));
     fireEvent.click(await screen.findByText('a, Caroline'));
