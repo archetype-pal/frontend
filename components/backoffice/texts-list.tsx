@@ -40,7 +40,6 @@ import {
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { NewImageTextDialog } from '@/components/backoffice/new-image-text-dialog';
-import { ImportTeiDialog } from '@/components/backoffice/import-tei-dialog';
 import { DataPagination } from '@/components/ui/data-pagination';
 import {
   Table,
@@ -467,7 +466,7 @@ export function TextsList() {
 
       <NewImageTextDialog open={newDialogOpen} onOpenChange={setNewDialogOpen} />
 
-      <ImportTeiDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
+      <NewImageTextDialog fromTeiFile open={importDialogOpen} onOpenChange={setImportDialogOpen} />
 
       <ConfirmDialog
         open={confirmBulkDelete}

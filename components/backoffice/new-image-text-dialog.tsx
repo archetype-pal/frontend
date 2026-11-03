@@ -3,8 +3,10 @@
 /**
  * Shared "+ New image-text" dialog.
  *
- * Two entry points use this:
+ * Three entry points use this:
  *   - the texts list toolbar ("+ New" with manual item_image input)
+ *   - the texts list's "Import TEI" (`fromTeiFile`: the content comes from a
+ *     file that must validate before the draft can be created)
  *   - the uncovered-images drilldown ("+ Transcription" / "+ Translation"
  *     buttons that pre-fill item_image and type)
  *
@@ -16,7 +18,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
@@ -38,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { createImageText } from '@/services/image-texts';
+import { createImageText, validateTei, type TeiValidationError } from '@/services/image-texts';
 import {
   describeCreateError,
   ExistingTextNotice,
@@ -60,7 +62,12 @@ export interface NewImageTextDialogProps {
   lockItemImage?: boolean;
   /** Lock the type field — used when entry point implies kind. */
   lockType?: boolean;
+  /** Create the draft from a TEI file, which must validate first. */
+  fromTeiFile?: boolean;
 }
+
+/** A chosen TEI file's text, and whether the validator accepted it. */
+type TeiFile = { content: string; valid: boolean };
 
 export function NewImageTextDialog({
   open,
@@ -69,6 +76,7 @@ export function NewImageTextDialog({
   defaultType = 'Transcription',
   lockItemImage = false,
   lockType = false,
+  fromTeiFile = false,
 }: NewImageTextDialogProps) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
@@ -82,8 +90,20 @@ export function NewImageTextDialog({
     itemImage: defaultItemImage ? String(defaultItemImage) : '',
     type: defaultType,
     language: '',
+    tei: null as TeiFile | null,
   });
-  const { itemImage, type, language } = form;
+  const { itemImage, type, language, tei } = form;
+  const copy = fromTeiFile
+    ? {
+        title: 'importTei.title',
+        description: 'importTei.description',
+        submit: 'importTei.importButton',
+      }
+    : {
+        title: 'imageTexts.newDialogTitle',
+        description: 'imageTexts.newDialogDescription',
+        submit: 'imageTexts.newCreateButton',
+      };
   const itemImageNumber = Number(itemImage);
   const existing = useExistingImageText(itemImageNumber, type);
 
@@ -96,6 +116,7 @@ export function NewImageTextDialog({
       itemImage: defaultItemImage ? String(defaultItemImage) : '',
       type: defaultType,
       language: '',
+      tei: null,
     });
   }, [open, defaultItemImage, defaultType]);
 
@@ -105,9 +126,11 @@ export function NewImageTextDialog({
         item_image: Number(itemImage),
         type,
         language,
+        ...(fromTeiFile ? { content: tei?.content ?? '' } : {}),
       }),
     onSuccess: (saved) => {
-      toast.success(t('imageTexts.toastCreated', { type: saved.type.toLowerCase(), id: saved.id }));
+      const toastKey = fromTeiFile ? 'importTei.toastImported' : 'imageTexts.toastCreated';
+      toast.success(t(toastKey, { type: saved.type.toLowerCase(), id: saved.id }));
       queryClient.invalidateQueries({ queryKey: backofficeKeys.imageTexts.all() });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.textsMonitor.overview() });
       queryClient.invalidateQueries({ queryKey: backofficeKeys.uncoveredImages.all() });
@@ -115,7 +138,7 @@ export function NewImageTextDialog({
       router.push(`/backoffice/image-texts/${saved.id}`);
     },
     onError: (err) => {
-      toast.error(t('imageTexts.toastCreateFailed'), {
+      toast.error(t(fromTeiFile ? 'importTei.toastImportFailed' : 'imageTexts.toastCreateFailed'), {
         description: describeCreateError(err, t, itemImageNumber, type),
       });
     },
@@ -126,14 +149,15 @@ export function NewImageTextDialog({
     itemImageNumber > 0 &&
     !!type &&
     !existing &&
+    (!fromTeiFile || !!tei?.valid) &&
     !createMut.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('imageTexts.newDialogTitle')}</DialogTitle>
-          <DialogDescription>{t('imageTexts.newDialogDescription')}</DialogDescription>
+          <DialogTitle>{t(copy.title)}</DialogTitle>
+          <DialogDescription>{t(copy.description)}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 px-5 py-2">
           <div className="space-y-1.5">
@@ -178,6 +202,9 @@ export function NewImageTextDialog({
             </div>
           </div>
           {existing ? <ExistingTextNotice text={existing} /> : null}
+          {fromTeiFile ? (
+            <TeiFileField onChange={(file) => setForm((f) => ({ ...f, tei: file }))} />
+          ) : null}
         </div>
         <DialogFooter>
           <Button
@@ -190,10 +217,69 @@ export function NewImageTextDialog({
           </Button>
           <Button size="sm" disabled={!canSubmit} onClick={() => createMut.mutate()}>
             {createMut.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-            {t('imageTexts.newCreateButton')}
+            {t(copy.submit)}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function TeiFileField({ onChange }: { onChange: (file: TeiFile | null) => void }) {
+  const t = useTranslations('backoffice');
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [errors, setErrors] = useState<TeiValidationError[] | null>(null);
+  const [validating, setValidating] = useState(false);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    const content = await file.text();
+    setFileName(file.name);
+    setErrors(null);
+    setValidating(true);
+    onChange(null);
+    let found: TeiValidationError[];
+    try {
+      found = (await validateTei(content)).errors;
+    } catch {
+      found = [{ line: 0, col: 0, message: t('importTei.validatorUnreachable') }];
+    }
+    setErrors(found);
+    setValidating(false);
+    onChange({ content, valid: found.length === 0 });
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor="new-text-file">{t('importTei.fileLabel')}</Label>
+      <Input
+        id="new-text-file"
+        type="file"
+        accept=".tei,.xml,application/xml,text/xml"
+        onChange={(e) => void handleFile(e.target.files?.[0])}
+      />
+      {fileName && (
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Upload className="h-3 w-3" /> {fileName}
+        </p>
+      )}
+      {validating && (
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" /> {t('importTei.validatingLabel')}
+        </p>
+      )}
+      {errors !== null &&
+        !validating &&
+        (errors.length === 0 ? (
+          <p className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-3.5 w-3.5" /> {t('importTei.validLabel')}
+          </p>
+        ) : (
+          <p className="flex items-center gap-1.5 text-[11px] font-medium text-destructive">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {t('importTei.lineErrorLabel', { line: errors[0].line, message: errors[0].message })}
+          </p>
+        ))}
+    </div>
   );
 }
