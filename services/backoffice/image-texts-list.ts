@@ -7,10 +7,10 @@
  */
 
 import { backofficeGet } from './api-client';
-import type { ImageTextStatus } from './review-queue';
+import type { StatusTransitionRow } from './image-text-history';
 import type { PaginatedResponse } from '@/types/backoffice';
 
-import type { ImageTextKind } from '@/types/image-text';
+import type { ImageTextKind, ImageTextStatus } from '@/types/image-text';
 
 export type { ImageTextKind };
 
@@ -28,15 +28,7 @@ export interface ImageTextListRow {
   language: string;
   review_assignee: number | null;
   review_assignee_username: string | null;
-  last_transition: {
-    id: number;
-    from_status: ImageTextStatus;
-    to_status: ImageTextStatus;
-    actor: number | null;
-    actor_username: string | null;
-    note: string;
-    created: string;
-  } | null;
+  last_transition: StatusTransitionRow | null;
   created: string;
   modified: string;
 }

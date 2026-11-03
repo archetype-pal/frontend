@@ -62,7 +62,8 @@ import {
   type ImageTextListRow,
 } from '@/services/backoffice/image-texts-list';
 import { bulkActionImageTexts } from '@/services/backoffice/image-texts-bulk';
-import { transitionImageText, type ImageTextStatus } from '@/services/backoffice/review-queue';
+import { transitionImageText } from '@/services/backoffice/review-queue';
+import type { ImageTextStatus } from '@/types/image-text';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { downloadBlob } from '@/lib/download';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';

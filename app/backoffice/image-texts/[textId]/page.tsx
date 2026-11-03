@@ -44,7 +44,10 @@ import {
 } from '@/services/image-texts';
 import { fetchManuscriptImage } from '@/services/manuscripts';
 import { transitionImageText, type TransitionPayload } from '@/services/backoffice/review-queue';
-import { fetchImageTextHistory } from '@/services/backoffice/image-text-history';
+import {
+  fetchImageTextHistory,
+  type StatusTransitionRow,
+} from '@/services/backoffice/image-text-history';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 const STATUSES: ImageTextStatus[] = ['Draft', 'Review', 'Live', 'Reviewed'];
@@ -432,21 +435,7 @@ function TransitionAction({
   );
 }
 
-function HistoryPanel({
-  history,
-}: {
-  history:
-    | Array<{
-        id: number;
-        from_status: ImageTextStatus;
-        to_status: ImageTextStatus;
-        actor: number | null;
-        actor_username: string | null;
-        note: string;
-        created: string;
-      }>
-    | undefined;
-}) {
+function HistoryPanel({ history }: { history: StatusTransitionRow[] | undefined }) {
   const t = useTranslations('backoffice');
   if (!history) return null;
   return (

@@ -1,5 +1,5 @@
 import { proxyFetch } from '@/lib/api-fetch';
-import type { ImageTextStatus } from './review-queue';
+import type { ImageTextStatus } from '@/types/image-text';
 
 export type BulkAction =
   | { ids: number[]; action: 'transition'; payload: { to_status: ImageTextStatus; note?: string } }
