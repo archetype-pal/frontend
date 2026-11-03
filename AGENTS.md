@@ -18,13 +18,25 @@
 - Route layout split:
   - Public site routes in `app/(site)/*` with header/footer shell in `app/(site)/layout.tsx`.
   - Backoffice routes in `app/backoffice/*` with guarded shell in `app/backoffice/layout.tsx` and `components/backoffice/layout/backoffice-shell.tsx`.
-  - Next route handlers in `app/api/*`: `auth/*`, the `proxy/[...path]`
-    passthrough, `app-settings`, `model-labels`, `pages`.
+  - Next route handlers in `app/api/*`: `auth/*` and the `proxy/[...path]`
+    passthrough. Nothing else: the backoffice reaches every Django resource,
+    site settings, labels and pages included, through the proxy.
 - Request-level logic lives in **`proxy.ts`** — Next.js 16's rename of
   `middleware.ts`; there is no `middleware.ts`. It builds the per-request CSP
-  nonce, redirects `/backoffice` requests without an auth cookie to `/login`,
-  rewrites disabled sections to `/not-found`, and redirects `/search` and
-  disabled search categories to the first enabled category.
+  nonce and redirects `/backoffice` requests without an auth cookie to
+  `/login`. It reads no site configuration.
+- Gates and not-found are decided in a **layout, above the route's
+  `loading.tsx`**, with `requireSection` and `requireFound` from
+  `lib/route-gates.ts`. A page under a loading boundary that calls `notFound()`
+  or `redirect()` does so after the skeleton has streamed with a 200. Each
+  switchable section (search, collection, lightbox, compare, the three
+  publication kinds) 404s itself from its layout; the detail routes look their
+  record up in a layout through a loader wrapped in React's `cache()`, which
+  the page reuses. Search has no route-level `loading.tsx`, since its category
+  redirect needs the category, which only the page sees.
+- Site settings and labels (`readSiteFeatures`, `readModelLabels`) are read
+  fresh on every request, never from Next's data cache, and shared within it
+  through `cache()`.
 - Root providers are composed in `app/layout.tsx`:
   - next-intl messages, auth, site features, model labels, query provider,
     collection, and search context.
@@ -36,7 +48,7 @@
     `INTERNAL_API_URL` when set), `authFetch` (server code, with the token from
     `getServerAuthToken()`), `proxyFetch` (browser code, through
     `/api/proxy/*`), and `optionalAuthFetch`.
-  - `services/backoffice/api-client.ts` (`backofficeGet`/`Post`/`Patch`/`Delete`,
+  - `services/backoffice/api-client.ts` (`backofficeGet`/`Post`/`Put`/`Patch`/`Delete`,
     all through `proxyFetch`) and `crud-factory.ts` (`createCrudService`) back
     the other `services/backoffice/*` modules.
   - Backoffice query keys come from the factory in `lib/backoffice/query-keys.ts`.
@@ -57,11 +69,15 @@
     marks it same-origin (`lib/same-origin.ts`). A dev server opened over plain
     HTTP from another address (`http://192.168.x.x:3000`) therefore refuses
     every write, sign-in included.
+  - Role checks read the profile's `capabilities` (`annotate`,
+    `annotate_editorially`, `read_drafts`, `manage`), which Django derives from
+    the same predicates its permissions use. Nothing gates on the signed-in
+    user's `is_staff` or `is_superuser` directly; the users page edits them as
+    data.
   - Three checks guard the backoffice, at three layers, and only the last is the
     security boundary: `proxy.ts` checks that the auth cookie _exists_;
-    `BackofficeShell` checks `is_staff` client-side; the backend's management
-    viewsets require **`is_superuser`**. A staff-but-not-superuser account
-    reaches the UI and is refused by every backoffice write.
+    `BackofficeShell` checks `capabilities.manage` client-side; the backend's
+    management viewsets require **`is_superuser`**, the rule `manage` reports.
 
 ## Frontend Commands (run in this directory)
 
