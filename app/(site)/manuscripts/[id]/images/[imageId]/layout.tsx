@@ -140,7 +140,7 @@ export default async function ManuscriptImageLayout({ children, params }: Layout
             manuscriptId={id}
             imageId={imageId}
             counts={{
-              annotations: image.number_of_image_annotations ?? 0,
+              annotations: image.number_of_annotations ?? 0,
               texts: visibleTexts.length,
               otherImages: otherImages.length,
             }}
