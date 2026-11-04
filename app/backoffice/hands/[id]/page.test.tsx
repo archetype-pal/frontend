@@ -11,7 +11,10 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('@/services/backoffice/scribes', () => ({ getHand, updateHand, deleteHand: vi.fn() }));
-vi.mock('@/hooks/backoffice/use-lookups', () => ({ useDates: () => ({ data: [] }) }));
+vi.mock('@/hooks/backoffice/use-lookups', () => ({
+  useDates: () => ({ data: [] }),
+  useScripts: () => ({ data: [] }),
+}));
 vi.mock('@/lib/backoffice/walk-paginated', () => ({ walkPaginated: async () => [] }));
 vi.mock('@/components/backoffice/common/place-combobox', () => ({ PlaceCombobox: () => null }));
 vi.mock('@/components/backoffice/scribes/hand-descriptions-section', () => ({

@@ -1290,6 +1290,8 @@
       "labelName": "Name",
       "labelPlace": "Ort",
       "selectNoDate": "Keines",
+      "labelScript": "Schrift",
+      "selectNoScript": "Keine",
       "labelDisplayOrder": "Anzeigereihenfolge",
       "displayOrderHint": "Niedrigere Werte stehen unter den Händen dieses Teils weiter vorn; die erste ist im Viewer die Vorgabe für eine neue Annotation.",
       "selectPlacePlaceholder": "Ort auswählen...",

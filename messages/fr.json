@@ -1290,6 +1290,8 @@
       "labelName": "Nom",
       "labelPlace": "Lieu",
       "selectNoDate": "Aucune",
+      "labelScript": "Écriture",
+      "selectNoScript": "Aucune",
       "labelDisplayOrder": "Ordre d'affichage",
       "displayOrderHint": "Les valeurs basses passent en premier parmi les mains de cette partie ; la première est la main proposée par défaut dans la visionneuse pour une nouvelle annotation.",
       "selectPlacePlaceholder": "Sélectionner un lieu...",
