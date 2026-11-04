@@ -1080,6 +1080,7 @@
         "partners": "Partners",
         "scribes": "Scribes",
         "hands": "Hands",
+        "scripts": "Scripts",
         "formats": "Formats",
         "sources": "Bibliographic References",
         "annotations": "Annotations",
@@ -1108,6 +1109,7 @@
       "supportingData": "Supporting Data",
       "physicalVolumes": "Items",
       "repositories": "Repositories",
+      "scripts": "Scripts",
       "formats": "Formats",
       "sources": "Bibliographic References",
       "groupSiteContent": "Site & Content",
@@ -1179,6 +1181,7 @@
       "annotations": "Annotations",
       "characters": "Characters",
       "repositories": "Repositories",
+      "scripts": "Scripts",
       "formats": "Formats",
       "sources": "Bibliographic References",
       "publications": "Posts",
@@ -2432,6 +2435,15 @@
       "fieldName": "Name",
       "fieldNamePlaceholder": "e.g. Codex, Roll",
       "deleteDescription": "This may affect items that use this format."
+    },
+    "scripts": {
+      "title": "Scripts",
+      "description": "Manage script records used across hands",
+      "singularLabel": "Script",
+      "pluralLabel": "Scripts",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "e.g. Caroline minuscule",
+      "deleteDescription": "A script that is used by a hand cannot be deleted."
     },
     "sources": {
       "title": "Bibliographic References",

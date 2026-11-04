@@ -1080,6 +1080,7 @@
         "partners": "Partner",
         "scribes": "Schreiber",
         "hands": "Hände",
+        "scripts": "Schriften",
         "formats": "Formate",
         "sources": "Bibliografische Referenzen",
         "annotations": "Annotationen",
@@ -1108,6 +1109,7 @@
       "supportingData": "Zusatzdaten",
       "physicalVolumes": "Elemente",
       "repositories": "Bibliotheken",
+      "scripts": "Schriften",
       "formats": "Formate",
       "sources": "Bibliografische Referenzen",
       "groupSiteContent": "Website & Inhalte",
@@ -1179,6 +1181,7 @@
       "annotations": "Annotationen",
       "characters": "Zeichen",
       "repositories": "Bibliotheken",
+      "scripts": "Schriften",
       "formats": "Formate",
       "sources": "Bibliografische Referenzen",
       "publications": "Beiträge",
@@ -2432,6 +2435,15 @@
       "fieldName": "Name",
       "fieldNamePlaceholder": "z. B. Kodex, Rolle",
       "deleteDescription": "Dies kann sich auf Objekte auswirken, die dieses Format verwenden."
+    },
+    "scripts": {
+      "title": "Schriften",
+      "description": "Die von Händen verwendeten Schriften verwalten",
+      "singularLabel": "Schrift",
+      "pluralLabel": "Schriften",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "z. B. Karolingische Minuskel",
+      "deleteDescription": "Eine Schrift, die von einer Hand verwendet wird, kann nicht gelöscht werden."
     },
     "sources": {
       "title": "Bibliografische Referenzen",

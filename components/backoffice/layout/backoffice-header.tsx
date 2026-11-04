@@ -122,6 +122,7 @@ export function BackofficeHeader({
       pages: t('header.breadcrumbs.pages'),
       scribes: t('header.breadcrumbs.scribes'),
       hands: t('header.breadcrumbs.hands'),
+      scripts: t('header.breadcrumbs.scripts'),
       dates: getPluralLabel('date'),
       formats: t('header.breadcrumbs.formats'),
       sources: t('header.breadcrumbs.sources'),

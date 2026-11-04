@@ -1080,6 +1080,7 @@
         "partners": "Partenaires",
         "scribes": "Scribes",
         "hands": "Mains",
+        "scripts": "Écritures",
         "formats": "Formats",
         "sources": "Références bibliographiques",
         "annotations": "Annotations",
@@ -1108,6 +1109,7 @@
       "supportingData": "Données de support",
       "physicalVolumes": "Éléments",
       "repositories": "Dépôts",
+      "scripts": "Écritures",
       "formats": "Formats",
       "sources": "Références bibliographiques",
       "groupSiteContent": "Site & Contenu",
@@ -1179,6 +1181,7 @@
       "annotations": "Annotations",
       "characters": "Caractères",
       "repositories": "Dépôts",
+      "scripts": "Écritures",
       "formats": "Formats",
       "sources": "Références bibliographiques",
       "publications": "Articles",
@@ -2432,6 +2435,15 @@
       "fieldName": "Nom",
       "fieldNamePlaceholder": "ex. Codex, Rouleau",
       "deleteDescription": "Cela peut affecter les éléments qui utilisent ce format."
+    },
+    "scripts": {
+      "title": "Écritures",
+      "description": "Gérer les écritures utilisées par les mains",
+      "singularLabel": "Écriture",
+      "pluralLabel": "Écritures",
+      "fieldName": "Nom",
+      "fieldNamePlaceholder": "p. ex. Caroline minuscule",
+      "deleteDescription": "Une écriture utilisée par une main ne peut pas être supprimée."
     },
     "sources": {
       "title": "Références bibliographiques",
