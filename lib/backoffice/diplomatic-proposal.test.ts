@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  chosenItems,
   diplomaticAcceptBlocker,
+  isItemised,
   isKnownPipeline,
   isTruncated,
   itemCount,
@@ -87,5 +89,20 @@ describe('the rest of the helpers', () => {
     expect(itemCount('W2.1', { entities: [{ role: 'witness', name: 'a' }] })).toBe(1);
     expect(itemCount('W3.3', {})).toBe(0);
     expect(itemCount('W3.2', { verdict: 'uncertain' })).toBe(0);
+  });
+});
+
+describe('choosing items', () => {
+  it('offers a choice only where the answer is a list', () => {
+    expect(['W2.1', 'W2.2', 'W3.3'].filter(isItemised)).toEqual(['W2.1', 'W2.2', 'W3.3']);
+    expect(['W2.4', 'W3.2', 'W9.9'].some(isItemised)).toBe(false);
+  });
+
+  it('sends nothing when every item is ticked, and the ticked positions in order otherwise', () => {
+    expect(chosenItems(new Set([2, 0, 1]), 3)).toBeUndefined();
+    expect(chosenItems(new Set([2, 0]), 3)).toEqual([0, 2]);
+    expect(chosenItems(new Set(), 3)).toEqual([]);
+    // A position past the end of the list is never sent.
+    expect(chosenItems(new Set([0, 5, -1]), 2)).toEqual([0]);
   });
 });

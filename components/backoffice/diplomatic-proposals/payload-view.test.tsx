@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { PayloadView } from './payload-view';
 
@@ -110,5 +110,90 @@ describe('<PayloadView>', () => {
       />
     );
     expect(screen.getByText('scribe')).not.toBeNull();
+  });
+
+  describe('choosing items', () => {
+    const ENTITIES = {
+      entities: [
+        { role: 'witness', name: 'Dauid de Bernham' },
+        { role: 'granter', name: 'W.' },
+      ],
+    };
+    const box = (name: string) => screen.getByRole('checkbox', { name });
+
+    it('ticks each item by its position in the model’s list, though entities show by role', () => {
+      const onToggle = vi.fn();
+      render(
+        <PayloadView
+          pipeline="W2.1"
+          text={TEXT}
+          catalogueDate=""
+          payload={ENTITIES}
+          choice={{ chosen: new Set([0]), onToggle }}
+        />
+      );
+
+      const boxes = screen.getAllByRole('checkbox');
+      expect(boxes.map((b) => b.getAttribute('aria-label'))).toEqual([
+        'Record Granter: W.',
+        'Record Witness: Dauid de Bernham',
+      ]);
+      expect(box('Record Witness: Dauid de Bernham').getAttribute('aria-checked')).toBe('true');
+      expect(box('Record Granter: W.').getAttribute('aria-checked')).toBe('false');
+      expect(box('Record Granter: W.').closest('li')?.className).toContain('opacity-60');
+      expect(box('Record Witness: Dauid de Bernham').closest('li')?.className).not.toContain(
+        'opacity-60'
+      );
+
+      fireEvent.click(box('Record Granter: W.'));
+      expect(onToggle).toHaveBeenCalledWith(1);
+      // A pending choice is not yet a decision.
+      expect(screen.queryByText('Left out')).toBeNull();
+    });
+
+    it('names formulae and relations by what they say', () => {
+      const choice = { chosen: new Set([0]), onToggle: () => {} };
+      render(
+        <PayloadView
+          pipeline="W2.2"
+          text={TEXT}
+          catalogueDate=""
+          payload={{ formulae: [{ kind: 'salutation', label: 'Eternal greeting', excerpt: '' }] }}
+          choice={choice}
+        />
+      );
+      render(
+        <PayloadView
+          pipeline="W3.3"
+          text={TEXT}
+          catalogueDate=""
+          payload={{
+            triples: [{ subject: 'Dauid de Bernham', predicate: 'witnessed_by', object: 'W.' }],
+          }}
+          choice={choice}
+        />
+      );
+
+      expect(box('Record Salutation: Eternal greeting')).not.toBeNull();
+      expect(box('Record Dauid de Bernham – witnessed by – W.')).not.toBeNull();
+    });
+
+    it('marks what an accepted proposal left out, and offers no checkboxes', () => {
+      render(
+        <PayloadView
+          pipeline="W2.1"
+          text={TEXT}
+          catalogueDate=""
+          payload={ENTITIES}
+          dropped={[0]}
+        />
+      );
+
+      expect(screen.queryByRole('checkbox')).toBeNull();
+      const leftOut = screen.getAllByText('Left out');
+      expect(leftOut).toHaveLength(1);
+      expect(leftOut[0].closest('li')?.textContent).toContain('Dauid de Bernham');
+      expect(leftOut[0].closest('li')?.className).toContain('opacity-60');
+    });
   });
 });

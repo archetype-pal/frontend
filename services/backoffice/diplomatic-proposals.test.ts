@@ -57,4 +57,11 @@ describe('diplomatic proposals service', () => {
     expect(call(1).url).toMatch(/\/diplomatic-proposals\/8\/reject\/?$/);
     expect(call(1).body).toEqual({ reason: 'not in the text' });
   });
+
+  it('accepts part of a proposal by naming the positions kept', async () => {
+    await acceptDiplomaticProposal(7, [0, 2]);
+
+    expect(call(0).url).toMatch(/\/diplomatic-proposals\/7\/accept\/?$/);
+    expect(call(0).body).toEqual({ items: [0, 2] });
+  });
 });

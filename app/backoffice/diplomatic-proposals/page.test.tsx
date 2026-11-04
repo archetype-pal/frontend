@@ -57,6 +57,7 @@ function proposal(
     reviewer_username: '',
     reviewed: null,
     reason: '',
+    dropped_items: [],
     created: '2026-11-04T00:00:00Z',
     ...overrides,
   };
@@ -70,6 +71,7 @@ const page = (results: DiplomaticProposalItem[]) => ({
 });
 
 const review = () => screen.getByRole('article');
+const acceptButton = () => within(review()).getByRole('button', { name: 'Accept' });
 const renderPage = () => renderWithQueryClient(<DiplomaticProposalsPage />);
 
 describe('<DiplomaticProposalsPage>', () => {
@@ -142,12 +144,106 @@ describe('<DiplomaticProposalsPage>', () => {
     ).not.toBeNull();
     fireEvent.click(within(review()).getByRole('button', { name: 'Accept' }));
 
-    await waitFor(() => expect(services.acceptDiplomaticProposal).toHaveBeenCalledWith(1));
+    // Every item is ticked, so the request names none of them.
+    await waitFor(() =>
+      expect(services.acceptDiplomaticProposal).toHaveBeenCalledWith(1, undefined)
+    );
     expect(
       await within(review()).findByRole('heading', { level: 2, name: 'DCA DCD 4.3.Sacr.2' })
     ).not.toBeNull();
     await waitFor(() => expect(services.getDiplomaticProposals).toHaveBeenCalledTimes(2));
     expect(services.getDiplomaticProposalDepth).toHaveBeenCalledTimes(2);
+  });
+
+  it('records only the items left ticked, and says the rest are left out', async () => {
+    services.getDiplomaticProposals.mockResolvedValue(page([proposal(1)]));
+    renderPage();
+    await screen.findByText('2 of 3 quotations found in the text');
+
+    fireEvent.click(
+      within(review()).getByRole('checkbox', { name: 'Record Witness: Ricardo de Morevilla' })
+    );
+
+    expect(
+      within(review()).getByText(
+        'Accepting records these 2 entities against the charter. The unticked item is left ' +
+          'out, and the proposal keeps a note of it.'
+      )
+    ).not.toBeNull();
+    fireEvent.click(acceptButton());
+
+    await waitFor(() => expect(services.acceptDiplomaticProposal).toHaveBeenCalledWith(1, [0, 1]));
+  });
+
+  it('will not accept with nothing ticked, and ticking an item again allows it', async () => {
+    services.getDiplomaticProposals.mockResolvedValue(page([proposal(1)]));
+    renderPage();
+    await screen.findByText('2 of 3 quotations found in the text');
+
+    const boxes = within(review()).getAllByRole('checkbox');
+    expect(boxes).toHaveLength(3);
+    boxes.forEach((box) => fireEvent.click(box));
+
+    expect(acceptButton().hasAttribute('disabled')).toBe(true);
+    expect(within(review()).getByText(/Nothing is ticked/)).not.toBeNull();
+
+    fireEvent.click(
+      within(review()).getByRole('checkbox', { name: 'Record Granter: Johannes de Vallibus' })
+    );
+
+    expect(acceptButton().hasAttribute('disabled')).toBe(false);
+    expect(
+      within(review()).getByText(
+        'Accepting records this entity against the charter. The 2 unticked items are left ' +
+          'out, and the proposal keeps a note of them.'
+      )
+    ).not.toBeNull();
+  });
+
+  it('accepts a translation whole, with nothing to untick', async () => {
+    const translation = (id: number) =>
+      proposal(id, { pipeline: 'W2.4', payload: { translation: 'To all the faithful…' } });
+    services.getDiplomaticProposals.mockResolvedValue(page([translation(1)]));
+    services.getDiplomaticProposal.mockImplementation(async (id: number) => ({
+      ...translation(id),
+      source_text: CHARTER,
+    }));
+    renderPage();
+
+    expect(
+      await within(await screen.findByRole('article')).findByText(/To all the faithful/)
+    ).not.toBeNull();
+    expect(within(review()).queryByRole('checkbox')).toBeNull();
+    fireEvent.click(acceptButton());
+
+    await waitFor(() =>
+      expect(services.acceptDiplomaticProposal).toHaveBeenCalledWith(1, undefined)
+    );
+  });
+
+  it('marks the items an accepted proposal left out', async () => {
+    services.getDiplomaticProposals.mockImplementation(async ({ status }: { status: string }) =>
+      status === 'accepted'
+        ? page([
+            proposal(5, {
+              status: 'accepted',
+              reviewer_username: 'luca',
+              reviewed: '2026-11-04T00:00:00Z',
+              dropped_items: [2],
+            }),
+          ])
+        : page([])
+    );
+    renderPage();
+    await screen.findByText('No proposals are waiting for review.');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Accepted' }));
+
+    expect(await screen.findByText(/1 item left out/)).not.toBeNull();
+    const leftOut = within(review()).getByText('Left out');
+    expect(leftOut.closest('li')?.textContent).toContain('Ricardo de Morevilla');
+    expect(within(review()).getAllByText('Left out')).toHaveLength(1);
+    expect(within(review()).queryByRole('checkbox')).toBeNull();
   });
 
   it('rejects with the reason typed beside the button', async () => {
