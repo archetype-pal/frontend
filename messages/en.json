@@ -3144,6 +3144,7 @@
       "description": "Description",
       "itemPart": "Item Part",
       "hand": "Hand",
+      "script": "Script",
       "place": "Place"
     },
     "manuscriptFallback": "Manuscript #{id}",

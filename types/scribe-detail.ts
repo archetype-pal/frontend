@@ -14,6 +14,7 @@ export interface ScribeHand {
   item_part: number;
   date?: string | null;
   place?: string | null;
+  script?: string | null;
   // Denormalized fields
   item_part_display_label?: string;
   shelfmark?: string;

@@ -3144,6 +3144,7 @@
       "description": "Description",
       "itemPart": "Partie de l'élément",
       "hand": "Main",
+      "script": "Écriture",
       "place": "Lieu"
     },
     "manuscriptFallback": "Manuscrit n°{id}",
