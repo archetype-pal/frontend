@@ -37,6 +37,7 @@ function proposal(
       image_text: 61,
       type: 'Transcription',
       item_image: 3738,
+      item_part: 420,
       historical_item: 412,
       label: `DCA DCD 4.3.Sacr.${id}`,
       date: '1221 × 1229',
@@ -112,7 +113,7 @@ describe('<DiplomaticProposalsPage>', () => {
       within(review())
         .getByRole('link', { name: /Open the page in the viewer/ })
         .getAttribute('href')
-    ).toBe('/manuscripts/412/images/3738');
+    ).toBe('/manuscripts/420/images/3738');
     expect(within(review()).getByRole('link', { name: 'Edit the text' }).getAttribute('href')).toBe(
       '/backoffice/image-texts/61'
     );

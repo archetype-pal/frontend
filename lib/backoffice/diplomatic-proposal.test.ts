@@ -74,6 +74,7 @@ describe('the rest of the helpers', () => {
           image_text: 1,
           type: 'Transcription',
           item_image: 2,
+          item_part: 4,
           historical_item: 3,
           label: 'x',
           date: '',
