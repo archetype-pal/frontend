@@ -431,3 +431,77 @@ export interface GraphProposalItem {
   accepted_graph: number | null;
   created: string;
 }
+
+/** The charter transcription a diplomatic proposal was read from. */
+export interface DiplomaticProposalSource {
+  image_text: number;
+  type: string;
+  item_image: number;
+  historical_item: number;
+  label: string;
+  /** The catalogue date; what a W3.2 verdict was judged against. Empty when undated. */
+  date: string;
+}
+
+export interface ProposedEntity {
+  role: string;
+  name: string;
+  normalised?: string;
+  note?: string;
+}
+
+export interface ProposedFormula {
+  kind: string;
+  label: string;
+  excerpt?: string;
+  published_type?: string;
+}
+
+export interface ProposedTriple {
+  subject: string;
+  predicate: string;
+  object: string;
+}
+
+/**
+ * A pipeline's parsed answer. Its shape depends on the pipeline: W2.1
+ * `entities`, W2.2 `formulae`, W2.4 `translation` and `notes`, W3.2 a
+ * `verdict` with its evidence, W3.3 `triples`.
+ */
+export interface DiplomaticPayload {
+  entities?: ProposedEntity[];
+  formulae?: ProposedFormula[];
+  triples?: ProposedTriple[];
+  translation?: string;
+  notes?: string;
+  verdict?: string;
+  evidence?: string;
+  reasoning?: string;
+  suggested_range?: string;
+  [key: string]: unknown;
+}
+
+/** A machine-authored diplomatic proposal (AI programme Phases 2–3). Read-only. */
+export interface DiplomaticProposalItem {
+  id: number;
+  pipeline: string;
+  source_type: string;
+  source_id: number;
+  /** Null when the source is not a transcription, or no longer exists. */
+  source: DiplomaticProposalSource | null;
+  payload: DiplomaticPayload;
+  confidence: number | null;
+  ml_job: number | null;
+  model_name: string;
+  status: GraphProposalStatus;
+  reviewer: number | null;
+  reviewer_username: string;
+  reviewed: string | null;
+  reason: string;
+  created: string;
+}
+
+export interface DiplomaticProposalDetail extends DiplomaticProposalItem {
+  /** The charter text as the model read it: TEI stripped, truncated past 12,000 characters. */
+  source_text: string;
+}

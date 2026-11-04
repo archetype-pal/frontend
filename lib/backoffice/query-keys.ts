@@ -136,6 +136,13 @@ export const backofficeKeys = {
       [...backofficeKeys.annotationProposals.all(), 'list', filters] as const,
     depth: () => [...backofficeKeys.annotationProposals.all(), 'depth'] as const,
   },
+  diplomaticProposals: {
+    all: () => [...backofficeKeys.all, 'diplomatic-proposals'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.diplomaticProposals.all(), 'list', filters] as const,
+    detail: (id: number) => [...backofficeKeys.diplomaticProposals.all(), 'detail', id] as const,
+    depth: () => [...backofficeKeys.diplomaticProposals.all(), 'depth'] as const,
+  },
   previewAsPublic: (textId: number) =>
     [...backofficeKeys.all, 'preview-as-public', textId] as const,
   teiRefSearch: (segment: string, query: string) =>

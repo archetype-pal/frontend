@@ -35,6 +35,7 @@ import {
   Trash2,
   HeartPulse,
   Sparkles,
+  ScanText,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
@@ -42,6 +43,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getComments } from '@/services/backoffice/publications';
 import { getAnnotationProposalDepth } from '@/services/backoffice/annotation-proposals';
+import { getDiplomaticProposalDepth } from '@/services/backoffice/diplomatic-proposals';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useTranslations } from 'next-intl';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -90,6 +92,11 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
             icon: Sparkles,
           },
           { label: t('sidebar.texts'), href: '/backoffice/texts', icon: ScrollText },
+          {
+            label: t('sidebar.diplomaticProposals'),
+            href: '/backoffice/diplomatic-proposals',
+            icon: ScanText,
+          },
           { label: t('sidebar.characters'), href: '/backoffice/symbols', icon: Type },
         ],
         subGroups: [
@@ -164,11 +171,20 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
     staleTime: 30_000,
     retry: false,
   });
+  const { data: diplomaticDepth } = useQuery({
+    queryKey: backofficeKeys.diplomaticProposals.depth(),
+    queryFn: getDiplomaticProposalDepth,
+    enabled: isAuthenticated,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: false,
+  });
 
   const pendingCount = pendingComments?.count ?? 0;
   const badges: Record<string, number> = {
     '/backoffice/comments': pendingCount,
     '/backoffice/annotation-proposals': proposalDepth?.pending ?? 0,
+    '/backoffice/diplomatic-proposals': diplomaticDepth?.pending ?? 0,
   };
 
   return (
