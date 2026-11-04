@@ -3619,5 +3619,23 @@
       }
     },
     "otherRelation": "Connected ({relation})"
+  },
+  "similarGlyphs": {
+    "metaTitle": "Letters like this",
+    "title": "Letters like this",
+    "intro": "The glyphs whose shape lies nearest this one's, nearest first. A model trained on medieval Latin handwriting and two measures of shape compare the letter-forms: the order is a machine's, not a scholar's judgement.",
+    "source": "Searched from",
+    "openInViewer": "Open in the viewer",
+    "otherCharters": "Only other charters",
+    "sameLetter": "Only the letter {character}",
+    "range": "{from}–{to} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "loading": "Finding letters like this…",
+    "noResults": "No glyph matches these filters.",
+    "noVector": "This glyph cannot be searched from yet: it has no vector.",
+    "unavailable": "Searching by likeness is not set up on this site yet.",
+    "error": "The search failed. Try again later.",
+    "backToSearch": "Back to glyph search"
   }
 }

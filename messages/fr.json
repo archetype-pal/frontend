@@ -3619,5 +3619,23 @@
       }
     },
     "otherRelation": "Lié ({relation})"
+  },
+  "similarGlyphs": {
+    "metaTitle": "Lettres semblables",
+    "title": "Lettres semblables",
+    "intro": "Les glyphes dont la forme est la plus proche de celle-ci, les plus proches d'abord. Un modèle entraîné sur l'écriture latine médiévale et deux mesures de forme comparent les lettres : l'ordre est celui d'une machine, non le jugement d'un spécialiste.",
+    "source": "Glyphe de départ",
+    "openInViewer": "Ouvrir dans la visionneuse",
+    "otherCharters": "Seulement les autres chartes",
+    "sameLetter": "Seulement la lettre {character}",
+    "range": "{from}–{to} sur {total}",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "loading": "Recherche de lettres semblables…",
+    "noResults": "Aucun glyphe ne correspond à ces filtres.",
+    "noVector": "On ne peut pas encore chercher à partir de ce glyphe : il n'a pas de vecteur.",
+    "unavailable": "La recherche par ressemblance n'est pas encore configurée sur ce site.",
+    "error": "La recherche a échoué. Réessayez plus tard.",
+    "backToSearch": "Retour à la recherche de glyphes"
   }
 }

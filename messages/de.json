@@ -3619,5 +3619,23 @@
       }
     },
     "otherRelation": "Verbunden ({relation})"
+  },
+  "similarGlyphs": {
+    "metaTitle": "Ähnliche Buchstaben",
+    "title": "Ähnliche Buchstaben",
+    "intro": "Die Glyphen, deren Form dieser am nächsten liegt, die nächsten zuerst. Ein auf mittellateinische Handschriften trainiertes Modell und zwei Formmaße vergleichen die Buchstabenformen: Die Reihenfolge ist die einer Maschine, kein wissenschaftliches Urteil.",
+    "source": "Ausgangsglyphe",
+    "openInViewer": "Im Viewer öffnen",
+    "otherCharters": "Nur andere Urkunden",
+    "sameLetter": "Nur der Buchstabe {character}",
+    "range": "{from}–{to} von {total}",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "loading": "Ähnliche Buchstaben werden gesucht…",
+    "noResults": "Keine Glyphe entspricht diesen Filtern.",
+    "noVector": "Von dieser Glyphe aus kann noch nicht gesucht werden: Sie hat keinen Vektor.",
+    "unavailable": "Die Ähnlichkeitssuche ist auf dieser Website noch nicht eingerichtet.",
+    "error": "Die Suche ist fehlgeschlagen. Bitte später erneut versuchen.",
+    "backToSearch": "Zurück zur Glyphensuche"
   }
 }
