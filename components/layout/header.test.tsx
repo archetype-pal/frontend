@@ -219,15 +219,27 @@ describe('<Header> Research menu', () => {
     expect(researchLinks()).toEqual([['formulary', '/formulary']]);
   });
 
-  it('lists both, Ask Archetype first', async () => {
-    mockState.getAgentTools.mockResolvedValue({ enabled: true, tools: [] });
-    mockState.getDiplomaticSummary.mockResolvedValue({ formulae: 1, entities: 0, relations: 0 });
+  it.each([
+    ['an entity', { formulae: 0, entities: 1, relations: 0 }],
+    ['a relation', { formulae: 0, entities: 0, relations: 1 }],
+  ])('lists the network once %s has been approved', async (_, summary) => {
+    mockState.getDiplomaticSummary.mockResolvedValue(summary);
     renderHeader();
 
-    await waitFor(() => expect(researchLinks()).toHaveLength(2));
+    await screen.findByRole('button', { name: 'research' });
+    expect(researchLinks()).toEqual([['network', '/network']]);
+  });
+
+  it('lists all three, Ask Archetype first', async () => {
+    mockState.getAgentTools.mockResolvedValue({ enabled: true, tools: [] });
+    mockState.getDiplomaticSummary.mockResolvedValue({ formulae: 1, entities: 2, relations: 0 });
+    renderHeader();
+
+    await waitFor(() => expect(researchLinks()).toHaveLength(3));
     expect(researchLinks()).toEqual([
       ['ask', '/ask'],
       ['formulary', '/formulary'],
+      ['network', '/network'],
     ]);
   });
 

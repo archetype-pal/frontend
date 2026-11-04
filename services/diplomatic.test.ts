@@ -5,7 +5,7 @@ vi.mock('@/lib/api-fetch', () => ({
   apiFetch: (...args: unknown[]) => apiFetchMock(...args),
 }));
 
-import { getDiplomaticSummary, getFormulae } from './diplomatic';
+import { NETWORK_GEXF_URL, getDiplomaticSummary, getFormulae, getNetwork } from './diplomatic';
 import { jsonResponse } from '@/test/responses';
 
 beforeEach(() => apiFetchMock.mockReset());
@@ -46,5 +46,30 @@ describe('getDiplomaticSummary', () => {
     apiFetchMock.mockResolvedValue(jsonResponse({}, 502));
 
     await expect(getDiplomaticSummary()).rejects.toThrow('502');
+  });
+});
+
+describe('getNetwork', () => {
+  it('reads the whole network', async () => {
+    const network = {
+      nodes: [{ id: 'person:a', label: 'A', kind: 'person', record: null }],
+      edges: [],
+    };
+    apiFetchMock.mockResolvedValue(jsonResponse(network));
+
+    await expect(getNetwork()).resolves.toEqual(network);
+    expect(apiFetchMock.mock.calls[0]![0]).toBe('/api/v1/diplomatic/network/');
+  });
+
+  it('throws on a failure rather than reporting an empty network', async () => {
+    apiFetchMock.mockResolvedValue(jsonResponse({}, 503));
+
+    await expect(getNetwork()).rejects.toThrow('503');
+  });
+
+  it('downloads the GEXF from the public API address the browser can reach', () => {
+    expect(NETWORK_GEXF_URL).toBe(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/diplomatic/network/gexf/`
+    );
   });
 });
