@@ -125,7 +125,10 @@
         "status",
         "language",
         "places",
-        "people"
+        "people",
+        "granters",
+        "beneficiaries",
+        "witnesses"
       ]
     },
     "clauses": {
