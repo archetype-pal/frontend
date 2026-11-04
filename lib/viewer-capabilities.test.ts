@@ -40,4 +40,12 @@ describe('getViewerCapabilities', () => {
     expect(viewer.canCreateEditorialAnnotations).toBe(true);
     expect(viewer.canPersistEditorialAnnotations).toBe(true);
   });
+
+  it('offers text editing only to a user who may manage', () => {
+    expect(getViewerCapabilities(null).canEditTexts).toBe(false);
+    expect(getViewerCapabilities(caps({ annotate: true, read_drafts: true })).canEditTexts).toBe(
+      false
+    );
+    expect(getViewerCapabilities(caps({ annotate: true, manage: true })).canEditTexts).toBe(true);
+  });
 });
