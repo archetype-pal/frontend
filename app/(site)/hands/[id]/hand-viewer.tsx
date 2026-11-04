@@ -339,6 +339,16 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
                 </>
               )}
 
+              {hand.script && (
+                <>
+                  <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    {t('fields.script')}
+                  </dt>
+                  <dd className="text-sm">{hand.script}</dd>
+                </>
+              )}
+
               {scribe && (
                 <>
                   <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">

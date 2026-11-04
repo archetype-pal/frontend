@@ -16,6 +16,7 @@ export interface HandDetail {
   place: string | null;
   descriptions: HandDescriptionPublic[];
   display_order?: number;
+  script?: string | null;
   // Additional fields that may come from the API
   repository_name?: string;
   repository_city?: string;
