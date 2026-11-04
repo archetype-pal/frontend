@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import {
   ChevronDown,
+  ExternalLink,
   Image as ImageIcon,
   ImagePlus,
   Pencil,
@@ -123,29 +125,41 @@ function ItemPartCard({
 
   return (
     <Collapsible className="rounded-md border">
-      <CollapsibleTrigger className="flex w-full items-center gap-3 px-4 py-3 hover:bg-accent/30 transition-colors">
-        <ChevronDown className="h-4 w-4 shrink-0 transition-transform [[data-state=closed]>&]:rotate-[-90deg]" />
-        <div className="flex-1 text-left">
-          <p className="text-sm font-medium">{part.display_label}</p>
-          {part.current_item_display && (
-            <p className="text-xs text-muted-foreground">
-              {part.current_item_display}
-              {part.current_item_locus ? `, ${part.current_item_locus}` : ''}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {dirty && (
-            <Badge variant="default" className="text-[10px] h-5 px-1.5">
-              {t('manuscriptsDetail.unsaved')}
+      <div className="flex items-center">
+        <CollapsibleTrigger className="flex flex-1 items-center gap-3 px-4 py-3 hover:bg-accent/30 transition-colors">
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform [[data-state=closed]>&]:rotate-[-90deg]" />
+          <div className="flex-1 text-left">
+            <p className="text-sm font-medium">{part.display_label}</p>
+            {part.current_item_display && (
+              <p className="text-xs text-muted-foreground">
+                {part.current_item_display}
+                {part.current_item_locus ? `, ${part.current_item_locus}` : ''}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {dirty && (
+              <Badge variant="default" className="text-[10px] h-5 px-1.5">
+                {t('manuscriptsDetail.unsaved')}
+              </Badge>
+            )}
+            <Badge variant="secondary" className="text-xs gap-1">
+              <ImageIcon className="h-3 w-3" />
+              {part.images.length}
             </Badge>
-          )}
-          <Badge variant="secondary" className="text-xs gap-1">
-            <ImageIcon className="h-3 w-3" />
-            {part.images.length}
-          </Badge>
-        </div>
-      </CollapsibleTrigger>
+          </div>
+        </CollapsibleTrigger>
+        <Link
+          href={`/manuscripts/${part.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={t('manuscriptsDetail.viewPartPublicPage', { label: part.display_label })}
+          aria-label={t('manuscriptsDetail.viewPartPublicPage', { label: part.display_label })}
+          className="px-3 py-3 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ExternalLink className="h-4 w-4" />
+        </Link>
+      </div>
 
       <CollapsibleContent>
         <div className="border-t px-4 py-4 space-y-4">
