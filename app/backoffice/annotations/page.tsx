@@ -29,6 +29,7 @@ import { useServerList } from '@/hooks/backoffice/use-server-list';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
+import { getAnnotatedHitDetailUrl } from '@/lib/media-url';
 import type { GraphItem } from '@/types/backoffice';
 import { toast } from 'sonner';
 
@@ -144,16 +145,19 @@ export default function AnnotationsPage() {
       },
       {
         id: 'actions',
-        cell: ({ row }) => (
-          <Link
-            href={`/manuscripts/${row.original.historical_item}/images/${row.original.item_image}`}
-            target="_blank"
-          >
-            <Button variant="ghost" size="icon" className="h-7 w-7">
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
-        ),
+        cell: ({ row }) => {
+          const href = getAnnotatedHitDetailUrl({
+            item_part: row.original.item_part ?? row.original.historical_item,
+            item_image: row.original.item_image,
+          });
+          return href ? (
+            <Link href={href} target="_blank">
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          ) : null;
+        },
         size: 50,
       },
     ],

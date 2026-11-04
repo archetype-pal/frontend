@@ -35,6 +35,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { formatAge } from '@/lib/backoffice/format-age';
+import { getAnnotatedHitDetailUrl } from '@/lib/media-url';
 import {
   ALL,
   EMPTY_TRASH_FILTERS,
@@ -244,38 +245,46 @@ export default function TrashPage() {
       },
       {
         id: 'actions',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              aria-label={`${t('trash.restore')} #${row.original.id}`}
-              onClick={() => restore(row.original.id)}
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-destructive"
-              aria-label={`${t('trash.purge')} #${row.original.id}`}
-              onClick={() => setPurgeTarget(row.original)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-            <Link
-              href={`/manuscripts/${row.original.historical_item}/images/${row.original.item_image}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t('trash.openImage')}
-            >
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <ExternalLink className="h-3.5 w-3.5" />
+        cell: ({ row }) => {
+          const href = getAnnotatedHitDetailUrl({
+            item_part: row.original.item_part ?? row.original.historical_item,
+            item_image: row.original.item_image,
+          });
+          return (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label={`${t('trash.restore')} #${row.original.id}`}
+                onClick={() => restore(row.original.id)}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
               </Button>
-            </Link>
-          </div>
-        ),
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive"
+                aria-label={`${t('trash.purge')} #${row.original.id}`}
+                onClick={() => setPurgeTarget(row.original)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+              {href && (
+                <Link
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t('trash.openImage')}
+                >
+                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+          );
+        },
         size: 110,
       },
     ],
