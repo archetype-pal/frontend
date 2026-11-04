@@ -70,6 +70,7 @@
     "ask": "Ask Archetype",
     "research": "Research",
     "formulary": "Formulary",
+    "network": "Network",
     "backoffice": "Backoffice",
     "menu": "Menu",
     "openMenu": "Open menu",
@@ -3532,5 +3533,86 @@
       "notification": "Notification",
       "other": "Other"
     }
+  },
+  "network": {
+    "metaTitle": "Network",
+    "title": "Network",
+    "intro": "Who appears with whom in the charters: granters, beneficiaries and witnesses, the places the charters name, and the scribes who wrote them. Choose a name to see its charters and everyone they connect it to.",
+    "provenance": "A language model proposed each name from the charters it read, and a scholar approved it before it appeared here. Names are given as the charter writes them: two spellings of one person are two entries, because deciding they are the same person is a scholar's call. Scribes come from the catalogue's attributions.",
+    "download": "Download the network (GEXF)",
+    "downloadHint": "The whole network, for Gephi and other graph tools.",
+    "indexLabel": "Everyone and everything in the network",
+    "kindLabel": "Show",
+    "all": "All",
+    "kinds": {
+      "person": "People",
+      "place": "Places",
+      "charter": "Charters",
+      "scribe": "Scribes"
+    },
+    "kind": {
+      "person": "Person",
+      "place": "Place",
+      "charter": "Charter",
+      "scribe": "Scribe"
+    },
+    "searchLabel": "Find a name",
+    "searchPlaceholder": "Find, e.g. Walterus",
+    "connections": "{count, plural, one {# connection} other {# connections}}",
+    "showMore": "Show more",
+    "noMatch": "Nothing matches.",
+    "open": "{kind, select, charter {Open the charter} scribe {Open the scribe} other {Open}}",
+    "drawingCaption": "{name} at the centre, with {inner, plural, one {# direct connection} other {# direct connections}}{outer, plural, =0 {} other { and # more one step further}}.",
+    "omitted": "{count, plural, one {# connection is not drawn, for want of room; all are listed below.} other {# connections are not drawn, for want of room; all are listed below.}}",
+    "statedIn": "stated in <charter>{name}</charter>",
+    "empty": "No connection has been approved yet.",
+    "emptyHint": "The network fills in once a scholar has reviewed the names and relations a model read in the charters.",
+    "loadError": "Could not load the network.",
+    "retry": "Try again",
+    "link": {
+      "granter": {
+        "out": "Granter of",
+        "in": "Granted by"
+      },
+      "beneficiary": {
+        "out": "Beneficiary of",
+        "in": "In favour of"
+      },
+      "witness": {
+        "out": "Witness to",
+        "in": "Witnessed by"
+      },
+      "scribe": {
+        "out": "Wrote",
+        "in": "Written by"
+      },
+      "located_at": {
+        "out": "Places named",
+        "in": "Named in"
+      }
+    },
+    "statement": {
+      "granted_by": {
+        "out": "Granted by",
+        "in": "Granted"
+      },
+      "beneficiary_of": {
+        "out": "Beneficiary of",
+        "in": "Had as beneficiary"
+      },
+      "witnessed_by": {
+        "out": "Witnessed by",
+        "in": "Witnessed"
+      },
+      "written_by": {
+        "out": "Written by",
+        "in": "Wrote"
+      },
+      "located_at": {
+        "out": "Located at",
+        "in": "Location of"
+      }
+    },
+    "otherRelation": "Connected ({relation})"
   }
 }

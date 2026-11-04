@@ -4,8 +4,9 @@
  */
 
 import { apiFetch } from '@/lib/api-fetch';
+import { env } from '@/lib/env';
 import type { PaginatedResponse } from '@/types/backoffice';
-import type { DiplomaticSummary, Formula } from '@/types/diplomatic';
+import type { DiplomaticNetwork, DiplomaticSummary, Formula } from '@/types/diplomatic';
 
 export interface FormulaeQuery {
   kind?: string;
@@ -33,3 +34,18 @@ export async function getDiplomaticSummary(): Promise<DiplomaticSummary> {
   }
   return response.json();
 }
+
+/** The witness and scribe network, whole: the page draws a part of it at a time. */
+export async function getNetwork(): Promise<DiplomaticNetwork> {
+  const response = await apiFetch('/api/v1/diplomatic/network/', { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`Failed to load the network: ${response.status}`);
+  }
+  return response.json();
+}
+
+/**
+ * The same network as a GEXF file, for Gephi. A plain link the browser follows,
+ * so always the public API address, even when rendered on the server.
+ */
+export const NETWORK_GEXF_URL = `${env.apiUrl}/api/v1/diplomatic/network/gexf/`;

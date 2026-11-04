@@ -153,6 +153,9 @@ export default function Header({
     ...((diplomaticSummary.data?.formulae ?? 0) > 0
       ? [{ href: '/formulary', label: t('formulary') }]
       : []),
+    ...((diplomaticSummary.data?.entities ?? 0) + (diplomaticSummary.data?.relations ?? 0) > 0
+      ? [{ href: '/network', label: t('network') }]
+      : []),
   ];
   const effectiveSuggestions =
     serverSuggestionsQuery.data && serverSuggestionsQuery.data.length > 0

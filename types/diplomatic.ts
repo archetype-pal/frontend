@@ -53,3 +53,30 @@ export interface DiplomaticSummary {
   entities: number;
   relations: number;
 }
+
+/** The network's kinds of node, in the order the page lists them. */
+export const NETWORK_KINDS = ['person', 'place', 'charter', 'scribe'] as const;
+export type NetworkKind = (typeof NETWORK_KINDS)[number];
+
+export interface NetworkNode {
+  /** `person:walterus`, `charter:703`, … A name is keyed on its wording. */
+  id: string;
+  label: string;
+  kind: NetworkKind;
+  /** The item part of a charter or the id of a scribe; null for a name read in a text. */
+  record: number | null;
+}
+
+export interface NetworkEdge {
+  source: string;
+  target: string;
+  /** A role (granter, beneficiary, witness), located_at, scribe, or a relation's predicate. */
+  relation: string;
+  /** For a relation between two people, the charter that states it; otherwise empty. */
+  charter: string;
+}
+
+export interface DiplomaticNetwork {
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+}

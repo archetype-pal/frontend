@@ -70,6 +70,7 @@
     "ask": "Archetype fragen",
     "research": "Forschung",
     "formulary": "Formelverzeichnis",
+    "network": "Netzwerk",
     "backoffice": "Backoffice",
     "menu": "Menü",
     "openMenu": "Menü öffnen",
@@ -3532,5 +3533,86 @@
       "notification": "Promulgatio",
       "other": "Sonstiges"
     }
+  },
+  "network": {
+    "metaTitle": "Netzwerk",
+    "title": "Netzwerk",
+    "intro": "Wer in den Urkunden mit wem auftritt: Aussteller, Empfänger und Zeugen, die Orte, die die Urkunden nennen, und die Schreiber, die sie geschrieben haben. Wählen Sie einen Namen, um seine Urkunden zu sehen und alle, mit denen sie ihn verbinden.",
+    "provenance": "Ein Sprachmodell hat jeden Namen aus den gelesenen Urkunden vorgeschlagen, und eine Fachperson hat ihn bestätigt, bevor er hier erscheint. Namen stehen so, wie die Urkunde sie schreibt: Zwei Schreibweisen einer Person sind zwei Einträge, denn ob es dieselbe Person ist, entscheidet die Forschung. Die Schreiber stammen aus den Zuschreibungen des Katalogs.",
+    "download": "Netzwerk herunterladen (GEXF)",
+    "downloadHint": "Das ganze Netzwerk, für Gephi und andere Graph-Werkzeuge.",
+    "indexLabel": "Alles im Netzwerk",
+    "kindLabel": "Anzeigen",
+    "all": "Alle",
+    "kinds": {
+      "person": "Personen",
+      "place": "Orte",
+      "charter": "Urkunden",
+      "scribe": "Schreiber"
+    },
+    "kind": {
+      "person": "Person",
+      "place": "Ort",
+      "charter": "Urkunde",
+      "scribe": "Schreiber"
+    },
+    "searchLabel": "Namen suchen",
+    "searchPlaceholder": "Suchen, z. B. Walterus",
+    "connections": "{count, plural, one {# Verbindung} other {# Verbindungen}}",
+    "showMore": "Mehr anzeigen",
+    "noMatch": "Nichts passt.",
+    "open": "{kind, select, charter {Urkunde öffnen} scribe {Schreiber öffnen} other {Öffnen}}",
+    "drawingCaption": "{name} in der Mitte, mit {inner, plural, one {# direkten Verbindung} other {# direkten Verbindungen}}{outer, plural, =0 {} other { und # weiteren einen Schritt weiter}}.",
+    "omitted": "{count, plural, one {# Verbindung ist aus Platzgründen nicht gezeichnet; unten sind alle aufgeführt.} other {# Verbindungen sind aus Platzgründen nicht gezeichnet; unten sind alle aufgeführt.}}",
+    "statedIn": "belegt in <charter>{name}</charter>",
+    "empty": "Noch keine Verbindung ist bestätigt.",
+    "emptyHint": "Das Netzwerk füllt sich, sobald eine Fachperson die Namen und Beziehungen geprüft hat, die ein Modell in den Urkunden gelesen hat.",
+    "loadError": "Das Netzwerk konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "link": {
+      "granter": {
+        "out": "Aussteller von",
+        "in": "Ausgestellt von"
+      },
+      "beneficiary": {
+        "out": "Empfänger von",
+        "in": "Zugunsten von"
+      },
+      "witness": {
+        "out": "Zeuge in",
+        "in": "Bezeugt von"
+      },
+      "scribe": {
+        "out": "Schrieb",
+        "in": "Geschrieben von"
+      },
+      "located_at": {
+        "out": "Genannte Orte",
+        "in": "Genannt in"
+      }
+    },
+    "statement": {
+      "granted_by": {
+        "out": "Ausgestellt von",
+        "in": "Stellte aus"
+      },
+      "beneficiary_of": {
+        "out": "Empfänger von",
+        "in": "Hatte als Empfänger"
+      },
+      "witnessed_by": {
+        "out": "Bezeugt von",
+        "in": "Bezeugte"
+      },
+      "written_by": {
+        "out": "Geschrieben von",
+        "in": "Schrieb"
+      },
+      "located_at": {
+        "out": "Gelegen in",
+        "in": "Ort von"
+      }
+    },
+    "otherRelation": "Verbunden ({relation})"
   }
 }

@@ -70,6 +70,7 @@
     "ask": "Interroger Archetype",
     "research": "Outils de recherche",
     "formulary": "Formulaire",
+    "network": "Réseau",
     "backoffice": "Administration",
     "menu": "Menu",
     "openMenu": "Ouvrir le menu",
@@ -3532,5 +3533,86 @@
       "notification": "Notification",
       "other": "Autre"
     }
+  },
+  "network": {
+    "metaTitle": "Réseau",
+    "title": "Réseau",
+    "intro": "Qui apparaît avec qui dans les chartes : auteurs, bénéficiaires et témoins, les lieux que les chartes nomment, et les scribes qui les ont écrites. Choisissez un nom pour voir ses chartes et tous ceux auxquels elles le relient.",
+    "provenance": "Un modèle de langue a proposé chaque nom à partir des chartes qu'il a lues, et un spécialiste l'a validé avant qu'il n'apparaisse ici. Les noms sont donnés tels que la charte les écrit : deux graphies d'une même personne font deux entrées, car décider qu'il s'agit de la même personne revient au spécialiste. Les scribes proviennent des attributions du catalogue.",
+    "download": "Télécharger le réseau (GEXF)",
+    "downloadHint": "Le réseau entier, pour Gephi et d'autres outils d'analyse de graphes.",
+    "indexLabel": "Tout ce que contient le réseau",
+    "kindLabel": "Afficher",
+    "all": "Tout",
+    "kinds": {
+      "person": "Personnes",
+      "place": "Lieux",
+      "charter": "Chartes",
+      "scribe": "Scribes"
+    },
+    "kind": {
+      "person": "Personne",
+      "place": "Lieu",
+      "charter": "Charte",
+      "scribe": "Scribe"
+    },
+    "searchLabel": "Chercher un nom",
+    "searchPlaceholder": "Rechercher, par ex. Walterus",
+    "connections": "{count, plural, one {# lien} other {# liens}}",
+    "showMore": "Afficher plus",
+    "noMatch": "Aucun résultat.",
+    "open": "{kind, select, charter {Ouvrir la charte} scribe {Ouvrir le scribe} other {Ouvrir}}",
+    "drawingCaption": "{name} au centre, avec {inner, plural, one {# lien direct} other {# liens directs}}{outer, plural, =0 {} other { et # autres un pas plus loin}}.",
+    "omitted": "{count, plural, one {# lien n'est pas dessiné, faute de place ; tous sont listés ci-dessous.} other {# liens ne sont pas dessinés, faute de place ; tous sont listés ci-dessous.}}",
+    "statedIn": "attesté dans <charter>{name}</charter>",
+    "empty": "Aucun lien n'a encore été validé.",
+    "emptyHint": "Le réseau se remplit dès qu'un spécialiste a examiné les noms et les relations qu'un modèle a lus dans les chartes.",
+    "loadError": "Impossible de charger le réseau.",
+    "retry": "Réessayer",
+    "link": {
+      "granter": {
+        "out": "Auteur de",
+        "in": "Accordée par"
+      },
+      "beneficiary": {
+        "out": "Bénéficiaire de",
+        "in": "En faveur de"
+      },
+      "witness": {
+        "out": "Témoin de",
+        "in": "Témoins"
+      },
+      "scribe": {
+        "out": "A écrit",
+        "in": "Écrite par"
+      },
+      "located_at": {
+        "out": "Lieux nommés",
+        "in": "Nommé dans"
+      }
+    },
+    "statement": {
+      "granted_by": {
+        "out": "Accordé par",
+        "in": "A accordé"
+      },
+      "beneficiary_of": {
+        "out": "Bénéficiaire de",
+        "in": "A eu pour bénéficiaire"
+      },
+      "witnessed_by": {
+        "out": "Attesté par",
+        "in": "A attesté"
+      },
+      "written_by": {
+        "out": "Écrit par",
+        "in": "A écrit"
+      },
+      "located_at": {
+        "out": "Situé à",
+        "in": "Lieu de"
+      }
+    },
+    "otherRelation": "Lié ({relation})"
   }
 }
