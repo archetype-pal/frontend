@@ -12,6 +12,7 @@ export const EDITING_CAPS: ViewerCapabilities = {
   canViewEditorialControls: true,
   canUseSettings: true,
   canUseEditorSettings: true,
+  canEditTexts: true,
 };
 
 export const makeCaps = (overrides: Partial<ViewerCapabilities> = {}): ViewerCapabilities => ({

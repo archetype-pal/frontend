@@ -134,6 +134,8 @@ export interface ViewerCapabilities {
    * The settings panel remains shared; its contents differ by capability.
    */
   canUseEditorSettings: boolean;
+
+  canEditTexts: boolean;
 }
 
 export type AnnotationEditorSource = 'persisted' | 'draft';
