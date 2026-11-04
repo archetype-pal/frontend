@@ -505,3 +505,54 @@ export interface DiplomaticProposalDetail extends DiplomaticProposalItem {
   /** The charter text as the model read it: TEI stripped, truncated past 12,000 characters. */
   source_text: string;
 }
+
+// ── Inference ledger ────────────────────────────────────────────────────
+
+export type MLJobStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'refused';
+
+/** One model call, as the ledger records it (AI programme W0.1). Append-only. */
+export interface MLJobListItem {
+  id: number;
+  /** The programme item that made the call ("W2.1"), or a named routine. */
+  task: string;
+  provider: string;
+  model_name: string;
+  model_version: string;
+  status: MLJobStatus;
+  /** Millionths of `cost_currency`. An integer, never a float. */
+  cost_micros: number;
+  cost_currency: string;
+  duration_ms: number | null;
+  created: string;
+}
+
+export interface MLJobDetail extends MLJobListItem {
+  /** sha256 of the prompt. The prompt itself is not stored. */
+  prompt_hash: string;
+  /** sha256 of the inputs. */
+  input_ref: string;
+  params: Record<string, unknown>;
+  error: string;
+  input_tokens: number;
+  output_tokens: number;
+  actor: number | null;
+  actor_username: string;
+  celery_task_id: string;
+  /** The records the call produced or changed. */
+  targets: { target_type: string; target_id: number }[];
+}
+
+/** The spend breaker's state over its trailing window. */
+export interface MLJobSummary {
+  inference_enabled: boolean;
+  hosted_providers_enabled: boolean;
+  window: string;
+  spend_micros: number;
+  /** 0 means no cap. */
+  cap_micros: number;
+  per_actor_cap_micros: number;
+  /** What the window's costs were in; more than one means the caps add unlike amounts. */
+  currencies: string[];
+  by_status: Record<MLJobStatus, number>;
+  tasks: { task: string; count: number }[];
+}

@@ -36,6 +36,7 @@ import {
   HeartPulse,
   Sparkles,
   ScanText,
+  Cpu,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
@@ -147,6 +148,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
         { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
         { label: t('sidebar.trash'), href: '/backoffice/trash', icon: Trash2 },
         { label: t('sidebar.sanityChecks'), href: '/backoffice/sanity-checks', icon: HeartPulse },
+        { label: t('sidebar.mlJobs'), href: '/backoffice/ml-jobs', icon: Cpu },
       ],
     });
     return groups;

@@ -130,6 +130,7 @@ export function BackofficeHeader({
       annotations: t('header.breadcrumbs.annotations'),
       'annotation-proposals': t('sidebar.annotationProposals'),
       'diplomatic-proposals': t('sidebar.diplomaticProposals'),
+      'ml-jobs': t('sidebar.mlJobs'),
       'physical-volumes': t('header.breadcrumbs.physicalVolumes'),
       users: t('header.breadcrumbs.users'),
       'search-engine': t('header.breadcrumbs.searchEngine'),

@@ -143,6 +143,13 @@ export const backofficeKeys = {
     detail: (id: number) => [...backofficeKeys.diplomaticProposals.all(), 'detail', id] as const,
     depth: () => [...backofficeKeys.diplomaticProposals.all(), 'depth'] as const,
   },
+  mlJobs: {
+    all: () => [...backofficeKeys.all, 'ml-jobs'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.mlJobs.all(), 'list', filters] as const,
+    detail: (id: number) => [...backofficeKeys.mlJobs.all(), 'detail', id] as const,
+    summary: () => [...backofficeKeys.mlJobs.all(), 'summary'] as const,
+  },
   previewAsPublic: (textId: number) =>
     [...backofficeKeys.all, 'preview-as-public', textId] as const,
   teiRefSearch: (segment: string, query: string) =>
