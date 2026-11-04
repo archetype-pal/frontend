@@ -67,6 +67,7 @@
     "blogs": "Blogs",
     "featureArticles": "Feature Articles",
     "about": "About",
+    "ask": "Ask Archetype",
     "backoffice": "Backoffice",
     "menu": "Menu",
     "openMenu": "Open menu",
@@ -3436,6 +3437,65 @@
     "metadata": {
       "fallbackTitle": "Workset",
       "defaultDescription": "A shared lightbox workset of manuscript images."
+    }
+  },
+  "ask": {
+    "metaTitle": "Ask Archetype",
+    "title": "Ask Archetype",
+    "intro": "Ask a question about the Models of Authority charters. A language model looks for the answer in the corpus with the tools listed below, and has to cite a charter for each thing it says.",
+    "aiNotice": "Answers are written by a language model. Check each claim against the record it cites before you rely on it.",
+    "questionLabel": "Your question",
+    "placeholder": "For example: which charters mention Melrose Abbey?",
+    "charsLeft": "{count, plural, one {# character left} other {# characters left}}",
+    "submit": "Ask",
+    "submitHint": "Enter to ask, Shift+Enter for a new line",
+    "asking": "Looking it up…",
+    "askingHint": "It searches and reads charters before it answers, which can take up to a minute.",
+    "offTitle": "Ask Archetype is switched off",
+    "off": "An administrator has to switch it on before questions can be asked here.",
+    "toolsError": "Could not load what Ask Archetype can do.",
+    "failure": {
+      "throttled": "That is a lot of questions in a short time. Please try again in an hour.",
+      "unavailable": "Ask Archetype cannot take a question right now.",
+      "invalid": "The question could not be sent.",
+      "unreachable": "Could not reach Ask Archetype. Please try again in a moment.",
+      "unknown": "Something went wrong while sending the question."
+    },
+    "youAsked": "You asked",
+    "answerTitle": "Answer",
+    "noCitations": "This answer cites no records, so nothing in it has been checked against the corpus.",
+    "exhausted": "It stopped before writing an answer.",
+    "exhaustedHint": "The question took longer than one answer may take. Any sources it had found are listed below; a narrower question may get further.",
+    "refused": "Ask Archetype could not run this question.",
+    "refusedHint": "The service is switched off or has reached its spending limit for today.",
+    "failed": "Something went wrong while answering.",
+    "failedHint": "Please try again in a moment.",
+    "sourcesTitle": "Sources ({count})",
+    "source": {
+      "noShelfmark": "Unnamed record",
+      "openFolio": "Open the folio",
+      "openMark": "Open the marked place",
+      "readText": "{type, select, Transcription {Read the transcription} Translation {Read the translation} other {Read the text}}",
+      "unverifiedRegion": "It named a place on the page that matches no annotation, so that place is not linked."
+    },
+    "earlier": "Earlier questions",
+    "limitsTitle": "What it can and cannot do",
+    "canTitle": "It can",
+    "cannotTitle": "Not yet",
+    "notGranted": "Not enabled on this site.",
+    "tools": {
+      "search_charters": "Find charters by the words of their transcription or translation",
+      "get_charter": "Read a charter in full, with its shelfmark, folio and date",
+      "get_image_regions": "List the annotated places on a folio",
+      "cite_record": "Check each citation against the record before it is used",
+      "fetch_witnesses": "Look up witnesses a scholar has approved",
+      "fetch_relations": "Look up who granted, witnessed or wrote a charter, as a scholar has approved",
+      "compare_hands": "Compare the scribal hands of two charters"
+    },
+    "reasons": {
+      "fetch_witnesses": "No witnesses have been extracted and approved yet.",
+      "fetch_relations": "No relations have been extracted and approved yet.",
+      "compare_hands": "This needs a palaeographic model that has not been trained yet."
     }
   }
 }

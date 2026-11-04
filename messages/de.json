@@ -67,6 +67,7 @@
     "blogs": "Blogs",
     "featureArticles": "Beiträge",
     "about": "Über",
+    "ask": "Archetype fragen",
     "backoffice": "Backoffice",
     "menu": "Menü",
     "openMenu": "Menü öffnen",
@@ -3436,6 +3437,65 @@
     "metadata": {
       "fallbackTitle": "Workset",
       "defaultDescription": "Ein gemeinsam genutztes Lightbox-Workset mit Manuskriptbildern."
+    }
+  },
+  "ask": {
+    "metaTitle": "Archetype fragen",
+    "title": "Archetype fragen",
+    "intro": "Stellen Sie eine Frage zu den Urkunden von Models of Authority. Ein Sprachmodell sucht die Antwort mit den unten aufgeführten Werkzeugen im Korpus und muss für jede Aussage eine Urkunde als Beleg angeben.",
+    "aiNotice": "Die Antworten schreibt ein Sprachmodell. Prüfen Sie jede Aussage an dem Datensatz, den es als Beleg angibt, bevor Sie sich darauf stützen.",
+    "questionLabel": "Ihre Frage",
+    "placeholder": "Zum Beispiel: Welche Urkunden erwähnen die Abtei Melrose?",
+    "charsLeft": "{count, plural, one {Noch # Zeichen} other {Noch # Zeichen}}",
+    "submit": "Fragen",
+    "submitHint": "Eingabetaste zum Fragen, Umschalt+Eingabetaste für eine neue Zeile",
+    "asking": "Wird nachgeschlagen …",
+    "askingHint": "Vor der Antwort durchsucht und liest es Urkunden; das kann bis zu einer Minute dauern.",
+    "offTitle": "Archetype fragen ist ausgeschaltet",
+    "off": "Eine Administratorin oder ein Administrator muss es einschalten, bevor hier Fragen gestellt werden können.",
+    "toolsError": "Es konnte nicht geladen werden, was Archetype fragen kann.",
+    "failure": {
+      "throttled": "Das sind viele Fragen in kurzer Zeit. Bitte versuchen Sie es in einer Stunde erneut.",
+      "unavailable": "Archetype fragen kann gerade keine Frage annehmen.",
+      "invalid": "Die Frage konnte nicht gesendet werden.",
+      "unreachable": "Archetype fragen ist nicht erreichbar. Bitte versuchen Sie es gleich noch einmal.",
+      "unknown": "Beim Senden der Frage ist etwas schiefgegangen."
+    },
+    "youAsked": "Ihre Frage",
+    "answerTitle": "Antwort",
+    "noCitations": "Diese Antwort nennt keine Belege; nichts darin wurde am Korpus geprüft.",
+    "exhausted": "Es hat aufgehört, bevor es eine Antwort geschrieben hat.",
+    "exhaustedHint": "Die Frage hat länger gedauert, als eine Antwort dauern darf. Die bis dahin gefundenen Belege stehen unten; eine engere Frage kommt vielleicht weiter.",
+    "refused": "Archetype fragen konnte diese Frage nicht bearbeiten.",
+    "refusedHint": "Der Dienst ist ausgeschaltet oder hat sein Ausgabenlimit für heute erreicht.",
+    "failed": "Beim Beantworten ist etwas schiefgegangen.",
+    "failedHint": "Bitte versuchen Sie es gleich noch einmal.",
+    "sourcesTitle": "Belege ({count})",
+    "source": {
+      "noShelfmark": "Datensatz ohne Signatur",
+      "openFolio": "Folio öffnen",
+      "openMark": "Markierte Stelle öffnen",
+      "readText": "{type, select, Transcription {Transkription lesen} Translation {Übersetzung lesen} other {Text lesen}}",
+      "unverifiedRegion": "Es hat eine Stelle auf der Seite genannt, die zu keiner Annotation passt; diese Stelle ist daher nicht verlinkt."
+    },
+    "earlier": "Frühere Fragen",
+    "limitsTitle": "Was es kann und was nicht",
+    "canTitle": "Es kann",
+    "cannotTitle": "Noch nicht",
+    "notGranted": "Auf dieser Website nicht freigeschaltet.",
+    "tools": {
+      "search_charters": "Urkunden nach dem Wortlaut ihrer Transkription oder Übersetzung finden",
+      "get_charter": "Eine Urkunde vollständig lesen, mit Signatur, Folio und Datum",
+      "get_image_regions": "Die annotierten Stellen eines Folios auflisten",
+      "cite_record": "Jeden Beleg am Datensatz prüfen, bevor er verwendet wird",
+      "fetch_witnesses": "Zeugen nachschlagen, die eine Fachperson bestätigt hat",
+      "fetch_relations": "Nachschlagen, wer eine Urkunde ausgestellt, bezeugt oder geschrieben hat, wie von einer Fachperson bestätigt",
+      "compare_hands": "Die Schreiberhände zweier Urkunden vergleichen"
+    },
+    "reasons": {
+      "fetch_witnesses": "Bisher wurden keine Zeugen extrahiert und bestätigt.",
+      "fetch_relations": "Bisher wurden keine Beziehungen extrahiert und bestätigt.",
+      "compare_hands": "Dafür braucht es ein paläographisches Modell, das noch nicht trainiert wurde."
     }
   }
 }

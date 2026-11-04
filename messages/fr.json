@@ -67,6 +67,7 @@
     "blogs": "Blogs",
     "featureArticles": "Articles de fond",
     "about": "À propos",
+    "ask": "Interroger Archetype",
     "backoffice": "Administration",
     "menu": "Menu",
     "openMenu": "Ouvrir le menu",
@@ -3436,6 +3437,65 @@
     "metadata": {
       "fallbackTitle": "Ensemble",
       "defaultDescription": "Un ensemble d'images de manuscrits partagé depuis la Visionneuse."
+    }
+  },
+  "ask": {
+    "metaTitle": "Interroger Archetype",
+    "title": "Interroger Archetype",
+    "intro": "Posez une question sur les chartes de Models of Authority. Un modèle de langue cherche la réponse dans le corpus avec les outils ci-dessous, et doit citer une charte pour chaque affirmation.",
+    "aiNotice": "Les réponses sont rédigées par un modèle de langue. Vérifiez chaque affirmation dans la notice citée avant de vous y fier.",
+    "questionLabel": "Votre question",
+    "placeholder": "Par exemple : quelles chartes mentionnent l'abbaye de Melrose ?",
+    "charsLeft": "{count, plural, one {# caractère restant} other {# caractères restants}}",
+    "submit": "Demander",
+    "submitHint": "Entrée pour demander, Maj+Entrée pour aller à la ligne",
+    "asking": "Recherche en cours…",
+    "askingHint": "Il cherche et lit des chartes avant de répondre, ce qui peut prendre jusqu'à une minute.",
+    "offTitle": "Interroger Archetype est désactivé",
+    "off": "Un administrateur doit l'activer avant que des questions puissent être posées ici.",
+    "toolsError": "Impossible de charger ce que sait faire Interroger Archetype.",
+    "failure": {
+      "throttled": "Cela fait beaucoup de questions en peu de temps. Veuillez réessayer dans une heure.",
+      "unavailable": "Interroger Archetype ne peut pas recevoir de question pour le moment.",
+      "invalid": "La question n'a pas pu être envoyée.",
+      "unreachable": "Interroger Archetype est injoignable. Veuillez réessayer dans un instant.",
+      "unknown": "Un problème est survenu lors de l'envoi de la question."
+    },
+    "youAsked": "Votre question",
+    "answerTitle": "Réponse",
+    "noCitations": "Cette réponse ne cite aucune notice : rien n'y a été vérifié dans le corpus.",
+    "exhausted": "Il s'est arrêté avant d'écrire une réponse.",
+    "exhaustedHint": "La question a pris plus de temps qu'une réponse n'en a droit. Les sources trouvées jusque-là figurent ci-dessous ; une question plus précise ira peut-être plus loin.",
+    "refused": "Interroger Archetype n'a pas pu traiter cette question.",
+    "refusedHint": "Le service est désactivé ou a atteint sa limite de dépenses pour aujourd'hui.",
+    "failed": "Un problème est survenu pendant la réponse.",
+    "failedHint": "Veuillez réessayer dans un instant.",
+    "sourcesTitle": "Sources ({count})",
+    "source": {
+      "noShelfmark": "Notice sans cote",
+      "openFolio": "Ouvrir le folio",
+      "openMark": "Ouvrir l'endroit indiqué",
+      "readText": "{type, select, Transcription {Lire la transcription} Translation {Lire la traduction} other {Lire le texte}}",
+      "unverifiedRegion": "Il a indiqué un endroit de la page qui ne correspond à aucune annotation ; cet endroit n'est donc pas lié."
+    },
+    "earlier": "Questions précédentes",
+    "limitsTitle": "Ce qu'il sait faire, et ce qu'il ne sait pas encore faire",
+    "canTitle": "Il peut",
+    "cannotTitle": "Pas encore",
+    "notGranted": "Non activé sur ce site.",
+    "tools": {
+      "search_charters": "Trouver des chartes d'après les mots de leur transcription ou de leur traduction",
+      "get_charter": "Lire une charte en entier, avec sa cote, son folio et sa date",
+      "get_image_regions": "Lister les endroits annotés d'un folio",
+      "cite_record": "Vérifier chaque citation dans la notice avant de l'utiliser",
+      "fetch_witnesses": "Rechercher les témoins validés par un spécialiste",
+      "fetch_relations": "Rechercher qui a accordé, attesté ou écrit une charte, d'après les relations validées par un spécialiste",
+      "compare_hands": "Comparer les mains de scribe de deux chartes"
+    },
+    "reasons": {
+      "fetch_witnesses": "Aucun témoin n'a encore été extrait et validé.",
+      "fetch_relations": "Aucune relation n'a encore été extraite et validée.",
+      "compare_hands": "Il faut pour cela un modèle paléographique qui n'a pas encore été entraîné."
     }
   }
 }
