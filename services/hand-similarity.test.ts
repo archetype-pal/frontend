@@ -5,7 +5,7 @@ vi.mock('@/lib/api-fetch', () => ({
   apiFetch: (...args: unknown[]) => apiFetchMock(...args),
 }));
 
-import { formsCompared, getSimilarHands } from './hand-similarity';
+import { formsCompared, getScribeSimilarHands, getSimilarHands } from './hand-similarity';
 import { jsonResponse } from '@/test/responses';
 
 beforeEach(() => apiFetchMock.mockReset());
@@ -51,5 +51,34 @@ describe('formsCompared', () => {
 
     expect(formsCompared([letter([4, 2]), letter([1, 6]), letter([3, 3])])).toBe(6);
     expect(formsCompared([])).toBe(0);
+  });
+});
+
+describe('getScribeSimilarHands', () => {
+  it('reads the hands near the scribe’s', async () => {
+    const body = {
+      scribe: 1,
+      minimum_glyphs: 10,
+      vectors: 'hog@1',
+      computed: null,
+      hands: [],
+      results: [],
+    };
+    apiFetchMock.mockResolvedValue(jsonResponse(body));
+
+    await expect(getScribeSimilarHands('1')).resolves.toEqual(body);
+    expect(apiFetchMock).toHaveBeenCalledWith('/api/v1/scribes/1/similar/');
+  });
+
+  it('gives null for a refusal, as for the placeholder scribe, so the page goes on without the tab', async () => {
+    apiFetchMock.mockResolvedValue(jsonResponse({ detail: 'No such scribe.' }, 404));
+
+    await expect(getScribeSimilarHands(-1)).resolves.toBeNull();
+  });
+
+  it('gives null for an outage too', async () => {
+    apiFetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
+
+    await expect(getScribeSimilarHands(1)).resolves.toBeNull();
   });
 });
