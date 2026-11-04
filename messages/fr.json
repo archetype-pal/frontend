@@ -3428,7 +3428,8 @@
     "tabs": {
       "information": "Informations",
       "hands": "Mains",
-      "idiographs": "Idiographes"
+      "idiographs": "Idiographes",
+      "similar": "Mains semblables"
     },
     "sections": {
       "dateAndPlace": "Date et lieu"
@@ -3447,6 +3448,21 @@
     "empty": {
       "hands": "Aucune main associée à ce scribe.",
       "idiographs": "Aucun idiographe associé à ce scribe."
+    },
+    "similar": {
+      "intro": "Les mains dont les lettres ressemblent le plus à celles des mains de ce scribe, parmi celles qui ne lui sont pas attribuées. Chaque main du scribe est comparée à toutes les autres, lettre par lettre, selon la direction de leurs traits ; la page d'une main indique les lettres sur lesquelles repose chaque comparaison. Les mains proches de plusieurs mains du scribe viennent en premier. L'ordre est celui d'une machine, non un jugement savant : un rapprochement est une piste à vérifier, non une attribution.",
+      "checkIntro": "Dans quelle mesure la comparaison retrouve ce scribe : {found} des {compared} mains comparées du scribe trouvent une autre de ses mains parmi leurs plus proches.",
+      "checkLabel": "Où les mains du scribe se retrouvent entre elles",
+      "checkFound": "{hand} trouve {other} au rang {rank}",
+      "checkNone": "{hand} ne trouve aucune autre main du scribe parmi ses plus proches",
+      "checkOne": "Une seule main de ce scribe a été comparée : ces rapprochements ne peuvent donc pas être vérifiés sur ses autres mains.",
+      "nearCount": "{compared, plural, one {Proche de la seule main comparée du scribe} other {Proche de {count} des # mains comparées du scribe}}",
+      "nearLabel": "Les mains du scribe parmi les plus proches desquelles figure celle-ci, chacune avec son rang",
+      "nearRank": "{hand} · rang {rank}",
+      "nearTitle": "Rang {rank} parmi les plus proches de {hand} ; ressemblance {similarity}",
+      "likeness": "meilleure ressemblance",
+      "likenessTitle": "La plus forte ressemblance avec l'une des mains du scribe : le cosinus moyen entre les formes des lettres communes à deux mains, de −1 à 1.",
+      "noScribe": "Aucun scribe attribué"
     },
     "metadata": {
       "fallbackTitle": "Scribe n°{id}",

@@ -55,3 +55,44 @@ export async function getSimilarHands(handId: number): Promise<SimilarHands | nu
 export function formsCompared(letters: SimilarHandLetter[]): number {
   return letters.reduce((total, letter) => total + Math.min(...letter.glyphs), 0);
 }
+
+/** One of a scribe's hands, and where its nearest hands rank. */
+export type NearRow = { hand: number; rank: number; similarity: number };
+
+export type ScribeHandCompared = {
+  id: number;
+  name: string;
+  item_part: number;
+  item_part_display_label: string;
+  /** Whether the hand has stored nearest hands. */
+  compared: boolean;
+  /** The scribe's other hands among this one's nearest. */
+  siblings: NearRow[];
+};
+
+/**
+ * The hands near a scribe's hands (backend: `GET /api/v1/scribes/<id>/similar/`):
+ * each match with which of the scribe's hands it is near and at what rank, and
+ * the scribe's own hands with where they find each other.
+ */
+export type ScribeSimilarHands = {
+  scribe: number;
+  minimum_glyphs: number;
+  vectors: string | null;
+  computed: string | null;
+  hands: ScribeHandCompared[];
+  results: { hand: SimilarHand['hand']; similarity: number; near: NearRow[] }[];
+};
+
+/** The hands near the scribe's, or null when they cannot be read (an older backend, an outage). */
+export async function getScribeSimilarHands(
+  scribeId: number | string
+): Promise<ScribeSimilarHands | null> {
+  try {
+    const response = await apiFetch(`/api/v1/scribes/${scribeId}/similar/`);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}

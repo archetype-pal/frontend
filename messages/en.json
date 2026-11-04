@@ -3428,7 +3428,8 @@
     "tabs": {
       "information": "Information",
       "hands": "Hands",
-      "idiographs": "Idiographs"
+      "idiographs": "Idiographs",
+      "similar": "Similar hands"
     },
     "sections": {
       "dateAndPlace": "Date and Place"
@@ -3447,6 +3448,21 @@
     "empty": {
       "hands": "No hands associated to this scribe.",
       "idiographs": "No idiographs associated to this scribe."
+    },
+    "similar": {
+      "intro": "The hands whose letters are shaped most like this scribe's hands, among those not attributed to the scribe. Each of the scribe's hands is compared with every other hand letter by letter, by the directions their strokes run in; a hand's own page lists the letters each comparison rests on. Hands near more of the scribe's hands come first. The order is a machine's, not a scholar's judgement: a match is a lead to check, not an attribution.",
+      "checkIntro": "How well the comparison finds this scribe: {found} of the scribe's {compared} compared hands find another of its hands among their nearest.",
+      "checkLabel": "Where the scribe's own hands find each other",
+      "checkFound": "{hand} finds {other} at rank {rank}",
+      "checkNone": "{hand} finds none of the scribe's other hands among its nearest",
+      "checkOne": "Only one of this scribe's hands has been compared, so these matches cannot be checked against the scribe's other hands.",
+      "nearCount": "{compared, plural, one {Near the scribe's one compared hand} other {Near {count} of the scribe's # compared hands}}",
+      "nearLabel": "The scribe's hands this one is among the nearest of, each with its rank there",
+      "nearRank": "{hand} · rank {rank}",
+      "nearTitle": "Rank {rank} among the nearest of {hand}; likeness {similarity}",
+      "likeness": "best likeness",
+      "likenessTitle": "The highest likeness to any of the scribe's hands: the mean cosine between two hands' forms of their shared letters, from −1 to 1.",
+      "noScribe": "No scribe attributed"
     },
     "metadata": {
       "fallbackTitle": "Scribe #{id}",

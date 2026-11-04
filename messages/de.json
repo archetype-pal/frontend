@@ -3428,7 +3428,8 @@
     "tabs": {
       "information": "Informationen",
       "hands": "Hände",
-      "idiographs": "Idiographen"
+      "idiographs": "Idiographen",
+      "similar": "Ähnliche Hände"
     },
     "sections": {
       "dateAndPlace": "Datum und Ort"
@@ -3447,6 +3448,21 @@
     "empty": {
       "hands": "Keine Hände mit diesem Schreiber verknüpft.",
       "idiographs": "Keine Idiographen mit diesem Schreiber verknüpft."
+    },
+    "similar": {
+      "intro": "Die Hände, deren Buchstaben denen der Hände dieses Schreibers am ähnlichsten geformt sind, unter denen, die ihm nicht zugeschrieben sind. Jede Hand des Schreibers wird mit jeder anderen Hand Buchstabe für Buchstabe verglichen, nach den Richtungen ihrer Striche; die Seite einer Hand nennt die Buchstaben, auf denen jeder Vergleich beruht. Hände, die mehreren Händen des Schreibers nahe sind, stehen vorn. Die Reihenfolge ist die einer Maschine, kein wissenschaftliches Urteil: Ein Treffer ist ein Hinweis zum Prüfen, keine Zuschreibung.",
+      "checkIntro": "Wie gut der Vergleich diesen Schreiber findet: {found} von {compared} verglichenen Händen des Schreibers finden eine andere seiner Hände unter ihren nächsten.",
+      "checkLabel": "Wo die Hände des Schreibers einander finden",
+      "checkFound": "{hand} findet {other} auf Rang {rank}",
+      "checkNone": "{hand} findet keine andere Hand des Schreibers unter ihren nächsten",
+      "checkOne": "Nur eine Hand dieses Schreibers wurde verglichen, daher lassen sich diese Treffer nicht an seinen anderen Händen prüfen.",
+      "nearCount": "{compared, plural, one {Nahe der einen verglichenen Hand des Schreibers} other {Nahe {count} von # verglichenen Händen des Schreibers}}",
+      "nearLabel": "Die Hände des Schreibers, unter deren nächsten diese ist, jeweils mit ihrem Rang dort",
+      "nearRank": "{hand} · Rang {rank}",
+      "nearTitle": "Rang {rank} unter den nächsten von {hand}; Ähnlichkeit {similarity}",
+      "likeness": "höchste Ähnlichkeit",
+      "likenessTitle": "Die höchste Ähnlichkeit zu einer der Hände des Schreibers: der mittlere Kosinus zwischen den Formen der gemeinsamen Buchstaben zweier Hände, von −1 bis 1.",
+      "noScribe": "Kein Schreiber zugeschrieben"
     },
     "metadata": {
       "fallbackTitle": "Schreiber Nr. {id}",
