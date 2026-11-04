@@ -17,9 +17,13 @@ const mockState = vi.hoisted(() => ({
     enabledSections: ['search'] as string[],
   },
   getAgentTools: vi.fn(),
+  getDiplomaticSummary: vi.fn(),
 }));
 
 vi.mock('@/services/agent', () => ({ getAgentTools: mockState.getAgentTools }));
+vi.mock('@/services/diplomatic', () => ({
+  getDiplomaticSummary: mockState.getDiplomaticSummary,
+}));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
@@ -101,6 +105,9 @@ beforeEach(() => {
   mockState.loadGlobalSuggestions.mockClear();
   mockState.getServerSuggestions.mockClear();
   mockState.getAgentTools.mockReset().mockResolvedValue({ enabled: false, tools: [] });
+  mockState.getDiplomaticSummary
+    .mockReset()
+    .mockResolvedValue({ formulae: 0, entities: 0, relations: 0 });
 });
 
 describe('<Header> search entry points', () => {
@@ -182,26 +189,61 @@ describe('<Header> static page menus', () => {
   });
 });
 
-describe('<Header> Ask Archetype', () => {
-  it('links to it while the agent is switched on', async () => {
+describe('<Header> Research menu', () => {
+  const researchLinks = () => {
+    const trigger = screen.queryByRole('button', { name: 'research' });
+    if (!trigger) return null;
+    return within(trigger.closest('li')!)
+      .getAllByRole('link')
+      .map((link) => [link.textContent, link.getAttribute('href')]);
+  };
+  const settled = () =>
+    waitFor(() => {
+      expect(mockState.getAgentTools).toHaveBeenCalled();
+      expect(mockState.getDiplomaticSummary).toHaveBeenCalled();
+    });
+
+  it('lists Ask Archetype while the agent is switched on', async () => {
     mockState.getAgentTools.mockResolvedValue({ enabled: true, tools: [] });
     renderHeader();
 
-    expect((await screen.findByRole('link', { name: 'ask' })).getAttribute('href')).toBe('/ask');
+    await screen.findByRole('button', { name: 'research' });
+    expect(researchLinks()).toEqual([['ask', '/ask']]);
   });
 
-  it('does not link to it while the agent is switched off', async () => {
+  it('lists the formulary once a formula has been approved', async () => {
+    mockState.getDiplomaticSummary.mockResolvedValue({ formulae: 3, entities: 0, relations: 0 });
     renderHeader();
 
-    await waitFor(() => expect(mockState.getAgentTools).toHaveBeenCalled());
-    expect(screen.queryByRole('link', { name: 'ask' })).toBeNull();
+    await screen.findByRole('button', { name: 'research' });
+    expect(researchLinks()).toEqual([['formulary', '/formulary']]);
   });
 
-  it('does not link to it when the agent cannot be asked whether it is on', async () => {
+  it('lists both, Ask Archetype first', async () => {
+    mockState.getAgentTools.mockResolvedValue({ enabled: true, tools: [] });
+    mockState.getDiplomaticSummary.mockResolvedValue({ formulae: 1, entities: 0, relations: 0 });
+    renderHeader();
+
+    await waitFor(() => expect(researchLinks()).toHaveLength(2));
+    expect(researchLinks()).toEqual([
+      ['ask', '/ask'],
+      ['formulary', '/formulary'],
+    ]);
+  });
+
+  it('is absent while there is nothing to list', async () => {
+    renderHeader();
+
+    await settled();
+    expect(researchLinks()).toBeNull();
+  });
+
+  it('is absent when neither can be asked', async () => {
     mockState.getAgentTools.mockRejectedValue(new Error('502'));
+    mockState.getDiplomaticSummary.mockRejectedValue(new Error('502'));
     renderHeader();
 
-    await waitFor(() => expect(mockState.getAgentTools).toHaveBeenCalled());
-    expect(screen.queryByRole('link', { name: 'ask' })).toBeNull();
+    await settled();
+    expect(researchLinks()).toBeNull();
   });
 });
