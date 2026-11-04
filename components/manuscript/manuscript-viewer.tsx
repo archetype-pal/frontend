@@ -105,6 +105,7 @@ export default function ManuscriptViewer({
   const canViewEditorialControls = viewerCapabilities.canViewEditorialControls;
   const canUseSettings = viewerCapabilities.canUseSettings;
   const canUseEditorSettings = viewerCapabilities.canUseEditorSettings;
+  const canEditTexts = viewerCapabilities.canEditTexts;
 
   const canPersistAnyAnnotations = canPersistPublicAnnotations || canPersistEditorialAnnotations;
 
@@ -682,6 +683,7 @@ export default function ManuscriptViewer({
 
   const handleCreateAnnotation = React.useCallback(
     (kind?: AnnotationCreationKind) => {
+      if (textLinkingActive && !canEditTexts) return;
       const nextKind = kind ?? getDefaultAnnotationCreationKind(viewerCapabilities);
       if (!nextKind) return;
       if (!canCreateAnnotationKind(viewerCapabilities, nextKind)) return;
@@ -690,8 +692,12 @@ export default function ManuscriptViewer({
       viewerApiRef.current?.enableDraw();
       setActiveTool('draw');
     },
-    [viewerCapabilities, setActiveTool, setCurrentCreationKind]
+    [textLinkingActive, canEditTexts, viewerCapabilities, setActiveTool, setCurrentCreationKind]
   );
+
+  React.useEffect(() => {
+    if (textLinkingActive && !canEditTexts && activeTool === 'draw') handleMoveTool();
+  }, [textLinkingActive, canEditTexts, activeTool, handleMoveTool]);
 
   const handleToggleMoveDrawTool = React.useCallback(() => {
     if (activeTool === 'draw') {
@@ -1012,7 +1018,9 @@ export default function ManuscriptViewer({
               canPersistAnyAnnotations={canPersistAnyAnnotations}
               unsavedChanges={unsavedChanges}
               canDeleteAnnotations={canDeleteAnnotations}
-              canCreatePublicAnnotations={canCreatePublicAnnotations}
+              canCreatePublicAnnotations={
+                canCreatePublicAnnotations && (!textLinkingActive || canEditTexts)
+              }
               textOnlyMode={textLinkingActive}
               onToggleFullScreen={handleToggleFullScreen}
               onMoveTool={handleMoveTool}
@@ -1121,7 +1129,7 @@ export default function ManuscriptViewer({
                   texts={imageTexts}
                   displayMode={effectiveTextDisplayMode}
                   layout={isBottomDock ? 'row' : 'column'}
-                  canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
+                  canEdit={canEditTexts && !isPublicDemoMode}
                   onTextSaved={() => void reloadTextsAndAnnotations()}
                   linkedGraphId={linkedGraphId}
                   hoveredGraphId={hoveredRegionGraphId}
@@ -1143,7 +1151,7 @@ export default function ManuscriptViewer({
                     // unreliable when glyphs overlap it in Both view.
                     setSelectedRegionGraphId(graphId);
                   }}
-                  canLink={canPersistAnyAnnotations && !isPublicDemoMode}
+                  canLink={canEditTexts && !isPublicDemoMode}
                   pendingLink={!!pendingLinkRegion}
                   onLinkPhrase={(textId, elementIndex, label) =>
                     linkPendingToPhrase(textId, elementIndex, label)
