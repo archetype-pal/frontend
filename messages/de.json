@@ -199,6 +199,9 @@
     "notAuthenticated": "Nicht authentifiziert.",
     "failedToLoadHands": "Laden der Hände für diese Handschrift fehlgeschlagen.",
     "recentlyEditedBadge": "Bearbeitet",
+    "lettersLikeThis": "Ähnliche Buchstaben",
+    "similarityBadge": "{percent} % ähnlich",
+    "similarityTitle": "Wie ähnlich der Encoder diese Glyphe und die Ausgangsglyphe findet: 100 % ist dieselbe Form",
     "recentlyEditedTooltip": "Kürzlich bearbeitet",
     "queryBuilder": {
       "opIs": "ist",

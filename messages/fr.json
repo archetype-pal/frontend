@@ -199,6 +199,9 @@
     "notAuthenticated": "Non authentifié.",
     "failedToLoadHands": "Impossible de charger les mains pour ce manuscrit.",
     "recentlyEditedBadge": "Modifié",
+    "lettersLikeThis": "Lettres semblables",
+    "similarityBadge": "{percent} % semblable",
+    "similarityTitle": "Degré de ressemblance que l'encodeur trouve entre ce glyphe et celui de départ : 100 % est la même forme",
     "recentlyEditedTooltip": "Récemment modifié",
     "queryBuilder": {
       "opIs": "est",

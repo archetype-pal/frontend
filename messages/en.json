@@ -199,6 +199,9 @@
     "notAuthenticated": "Not authenticated.",
     "failedToLoadHands": "Failed to load hands for this manuscript.",
     "recentlyEditedBadge": "Edited",
+    "lettersLikeThis": "Letters like this",
+    "similarityBadge": "{percent}% alike",
+    "similarityTitle": "How alike the encoder finds this glyph and the one searched from: 100% is the same shape",
     "recentlyEditedTooltip": "Recently edited",
     "queryBuilder": {
       "opIs": "is",
