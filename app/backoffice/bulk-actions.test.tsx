@@ -6,13 +6,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AnnotationsPage from './annotations/page';
 import TrashPage from './trash/page';
 import { renderWithQueryClient } from '@/test/render';
+import type { GraphItem } from '@/types/backoffice';
 
 const services = vi.hoisted(() => {
-  const graph = (id: number) => ({
+  const graph = (id: number): GraphItem => ({
     id,
-    item_image: 1,
+    item_image: 11,
     image_display: 'Image',
-    historical_item: 1,
+    historical_item: 3,
+    item_part: 7,
     annotation: {},
     annotation_type: 'image',
     allograph: 1,
@@ -32,6 +34,7 @@ const services = vi.hoisted(() => {
     results: [1, 2, 3].map(graph),
   });
   return {
+    graph,
     getGraphs: vi.fn(page),
     getTrashedGraphs: vi.fn(page),
     deleteGraph: vi.fn(),
@@ -92,6 +95,40 @@ describe('a bulk action on a backoffice list', () => {
       runBulk();
       await waitFor(() => expect(screen.queryByText('1 selected')).toBeNull());
       expect(run.mock.calls).toEqual([[1]]);
+    }
+  );
+});
+
+describe('the image link on a backoffice annotation row', () => {
+  const imageHrefs = (container: HTMLElement) =>
+    [...container.querySelectorAll('a[href*="/images/11"]')].map((a) => a.getAttribute('href'));
+
+  it.each([
+    { list: 'Annotations', Page: AnnotationsPage },
+    { list: 'Trash', Page: TrashPage },
+  ])('$list opens the image under its item part', async ({ Page }) => {
+    const { container } = renderPage(Page);
+    await screen.findByText('Allograph 1');
+
+    expect(imageHrefs(container)).toEqual(Array(3).fill('/manuscripts/7/images/11'));
+  });
+
+  it.each([
+    { list: 'Annotations', Page: AnnotationsPage, load: services.getGraphs },
+    { list: 'Trash', Page: TrashPage, load: services.getTrashedGraphs },
+  ])(
+    '$list falls back to the historical item when the API sends no item part',
+    async ({ Page, load }) => {
+      load.mockResolvedValueOnce({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [{ ...services.graph(1), item_part: undefined }],
+      });
+      const { container } = renderPage(Page);
+      await screen.findByText('Allograph 1');
+
+      expect(imageHrefs(container)).toEqual(['/manuscripts/3/images/11']);
     }
   );
 });
