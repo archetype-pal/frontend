@@ -117,6 +117,47 @@ describe('SearchGrid text-only mode (frontend#74)', () => {
   });
 });
 
+describe('SearchGrid letters like this (AI programme W1.2)', () => {
+  it('offers the search from a glyph that has a vector', () => {
+    renderWithQueryClient(
+      <SearchGrid results={[{ ...graph, has_glyph_vector: true }]} resultType="graphs" />
+    );
+
+    const link = screen.getByRole('link', { name: 'Letters like this' });
+    expect(link.getAttribute('href')).toBe('/search/graphs/7/similar');
+  });
+
+  it('offers nothing for a glyph without one, or while annotating', () => {
+    renderWithQueryClient(<SearchGrid results={[graph]} resultType="graphs" />);
+    expect(screen.queryByRole('link', { name: 'Letters like this' })).toBeNull();
+
+    renderWithQueryClient(
+      <SearchGrid
+        results={[{ ...graph, has_glyph_vector: true }]}
+        resultType="graphs"
+        annotatingMode
+      />
+    );
+    expect(screen.queryByRole('link', { name: 'Letters like this' })).toBeNull();
+  });
+
+  it('shows how alike a hit is, as the cosine, only on a hit that has a score', () => {
+    renderWithQueryClient(
+      <SearchGrid
+        results={[
+          { ...graph, _rankingScore: 0.95 },
+          { ...graph, id: 8 },
+        ]}
+        resultType="graphs"
+      />
+    );
+
+    expect(screen.getAllByText(/% alike$/).map((badge) => badge.textContent)).toEqual([
+      '90% alike',
+    ]);
+  });
+});
+
 describe('SearchGrid manuscript compare selection (frontend#110)', () => {
   const manuscript: ManuscriptListItem = {
     id: 5,
