@@ -397,3 +397,37 @@ export interface GraphItem {
   deleted_at: string | null;
   deleted_by: string | null;
 }
+
+export type GraphProposalStatus = 'pending' | 'accepted' | 'rejected';
+
+/**
+ * A machine-proposed annotation awaiting a human decision (AI programme W0.5).
+ * Read-only: the only writes are the accept and reject actions.
+ */
+export interface GraphProposalItem {
+  id: number;
+  item_image: number;
+  image_display: string;
+  /** The page's IIIF info.json URL; null when the image server can't address it. */
+  image_iiif: string | null;
+  historical_item: number;
+  /** GeoJSON Feature in the page's pixel space, Y-up, as on a graph. */
+  annotation: Record<string, unknown>;
+  allograph: number | null;
+  allograph_name: string | null;
+  // Null when the page's part has no hand recorded. An image proposal without
+  // one cannot be accepted: Graph's check constraint requires both.
+  hand: number | null;
+  hand_name: string | null;
+  annotation_type: 'image' | 'text' | 'editorial';
+  confidence: number | null;
+  ml_job: number | null;
+  model_name: string;
+  status: GraphProposalStatus;
+  reviewer: number | null;
+  reviewer_username: string;
+  reviewed: string | null;
+  reason: string;
+  accepted_graph: number | null;
+  created: string;
+}

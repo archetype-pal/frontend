@@ -130,6 +130,12 @@ export const backofficeKeys = {
   reviewQueue: {
     all: () => [...backofficeKeys.all, 'review-queue'] as const,
   },
+  annotationProposals: {
+    all: () => [...backofficeKeys.all, 'annotation-proposals'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.annotationProposals.all(), 'list', filters] as const,
+    depth: () => [...backofficeKeys.annotationProposals.all(), 'depth'] as const,
+  },
   previewAsPublic: (textId: number) =>
     [...backofficeKeys.all, 'preview-as-public', textId] as const,
   teiRefSearch: (segment: string, query: string) =>
