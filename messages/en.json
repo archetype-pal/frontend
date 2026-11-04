@@ -68,6 +68,8 @@
     "featureArticles": "Feature Articles",
     "about": "About",
     "ask": "Ask Archetype",
+    "research": "Research",
+    "formulary": "Formulary",
     "backoffice": "Backoffice",
     "menu": "Menu",
     "openMenu": "Open menu",
@@ -3496,6 +3498,39 @@
       "fetch_witnesses": "No witnesses have been extracted and approved yet.",
       "fetch_relations": "No relations have been extracted and approved yet.",
       "compare_hands": "This needs a palaeographic model that has not been trained yet."
+    }
+  },
+  "formulary": {
+    "metaTitle": "Formulary",
+    "title": "Formulary",
+    "intro": "The recurring formulae of the charters: greetings, notifications, dispositive verbs, curses and sealing clauses. Each is set against the published Models of Authority typology, and one that matches nothing published is marked.",
+    "provenance": "A language model proposed each formula from the charters it read, and a scholar approved it before it appeared here.",
+    "kindLabel": "Kind of formula",
+    "all": "All",
+    "searchLabel": "Search the formulary",
+    "searchPlaceholder": "Search, e.g. sigilli",
+    "count": "{count, plural, one {# formula} other {# formulae}}",
+    "publishedType": "Published type: {type}",
+    "unpublishedType": "Not in the published typology",
+    "exemplarLabel": "Typical wording",
+    "foundIn": "{count, plural, one {Found in # charter} other {Found in # charters}}",
+    "showAll": "Show all {count}",
+    "showFewer": "Show fewer",
+    "readText": "{type, select, Transcription {Read the transcription} Translation {Read the translation} other {Read the text}}",
+    "openFolio": "Open the folio",
+    "noShelfmark": "Unnamed record",
+    "empty": "No formula has been approved yet.",
+    "emptyHint": "Formulae appear here once a scholar has reviewed what the model proposed.",
+    "noMatch": "No formula matches.",
+    "loadError": "Could not load the formulary.",
+    "retry": "Try again",
+    "kind": {
+      "sanctio": "Sanctio",
+      "corroboratio": "Corroboratio",
+      "dispositive": "Dispositive verb",
+      "salutation": "Salutation",
+      "notification": "Notification",
+      "other": "Other"
     }
   }
 }

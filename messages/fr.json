@@ -68,6 +68,8 @@
     "featureArticles": "Articles de fond",
     "about": "À propos",
     "ask": "Interroger Archetype",
+    "research": "Outils de recherche",
+    "formulary": "Formulaire",
     "backoffice": "Administration",
     "menu": "Menu",
     "openMenu": "Ouvrir le menu",
@@ -3496,6 +3498,39 @@
       "fetch_witnesses": "Aucun témoin n'a encore été extrait et validé.",
       "fetch_relations": "Aucune relation n'a encore été extraite et validée.",
       "compare_hands": "Il faut pour cela un modèle paléographique qui n'a pas encore été entraîné."
+    }
+  },
+  "formulary": {
+    "metaTitle": "Formulaire",
+    "title": "Formulaire",
+    "intro": "Les formules récurrentes des chartes : salut, notification, verbes dispositifs, clauses comminatoires et de corroboration. Chacune est confrontée à la typologie publiée de Models of Authority, et celle qui ne correspond à rien de publié est signalée.",
+    "provenance": "Un modèle de langue a proposé chaque formule à partir des chartes qu'il a lues, et un spécialiste l'a validée avant qu'elle n'apparaisse ici.",
+    "kindLabel": "Type de formule",
+    "all": "Toutes",
+    "searchLabel": "Rechercher dans le formulaire",
+    "searchPlaceholder": "Rechercher, par ex. sigilli",
+    "count": "{count, plural, one {# formule} other {# formules}}",
+    "publishedType": "Type publié : {type}",
+    "unpublishedType": "Absent de la typologie publiée",
+    "exemplarLabel": "Formulation type",
+    "foundIn": "{count, plural, one {Attestée dans # charte} other {Attestée dans # chartes}}",
+    "showAll": "Afficher les {count}",
+    "showFewer": "Afficher moins",
+    "readText": "{type, select, Transcription {Lire la transcription} Translation {Lire la traduction} other {Lire le texte}}",
+    "openFolio": "Ouvrir le folio",
+    "noShelfmark": "Notice sans cote",
+    "empty": "Aucune formule n'a encore été validée.",
+    "emptyHint": "Les formules apparaissent ici dès qu'un spécialiste a examiné les propositions du modèle.",
+    "noMatch": "Aucune formule ne correspond.",
+    "loadError": "Impossible de charger le formulaire.",
+    "retry": "Réessayer",
+    "kind": {
+      "sanctio": "Sanctio",
+      "corroboratio": "Corroboratio",
+      "dispositive": "Verbe dispositif",
+      "salutation": "Salut",
+      "notification": "Notification",
+      "other": "Autre"
     }
   }
 }

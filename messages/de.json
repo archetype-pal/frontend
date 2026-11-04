@@ -68,6 +68,8 @@
     "featureArticles": "Beiträge",
     "about": "Über",
     "ask": "Archetype fragen",
+    "research": "Forschung",
+    "formulary": "Formelverzeichnis",
     "backoffice": "Backoffice",
     "menu": "Menü",
     "openMenu": "Menü öffnen",
@@ -3496,6 +3498,39 @@
       "fetch_witnesses": "Bisher wurden keine Zeugen extrahiert und bestätigt.",
       "fetch_relations": "Bisher wurden keine Beziehungen extrahiert und bestätigt.",
       "compare_hands": "Dafür braucht es ein paläographisches Modell, das noch nicht trainiert wurde."
+    }
+  },
+  "formulary": {
+    "metaTitle": "Formelverzeichnis",
+    "title": "Formelverzeichnis",
+    "intro": "Die wiederkehrenden Formeln der Urkunden: Grußformeln, Promulgationen, Dispositivverben, Strafformeln und Beglaubigungsformeln. Jede wird mit der veröffentlichten Typologie von Models of Authority verglichen; eine, die zu nichts Veröffentlichtem passt, ist gekennzeichnet.",
+    "provenance": "Ein Sprachmodell hat jede Formel aus den gelesenen Urkunden vorgeschlagen, und eine Fachperson hat sie bestätigt, bevor sie hier erscheint.",
+    "kindLabel": "Art der Formel",
+    "all": "Alle",
+    "searchLabel": "Im Formelverzeichnis suchen",
+    "searchPlaceholder": "Suchen, z. B. sigilli",
+    "count": "{count, plural, one {# Formel} other {# Formeln}}",
+    "publishedType": "Veröffentlichter Typ: {type}",
+    "unpublishedType": "Nicht in der veröffentlichten Typologie",
+    "exemplarLabel": "Typischer Wortlaut",
+    "foundIn": "{count, plural, one {In # Urkunde belegt} other {In # Urkunden belegt}}",
+    "showAll": "Alle {count} anzeigen",
+    "showFewer": "Weniger anzeigen",
+    "readText": "{type, select, Transcription {Transkription lesen} Translation {Übersetzung lesen} other {Text lesen}}",
+    "openFolio": "Folio öffnen",
+    "noShelfmark": "Datensatz ohne Signatur",
+    "empty": "Bisher wurde keine Formel bestätigt.",
+    "emptyHint": "Formeln erscheinen hier, sobald eine Fachperson die Vorschläge des Modells geprüft hat.",
+    "noMatch": "Keine Formel passt.",
+    "loadError": "Das Formelverzeichnis konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "kind": {
+      "sanctio": "Sanctio",
+      "corroboratio": "Corroboratio",
+      "dispositive": "Dispositivverb",
+      "salutation": "Salutatio",
+      "notification": "Promulgatio",
+      "other": "Sonstiges"
     }
   }
 }
