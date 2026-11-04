@@ -16,7 +16,10 @@ const mockState = vi.hoisted(() => ({
     sectionOrder: ['search'] as string[],
     enabledSections: ['search'] as string[],
   },
+  getAgentTools: vi.fn(),
 }));
+
+vi.mock('@/services/agent', () => ({ getAgentTools: mockState.getAgentTools }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
@@ -97,6 +100,7 @@ beforeEach(() => {
   mockState.push.mockClear();
   mockState.loadGlobalSuggestions.mockClear();
   mockState.getServerSuggestions.mockClear();
+  mockState.getAgentTools.mockReset().mockResolvedValue({ enabled: false, tools: [] });
 });
 
 describe('<Header> search entry points', () => {
@@ -175,5 +179,29 @@ describe('<Header> static page menus', () => {
     mockState.siteFeatures = { sectionOrder: ['heading:help'], enabledSections: [] };
     renderHeader({ pages: [], menuHeadings: [help] });
     expect(screen.queryByRole('button', { name: 'Help' })).toBeNull();
+  });
+});
+
+describe('<Header> Ask Archetype', () => {
+  it('links to it while the agent is switched on', async () => {
+    mockState.getAgentTools.mockResolvedValue({ enabled: true, tools: [] });
+    renderHeader();
+
+    expect((await screen.findByRole('link', { name: 'ask' })).getAttribute('href')).toBe('/ask');
+  });
+
+  it('does not link to it while the agent is switched off', async () => {
+    renderHeader();
+
+    await waitFor(() => expect(mockState.getAgentTools).toHaveBeenCalled());
+    expect(screen.queryByRole('link', { name: 'ask' })).toBeNull();
+  });
+
+  it('does not link to it when the agent cannot be asked whether it is on', async () => {
+    mockState.getAgentTools.mockRejectedValue(new Error('502'));
+    renderHeader();
+
+    await waitFor(() => expect(mockState.getAgentTools).toHaveBeenCalled());
+    expect(screen.queryByRole('link', { name: 'ask' })).toBeNull();
   });
 });
