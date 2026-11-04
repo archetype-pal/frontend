@@ -3378,7 +3378,8 @@
       "information": "Information",
       "description": "Description",
       "images": "Manuscript Images",
-      "graphs": "Graphs"
+      "graphs": "Graphs",
+      "similar": "Similar hands"
     },
     "details": {
       "heading": "Hand Details"
@@ -3403,6 +3404,16 @@
       "loadError": "Failed to load graphs.",
       "empty": "No graphs associated to this hand.",
       "allographFallback": "Allograph {id}"
+    },
+    "similar": {
+      "intro": "The hands whose letters are shaped most like this hand's. Two hands are compared only on the letters both wrote, letter by letter, by the directions their strokes run in, and each match lists the letters it rests on. The order is a machine's, not a scholar's judgement: a match on a few letters is a lead to check, not an attribution.",
+      "evidence": "{letters, plural, one {# shared letter} other {# shared letters}} · {forms, plural, one {# form} other {# forms}} compared",
+      "lettersLabel": "Letters compared, most compared first, each with how alike the two hands' forms are",
+      "letterTitle": "{letter}: {similarity} ({here} here, {there} there)",
+      "moreLetters": "+{count} more",
+      "likeness": "likeness",
+      "likenessTitle": "The mean cosine between the two hands' forms of their shared letters, from −1 to 1. Around 0, the forms are no more alike than any two hands'.",
+      "noScribe": "No scribe attributed"
     },
     "metadata": {
       "fallbackTitle": "Hand #{id}",

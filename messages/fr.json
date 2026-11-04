@@ -3378,7 +3378,8 @@
       "information": "Informations",
       "description": "Description",
       "images": "Images du manuscrit",
-      "graphs": "Graphes"
+      "graphs": "Graphes",
+      "similar": "Mains semblables"
     },
     "details": {
       "heading": "Détails de la main"
@@ -3403,6 +3404,16 @@
       "loadError": "Impossible de charger les graphèmes.",
       "empty": "Aucun graphème associé à cette main.",
       "allographFallback": "Allographe {id}"
+    },
+    "similar": {
+      "intro": "Les mains dont les lettres ressemblent le plus à celles de cette main. Deux mains ne sont comparées que sur les lettres qu'elles ont toutes deux tracées, lettre par lettre, selon la direction de leurs traits, et chaque rapprochement indique les lettres sur lesquelles il repose. L'ordre est celui d'une machine, non un jugement savant : un rapprochement fondé sur quelques lettres est une piste à vérifier, non une attribution.",
+      "evidence": "{letters, plural, one {# lettre commune} other {# lettres communes}} · {forms, plural, one {# forme comparée} other {# formes comparées}}",
+      "lettersLabel": "Lettres comparées, les plus comparées d'abord, chacune avec la ressemblance des formes des deux mains",
+      "letterTitle": "{letter} : {similarity} ({here} ici, {there} là)",
+      "moreLetters": "+{count} autres",
+      "likeness": "ressemblance",
+      "likenessTitle": "Le cosinus moyen entre les formes des lettres communes aux deux mains, de −1 à 1. Autour de 0, les formes ne se ressemblent pas plus que celles de deux mains quelconques.",
+      "noScribe": "Aucun scribe attribué"
     },
     "metadata": {
       "fallbackTitle": "Main n°{id}",

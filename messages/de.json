@@ -3378,7 +3378,8 @@
       "information": "Informationen",
       "description": "Beschreibung",
       "images": "Manuskriptbilder",
-      "graphs": "Graphen"
+      "graphs": "Graphen",
+      "similar": "Ähnliche Hände"
     },
     "details": {
       "heading": "Details zur Hand"
@@ -3403,6 +3404,16 @@
       "loadError": "Graphen konnten nicht geladen werden.",
       "empty": "Dieser Hand sind keine Graphen zugeordnet.",
       "allographFallback": "Allograph {id}"
+    },
+    "similar": {
+      "intro": "Die Hände, deren Buchstaben denen dieser Hand am ähnlichsten geformt sind. Zwei Hände werden nur anhand der Buchstaben verglichen, die beide geschrieben haben, Buchstabe für Buchstabe, nach den Richtungen ihrer Striche, und jeder Treffer nennt die Buchstaben, auf denen er beruht. Die Reihenfolge ist die einer Maschine, kein wissenschaftliches Urteil: Ein Treffer auf wenigen Buchstaben ist ein Hinweis zum Prüfen, keine Zuschreibung.",
+      "evidence": "{letters, plural, one {# gemeinsamer Buchstabe} other {# gemeinsame Buchstaben}} · {forms, plural, one {# Form} other {# Formen}} verglichen",
+      "lettersLabel": "Verglichene Buchstaben, die meistverglichenen zuerst, jeweils mit der Ähnlichkeit der Formen beider Hände",
+      "letterTitle": "{letter}: {similarity} ({here} hier, {there} dort)",
+      "moreLetters": "+{count} weitere",
+      "likeness": "Ähnlichkeit",
+      "likenessTitle": "Der mittlere Kosinus zwischen den Formen der gemeinsamen Buchstaben beider Hände, von −1 bis 1. Um 0 sind die Formen einander nicht ähnlicher als die zweier beliebiger Hände.",
+      "noScribe": "Kein Schreiber zugeschrieben"
     },
     "metadata": {
       "fallbackTitle": "Hand Nr. {id}",

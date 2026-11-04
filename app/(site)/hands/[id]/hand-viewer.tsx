@@ -54,8 +54,12 @@ import {
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
+import type { SimilarHands } from '@/services/hand-similarity';
+import { SimilarHandsList } from './similar-hands';
 
 const TAB_VALUES = ['information', 'description', 'images', 'graphs'] as const;
+// The similar-hands tab exists only for a hand that has been compared (AI programme W1.3).
+const TAB_VALUES_WITH_SIMILAR = [...TAB_VALUES, 'similar'] as const;
 const DEFAULT_TAB = 'information';
 
 interface HandViewerProps {
@@ -63,6 +67,7 @@ interface HandViewerProps {
   images: HandImage[];
   scribe: HandScribe | null;
   manuscript: HandManuscript | null;
+  similarHands?: SimilarHands | null;
 }
 
 // ── Client-side graph fetching ──────────────────────────────────────
@@ -166,12 +171,16 @@ function useHandGraphs(
 
 // ── Main component ──────────────────────────────────────────────────
 
-export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps) {
+export function HandViewer({ hand, images, scribe, manuscript, similarHands }: HandViewerProps) {
   const t = useTranslations('hand');
   const tCommon = useTranslations('common');
   // `?? []`: an API that predates backend#184 still sends a single `description`.
   const descriptions = hand.descriptions ?? [];
-  const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
+  const hasSimilarHands = Boolean(similarHands?.results.length);
+  const { activeTab, handleTabChange } = useTabNavigation(
+    hasSimilarHands ? TAB_VALUES_WITH_SIMILAR : TAB_VALUES,
+    DEFAULT_TAB
+  );
   const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
   const handsSearchEnabled =
     isSectionEnabled('search') && isSearchCategoryEnabled(siteFeatures, 'hands');
@@ -305,6 +314,7 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             {t('tabs.graphs')}
             {graphsState.status === 'loaded' ? ` (${graphs.length})` : ''}
           </TabsTrigger>
+          {hasSimilarHands && <TabsTrigger value="similar">{t('tabs.similar')}</TabsTrigger>}
         </TabsList>
 
         {/* Information Tab */}
@@ -510,6 +520,12 @@ export function HandViewer({ hand, images, scribe, manuscript }: HandViewerProps
             </div>
           )}
         </TabsContent>
+
+        {similarHands && hasSimilarHands && (
+          <TabsContent value="similar">
+            <SimilarHandsList similar={similarHands} />
+          </TabsContent>
+        )}
       </Tabs>
     </main>
   );
