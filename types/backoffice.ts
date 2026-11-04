@@ -437,6 +437,8 @@ export interface DiplomaticProposalSource {
   image_text: number;
   type: string;
   item_image: number;
+  /** With `item_image`, the viewer's route: /manuscripts/<part>/images/<image>. */
+  item_part: number;
   historical_item: number;
   label: string;
   /** The catalogue date; what a W3.2 verdict was judged against. Empty when undated. */

@@ -112,7 +112,7 @@ export function ProposalReview({
           {source && (
             <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
               <Link
-                href={`/manuscripts/${source.historical_item}/images/${source.item_image}`}
+                href={`/manuscripts/${source.item_part}/images/${source.item_image}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-primary hover:underline"
