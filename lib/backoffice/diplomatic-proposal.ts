@@ -76,6 +76,23 @@ export function diplomaticAcceptBlocker(
   return proposal.source == null ? 'sourceGone' : null;
 }
 
+/**
+ * The pipelines whose answer is a list a reviewer may accept part of. A
+ * translation or a dating verdict is one answer, accepted or rejected whole.
+ */
+export function isItemised(pipeline: string): boolean {
+  return pipeline === 'W2.1' || pipeline === 'W2.2' || pipeline === 'W3.3';
+}
+
+/**
+ * The positions to send with an acceptance: undefined when every item is
+ * ticked, so a whole acceptance is the plain request it always was.
+ */
+export function chosenItems(chosen: ReadonlySet<number>, total: number): number[] | undefined {
+  const inRange = [...chosen].filter((i) => i >= 0 && i < total).sort((a, b) => a - b);
+  return inRange.length === total ? undefined : inRange;
+}
+
 /** How many records accepting would write, for the pipelines that write one per item. */
 export function itemCount(pipeline: string, payload: DiplomaticPayload): number {
   switch (pipeline) {

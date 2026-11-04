@@ -39,11 +39,15 @@ export function getDiplomaticProposalDepth() {
   });
 }
 
-/** Write the proposal's records. A 409 carries why it can't be accepted. */
-export function acceptDiplomaticProposal(id: number) {
-  return backofficePost<{ status: GraphProposalStatus; created: number }>(
+/**
+ * Write the proposal's records. `items` records only those positions of a list
+ * answer and notes the rest as dropped; left out, the whole answer is recorded.
+ * A 400 says why a choice does not fit, a 409 why it can't be accepted.
+ */
+export function acceptDiplomaticProposal(id: number, items?: readonly number[]) {
+  return backofficePost<{ status: GraphProposalStatus; created: number; dropped: number[] }>(
     `${BASE}${id}/accept/`,
-    {}
+    items ? { items: [...items] } : {}
   );
 }
 

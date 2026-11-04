@@ -2265,7 +2265,12 @@
         "relations": "{count, plural, =0 {No relations} =1 {1 relation} other {# relations}}",
         "inconsistent": "Text contradicts its date",
         "uncertain": "Dating uncertain"
-      }
+      },
+      "keepItem": "Record {item}",
+      "leftOutBadge": "Left out",
+      "noneChosen": "Nothing is ticked. Tick what the charter supports, or reject the proposal.",
+      "leavesOut": "{count, plural, =1 {The unticked item is} other {The # unticked items are}} left out, and the proposal keeps a note of {count, plural, =1 {it} other {them}}.",
+      "leftOutCount": "{count, plural, =1 {1 item left out} other {# items left out}}"
     },
     "mlJobs": {
       "title": "Model runs",

@@ -5,7 +5,9 @@
  *
  * The reviewer's job is to check the model against the charter, so the text
  * sits next to the answer with every quotation marked where it occurs, and a
- * count of the quotations the text does not contain.
+ * count of the quotations the text does not contain. In a list answer every
+ * item starts ticked, and the reviewer unticks what the charter does not
+ * support: only the ticked items are recorded.
  */
 
 import { useMemo, useState } from 'react';
@@ -20,10 +22,15 @@ import { Button } from '@/components/ui/button';
 import { RelativeTime } from '@/components/backoffice/relative-time';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { HighlightedText } from '@/components/backoffice/diplomatic-proposals/highlighted-text';
-import { PayloadView } from '@/components/backoffice/diplomatic-proposals/payload-view';
+import {
+  PayloadView,
+  type ItemChoice,
+} from '@/components/backoffice/diplomatic-proposals/payload-view';
 import {
   PIPELINE_SLUGS,
+  chosenItems,
   diplomaticAcceptBlocker,
+  isItemised,
   isKnownPipeline,
   isTruncated,
   itemCount,
@@ -51,7 +58,29 @@ export function ProposalReview({
   const t = useTranslations('backoffice.diplomaticProposals');
   const [reason, setReason] = useState('');
   const pending = proposal.status === 'pending';
-  const blocker = diplomaticAcceptBlocker(proposal);
+  const itemised = isItemised(proposal.pipeline);
+  const total = itemCount(proposal.pipeline, proposal.payload);
+  // Every item starts ticked; the panel is keyed by proposal, so a new one starts afresh.
+  const [chosen, setChosen] = useState<ReadonlySet<number>>(
+    () => new Set(Array.from({ length: total }, (_, i) => i))
+  );
+  const choice: ItemChoice | undefined =
+    pending && itemised
+      ? {
+          chosen,
+          onToggle: (index) =>
+            setChosen((prev) => {
+              const next = new Set(prev);
+              if (next.has(index)) next.delete(index);
+              else next.add(index);
+              return next;
+            }),
+        }
+      : undefined;
+  const leftOut = itemised ? total - chosen.size : 0;
+  const blocker =
+    diplomaticAcceptBlocker(proposal) ??
+    (itemised && total > 0 && chosen.size === 0 ? 'noneChosen' : null);
   const slug = isKnownPipeline(proposal.pipeline) ? PIPELINE_SLUGS[proposal.pipeline] : null;
   const { source } = proposal;
 
@@ -70,7 +99,8 @@ export function ProposalReview({
   const missing = located ? located.found.filter((f) => !f).length : 0;
 
   const accept = useMutation({
-    mutationFn: () => acceptDiplomaticProposal(proposal.id),
+    mutationFn: () =>
+      acceptDiplomaticProposal(proposal.id, itemised ? chosenItems(chosen, total) : undefined),
     onSuccess: ({ created }) => {
       toast.success(t('toastAccepted', { created }));
       onDecided(proposal.id);
@@ -144,6 +174,8 @@ export function ProposalReview({
             payload={proposal.payload}
             text={text}
             catalogueDate={source?.date ?? ''}
+            choice={choice}
+            dropped={proposal.dropped_items}
           />
         </section>
 
@@ -158,9 +190,10 @@ export function ProposalReview({
               slug && (
                 <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                   <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-                  {t(`acceptNote.${slug}`, {
-                    count: itemCount(proposal.pipeline, proposal.payload),
-                  })}
+                  <span>
+                    {t(`acceptNote.${slug}`, { count: itemised ? chosen.size : total })}
+                    {leftOut > 0 && <> {t('leavesOut', { count: leftOut })}</>}
+                  </span>
                 </p>
               )
             )}
@@ -211,6 +244,9 @@ export function ProposalReview({
                 {' '}
                 · <RelativeTime iso={proposal.reviewed} />
               </>
+            )}
+            {proposal.status === 'accepted' && proposal.dropped_items.length > 0 && (
+              <> · {t('leftOutCount', { count: proposal.dropped_items.length })}</>
             )}
             {proposal.reason && <> · “{proposal.reason}”</>}
           </div>

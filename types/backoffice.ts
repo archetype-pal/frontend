@@ -500,6 +500,11 @@ export interface DiplomaticProposalItem {
   reviewer_username: string;
   reviewed: string | null;
   reason: string;
+  /**
+   * Positions in the payload's list that the reviewer left out when accepting
+   * the rest. Empty when accepted whole, rejected, or still pending.
+   */
+  dropped_items: number[];
   created: string;
 }
 

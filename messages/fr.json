@@ -2265,7 +2265,12 @@
         "relations": "{count, plural, =0 {Aucune relation} =1 {1 relation} other {# relations}}",
         "inconsistent": "Le texte contredit sa date",
         "uncertain": "Datation incertaine"
-      }
+      },
+      "keepItem": "Enregistrer {item}",
+      "leftOutBadge": "Écarté",
+      "noneChosen": "Rien n’est coché. Cochez ce que la charte confirme, ou rejetez la proposition.",
+      "leavesOut": "{count, plural, =1 {L’élément non coché est écarté} other {Les # éléments non cochés sont écartés}}, et la proposition en garde la trace.",
+      "leftOutCount": "{count, plural, =1 {1 élément écarté} other {# éléments écartés}}"
     },
     "mlJobs": {
       "title": "Exécutions de modèles",

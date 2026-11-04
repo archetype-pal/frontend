@@ -2265,7 +2265,12 @@
         "relations": "{count, plural, =0 {Keine Beziehungen} =1 {1 Beziehung} other {# Beziehungen}}",
         "inconsistent": "Text widerspricht seinem Datum",
         "uncertain": "Datierung unsicher"
-      }
+      },
+      "keepItem": "{item} erfassen",
+      "leftOutBadge": "Ausgelassen",
+      "noneChosen": "Nichts ist angekreuzt. Kreuzen Sie an, was die Urkunde belegt, oder lehnen Sie den Vorschlag ab.",
+      "leavesOut": "{count, plural, =1 {Der nicht angekreuzte Eintrag wird} other {Die # nicht angekreuzten Einträge werden}} ausgelassen; der Vorschlag vermerkt {count, plural, =1 {ihn} other {sie}}.",
+      "leftOutCount": "{count, plural, =1 {1 Eintrag ausgelassen} other {# Einträge ausgelassen}}"
     },
     "mlJobs": {
       "title": "Modellläufe",

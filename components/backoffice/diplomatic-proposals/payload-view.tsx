@@ -6,12 +6,17 @@
  * Every string the model says it read in the charter carries a mark saying
  * whether the text contains it. One it cannot find is the model inventing a
  * reading, which is the thing a reviewer most needs to catch.
+ *
+ * A list answer (entities, formulae, relations) gives each item a checkbox
+ * while the proposal is pending, so the reviewer can leave out the ones the
+ * charter does not support. Once accepted, the items left out are marked.
  */
 
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { findQuote, quotedFragments } from '@/lib/backoffice/quote-finder';
 import { cn } from '@/lib/utils';
 import type { DiplomaticPayload, ProposedEntity } from '@/types/backoffice';
@@ -77,16 +82,84 @@ function Quoted({ children, className }: { children: React.ReactNode; className?
   return <span className={cn('font-serif italic', className)}>{children}</span>;
 }
 
-function EntitiesView({ entities, text }: { entities: ProposedEntity[]; text: string | null }) {
+/** The reviewer's choice of items, while a list answer is pending. */
+export type ItemChoice = {
+  /** Positions in the payload's list that are ticked. */
+  chosen: ReadonlySet<number>;
+  onToggle: (index: number) => void;
+};
+
+/** How an item reads to the reviewer and to assistive technology. */
+type ItemMarks = {
+  choice?: ItemChoice;
+  /** Positions the reviewer left out when the proposal was accepted. */
+  dropped?: readonly number[];
+};
+
+function isOut(index: number, { choice, dropped }: ItemMarks): boolean {
+  return choice ? !choice.chosen.has(index) : (dropped ?? []).includes(index);
+}
+
+/** The checkbox in front of a pending item. */
+function ItemMark({ index, label, marks }: { index: number; label: string; marks: ItemMarks }) {
+  const t = useTranslations('backoffice.diplomaticProposals');
+  if (!marks.choice) return null;
+  const { chosen, onToggle } = marks.choice;
+  return (
+    <Checkbox
+      checked={chosen.has(index)}
+      onCheckedChange={() => onToggle(index)}
+      aria-label={t('keepItem', { item: label })}
+      className="self-center"
+    />
+  );
+}
+
+/** The mark after an item the reviewer left out, once the proposal is accepted. */
+function LeftOut({ index, marks }: { index: number; marks: ItemMarks }) {
+  const t = useTranslations('backoffice.diplomaticProposals');
+  if (marks.choice || !isOut(index, marks)) return null;
+  return (
+    <Badge variant="outline" className="font-normal">
+      {t('leftOutBadge')}
+    </Badge>
+  );
+}
+
+function EntitiesView({
+  entities,
+  text,
+  marks,
+}: {
+  entities: ProposedEntity[];
+  text: string | null;
+  marks: ItemMarks;
+}) {
   const t = useTranslations('backoffice.diplomaticProposals');
   const rank = (role: string) => (known(ROLES, role) ? ROLES.indexOf(role) : ROLES.length);
-  const sorted = [...entities].sort((a, b) => rank(a.role) - rank(b.role));
+  // Shown by role, but chosen by position in the model's list, which is what
+  // the backend records.
+  const sorted = entities
+    .map((entity, index) => ({ entity, index }))
+    .sort((a, b) => rank(a.entity.role) - rank(b.entity.role));
+  const roleLabel = (role: string) => (known(ROLES, role) ? t(`role.${role}`) : role);
   return (
     <ul className="divide-y rounded-md border">
-      {sorted.map((entity, i) => (
-        <li key={i} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2">
+      {sorted.map(({ entity, index }) => (
+        <li
+          key={index}
+          className={cn(
+            'flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2',
+            isOut(index, marks) && 'opacity-60'
+          )}
+        >
+          <ItemMark
+            index={index}
+            label={`${roleLabel(entity.role)}: ${entity.name}`}
+            marks={marks}
+          />
           <span className="w-24 shrink-0 text-xs uppercase tracking-wide text-muted-foreground">
-            {known(ROLES, entity.role) ? t(`role.${entity.role}`) : entity.role}
+            {roleLabel(entity.role)}
           </span>
           <span className="min-w-0 flex-1">
             {entity.role === 'transaction' ? (
@@ -105,6 +178,7 @@ function EntitiesView({ entities, text }: { entities: ProposedEntity[]; text: st
               <span className="block text-xs text-muted-foreground">{entity.note}</span>
             )}
           </span>
+          <LeftOut index={index} marks={marks} />
           {entity.role !== 'transaction' && <QuoteCheck text={text} quote={entity.name} />}
         </li>
       ))}
@@ -117,29 +191,49 @@ export function PayloadView({
   payload,
   text,
   catalogueDate,
+  choice,
+  dropped,
 }: {
   pipeline: string;
   payload: DiplomaticPayload;
   /** The charter text, once loaded; null while it loads or when it is gone. */
   text: string | null;
   catalogueDate: string;
+  /** Checkboxes for a pending list answer; omitted, the items are only shown. */
+  choice?: ItemChoice;
+  /** Positions left out when the proposal was accepted. */
+  dropped?: readonly number[];
 }) {
   const t = useTranslations('backoffice.diplomaticProposals');
+  const marks: ItemMarks = { choice, dropped };
+  const kindLabel = (kind: string) => (known(KINDS, kind) ? t(`kind.${kind}`) : kind);
+  const predicateLabel = (predicate: string) =>
+    known(PREDICATES, predicate) ? t(`predicate.${predicate}`) : predicate;
 
   switch (pipeline) {
     case 'W2.1':
-      return <EntitiesView entities={payload.entities ?? []} text={text} />;
+      return <EntitiesView entities={payload.entities ?? []} text={text} marks={marks} />;
 
     case 'W2.2':
       return (
         <ul className="space-y-2">
           {(payload.formulae ?? []).map((formula, i) => (
-            <li key={i} className="space-y-1 rounded-md border px-3 py-2">
+            <li
+              key={i}
+              className={cn(
+                'space-y-1 rounded-md border px-3 py-2',
+                isOut(i, marks) && 'opacity-60'
+              )}
+            >
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">
-                  {known(KINDS, formula.kind) ? t(`kind.${formula.kind}`) : formula.kind}
-                </Badge>
+                <ItemMark
+                  index={i}
+                  label={`${kindLabel(formula.kind)}: ${formula.label}`}
+                  marks={marks}
+                />
+                <Badge variant="outline">{kindLabel(formula.kind)}</Badge>
                 <span className="text-sm font-medium">{formula.label}</span>
+                <LeftOut index={i} marks={marks} />
               </div>
               {formula.excerpt && (
                 <div className="flex items-baseline gap-3">
@@ -227,16 +321,26 @@ export function PayloadView({
       return (
         <ul className="divide-y rounded-md border">
           {(payload.triples ?? []).map((triple, i) => (
-            <li key={i} className="flex flex-wrap items-baseline gap-x-2 gap-y-1 px-3 py-2 text-sm">
+            <li
+              key={i}
+              className={cn(
+                'flex flex-wrap items-baseline gap-x-2 gap-y-1 px-3 py-2 text-sm',
+                isOut(i, marks) && 'opacity-60'
+              )}
+            >
+              <ItemMark
+                index={i}
+                label={`${triple.subject} – ${predicateLabel(triple.predicate)} – ${triple.object}`}
+                marks={marks}
+              />
               <Quoted>{triple.subject}</Quoted>
               <QuoteCheck text={text} quote={triple.subject} compact />
               <Badge variant="outline" className="font-normal">
-                {known(PREDICATES, triple.predicate)
-                  ? t(`predicate.${triple.predicate}`)
-                  : triple.predicate}
+                {predicateLabel(triple.predicate)}
               </Badge>
               <Quoted>{triple.object}</Quoted>
               <QuoteCheck text={text} quote={triple.object} compact />
+              <LeftOut index={i} marks={marks} />
             </li>
           ))}
         </ul>
