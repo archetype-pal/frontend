@@ -9,23 +9,29 @@ import type { BackendGraph } from '@/services/annotations';
 // test doesn't pull in the real (canvas-heavy) annotorious module — but capture
 // the props the viewer hands it, so tests can drive its events (exposeApi /
 // onSelect / onCreate …) and exercise the viewer's wiring.
-const { annotoriousPropsRef, authRef, annotationServiceMocks } = vi.hoisted(() => ({
-  annotoriousPropsRef: { current: null as Record<string, (...args: unknown[]) => unknown> | null },
-  authRef: { current: false },
-  annotationServiceMocks: {
-    fetchAnnotationsForImage: vi.fn(
-      async (
-        _imageId?: string,
-        _allographId?: string,
-        _annotationType?: string | null,
-        _authenticated?: boolean
-      ): Promise<BackendGraph[]> => []
-    ),
-    createViewerAnnotation: vi.fn(async () => ({})),
-    updateViewerAnnotation: vi.fn(async () => ({})),
-    deleteViewerAnnotation: vi.fn(async () => undefined),
-  },
-}));
+const { annotoriousPropsRef, authRef, userRef, findOnPage, annotationServiceMocks } = vi.hoisted(
+  () => ({
+    annotoriousPropsRef: {
+      current: null as Record<string, (...args: unknown[]) => unknown> | null,
+    },
+    authRef: { current: false },
+    userRef: { current: null as { capabilities: Record<string, boolean> } | null },
+    findOnPage: vi.fn(),
+    annotationServiceMocks: {
+      fetchAnnotationsForImage: vi.fn(
+        async (
+          _imageId?: string,
+          _allographId?: string,
+          _annotationType?: string | null,
+          _authenticated?: boolean
+        ): Promise<BackendGraph[]> => []
+      ),
+      createViewerAnnotation: vi.fn(async () => ({})),
+      updateViewerAnnotation: vi.fn(async () => ({})),
+      deleteViewerAnnotation: vi.fn(async () => undefined),
+    },
+  })
+);
 
 vi.mock('next/dynamic', () => ({
   default: () =>
@@ -42,7 +48,7 @@ const mockViewerApi = new Proxy({}, { get: () => () => undefined });
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({
     isAuthenticated: authRef.current,
-    user: null,
+    user: userRef.current,
     isReady: true,
     logout: vi.fn(),
   }),
@@ -100,6 +106,8 @@ vi.mock('@/services/manuscripts', () => ({
 }));
 
 vi.mock('@/services/annotations', () => annotationServiceMocks);
+
+vi.mock('@/services/backoffice/annotation-proposals', () => ({ findOnPage }));
 
 vi.mock('@/services/image-texts', () => ({
   fetchImageTextsForImage: vi.fn(async () => []),
@@ -176,6 +184,7 @@ describe('ManuscriptViewer smoke test', () => {
   afterEach(() => {
     vi.clearAllMocks();
     authRef.current = false;
+    userRef.current = null;
     annotationServiceMocks.fetchAnnotationsForImage.mockResolvedValue([]);
     annotationServiceMocks.createViewerAnnotation.mockResolvedValue({});
     annotationServiceMocks.updateViewerAnnotation.mockResolvedValue({});
@@ -189,6 +198,29 @@ describe('ManuscriptViewer smoke test', () => {
     const imageTools = await screen.findByRole('button', { name: 'Image tools' });
     expect(imageTools).toBeTruthy();
     expect(fetchBaseData).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers the find-on-page control to managers only, searching this page', async () => {
+    const capabilities = { annotate: true, annotate_editorially: true, read_drafts: true };
+    authRef.current = true;
+    userRef.current = { capabilities: { ...capabilities, manage: false } };
+    const { unmount } = render(
+      <ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />
+    );
+    await screen.findByRole('button', { name: 'Image tools' });
+    expect(screen.queryByRole('button', { name: 'Find a letter on this page' })).toBeNull();
+    unmount();
+
+    userRef.current = { capabilities: { ...capabilities, manage: true } };
+    findOnPage.mockResolvedValue({ status: 'cannot', reason: 'unknown_letter', options: [] });
+    render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Find a letter on this page' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'What to find' }), {
+      target: { value: 'long s' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Find' }));
+
+    await waitFor(() => expect(findOnPage).toHaveBeenCalledWith('4432', { request: 'long s' }));
   });
 
   it('shows the error state when base data fails to load', async () => {

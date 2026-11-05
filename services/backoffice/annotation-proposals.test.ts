@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { jsonResponse } from '@/test/responses';
 import {
   acceptAnnotationProposal,
+  findOnPage,
   getAnnotationProposalDepth,
   getAnnotationProposals,
   rejectAnnotationProposal,
@@ -39,6 +40,17 @@ describe('annotation proposals service', () => {
     await getAnnotationProposals({ status: 'pending', ml_job: 31 });
 
     expect(call().url).toMatch(/\/proposals\/?\?status=pending&ml_job=31$/);
+  });
+
+  it('posts a find-on-page request, as written or as the letter picked', async () => {
+    await findOnPage(5504, { request: 'label every long s' });
+    await findOnPage('5504', { allograph: 12, hand: null, count: 30 });
+
+    expect(call(0).method).toBe('POST');
+    expect(call(0).url).toMatch(/\/api\/v1\/management\/vision\/pages\/5504\/find\/?$/);
+    expect(call(0).body).toEqual({ request: 'label every long s' });
+    expect(call(1).url).toMatch(/\/vision\/pages\/5504\/find\/?$/);
+    expect(call(1).body).toEqual({ allograph: 12, hand: null, count: 30 });
   });
 
   it('reads the pending depth', async () => {
