@@ -429,6 +429,52 @@ describe('<LessonView> a written lesson', () => {
     expect(open.getAttribute('href')).toBe('/manuscripts/12/images/70?graph=326');
     expect(services.getGlyphPart).toHaveBeenCalledWith(326);
   });
+
+  it("marks the examples from the lesson's own page, and says so in the heading", async () => {
+    // Page 64 is the lesson's own; GLYPH is from page 70.
+    const here: LearnGlyph = { ...GLYPH, id: 327, item_image: 64, letter_form: 'a, from here' };
+    const steps = [
+      { ...STEPS[0], example_glyph_ids: [326, 327] },
+      { ...STEPS[1], example_glyph_ids: [327] },
+    ];
+    const lesson = session();
+    services.getLesson.mockResolvedValue(
+      session({
+        walkthrough: { ...lesson.walkthrough!, steps, glyphs: { '326': GLYPH, '327': here } },
+      })
+    );
+    renderWithQueryClient(<LessonView id={ID} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Begin with step 1' }));
+
+    const both = screen.getByRole('list', { name: 'From this page and other charters' });
+    const cards = within(both).getAllByRole('listitem');
+    expect(within(cards[0]).queryByText('This page')).toBeNull();
+    expect(within(cards[1]).getByText('This page')).toBeTruthy();
+
+    fireEvent.click(stepCard(1));
+    const mine = screen.getByRole('list', { name: 'Enlarged from this page' });
+    expect(within(mine).getByText('This page')).toBeTruthy();
+  });
+
+  it("marks none of an upload's examples, which has no page of its own", async () => {
+    const lesson = session();
+    services.getLesson.mockResolvedValue(
+      session({
+        page: null,
+        item_image: null,
+        uploaded: true,
+        walkthrough: {
+          ...lesson.walkthrough!,
+          steps: [{ ...STEPS[0], example_glyph_ids: [326] }],
+        },
+      })
+    );
+    renderWithQueryClient(<LessonView id={ID} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Begin with step 1' }));
+
+    const examples = screen.getByRole('list', { name: 'The same letter in other charters' });
+    expect(within(examples).queryByText('This page')).toBeNull();
+  });
 });
 
 describe('<LessonView> the practice', () => {
@@ -589,6 +635,25 @@ describe('<LessonView> questions', () => {
 
     fireEvent.click(show);
     expect(drawn()).toHaveLength(0);
+  });
+
+  it("marks an answer's examples from the lesson's own page", async () => {
+    const here: LearnGlyph = { ...GLYPH, id: 327, item_image: 64, letter_form: 't, from here' };
+    services.getLesson.mockResolvedValue(
+      session({
+        messages: [
+          question,
+          { ...answer, example_glyph_ids: [327], glyphs: { '327': here } },
+          { ...answer, example_glyph_ids: [326], glyphs: { '326': GLYPH } },
+        ],
+      })
+    );
+    renderWithQueryClient(<LessonView id={ID} />);
+
+    const mine = await screen.findByRole('list', { name: 'Enlarged from this page' });
+    expect(within(mine).getByText('This page')).toBeTruthy();
+    const elsewhere = screen.getByRole('list', { name: 'Examples from other charters' });
+    expect(within(elsewhere).queryByText('This page')).toBeNull();
   });
 
   it('marks an answer the tutor could not give', async () => {
