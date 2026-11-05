@@ -18,7 +18,7 @@ import { glyphHref, iiifSrc } from '@/lib/learn';
 import { getGlyphPart } from '@/services/learn';
 import type { LearnGlyph } from '@/types/learn';
 
-function GlyphCard({ glyph }: { glyph: LearnGlyph }) {
+function GlyphCard({ glyph, onThisPage }: { glyph: LearnGlyph; onThisPage: boolean }) {
   const t = useTranslations('learn.glyph');
   // The viewer's address needs the page's manuscript part, which the lesson
   // does not carry. One lookup serves every glyph of the same page.
@@ -53,7 +53,14 @@ function GlyphCard({ glyph }: { glyph: LearnGlyph }) {
         )}
       </div>
       <div className="flex flex-1 flex-col gap-0.5 border-t px-2.5 py-2 text-xs">
-        <p className="text-sm font-medium leading-tight">{name}</p>
+        <p className="flex items-baseline justify-between gap-1 text-sm font-medium leading-tight">
+          <span>{name}</span>
+          {onThisPage && (
+            <span className="shrink-0 rounded bg-amber-100 px-1 text-[0.65rem] font-semibold uppercase tracking-wide text-amber-900">
+              {t('thisPage')}
+            </span>
+          )}
+        </p>
         {glyph.hand && <p className="line-clamp-1 text-muted-foreground">{glyph.hand}</p>}
         <p className="line-clamp-2 text-muted-foreground" title={glyph.page || glyph.charter}>
           {glyph.charter}
@@ -73,14 +80,32 @@ function GlyphCard({ glyph }: { glyph: LearnGlyph }) {
   );
 }
 
-export function GlyphExamples({ glyphs, title }: { glyphs: LearnGlyph[]; title: string }) {
+/**
+ * The examples a step or an answer shows. They come from other charters, or,
+ * from the experts' annotations, enlarged from the lesson's own page: each of
+ * those is marked, and the heading says which there are. `title` is the
+ * heading when every example is from another page.
+ */
+export function GlyphExamples({
+  glyphs,
+  title,
+  pageId,
+}: {
+  glyphs: LearnGlyph[];
+  title: string;
+  pageId: number | null;
+}) {
+  const t = useTranslations('learn.glyph');
   if (glyphs.length === 0) return null;
+  const here = glyphs.filter((glyph) => glyph.item_image === pageId).length;
+  const heading =
+    here === 0 ? title : here === glyphs.length ? t('fromThisPage') : t('fromThisPageAndOthers');
   return (
     <div>
-      <p className="text-sm font-semibold">{title}</p>
-      <ul aria-label={title} className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <p className="text-sm font-semibold">{heading}</p>
+      <ul aria-label={heading} className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {glyphs.map((glyph) => (
-          <GlyphCard key={glyph.id} glyph={glyph} />
+          <GlyphCard key={glyph.id} glyph={glyph} onThisPage={glyph.item_image === pageId} />
         ))}
       </ul>
     </div>

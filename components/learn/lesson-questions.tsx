@@ -25,6 +25,7 @@ import type { LearnMessage, TutorSession } from '@/types/learn';
 
 function TutorMessage({
   message,
+  pageId,
   selected,
   activeBox,
   onSelect,
@@ -32,6 +33,7 @@ function TutorMessage({
   itemRef,
 }: {
   message: LearnMessage;
+  pageId: number | null;
   selected: boolean;
   activeBox: number | null;
   onSelect: () => void;
@@ -107,7 +109,7 @@ function TutorMessage({
             })}
         </div>
       )}
-      <GlyphExamples glyphs={examples} title={t('examples')} />
+      <GlyphExamples glyphs={examples} title={t('examples')} pageId={pageId} />
     </li>
   );
 }
@@ -220,6 +222,7 @@ export function LessonQuestions({
               <TutorMessage
                 key={index}
                 message={message}
+                pageId={session.page?.id ?? null}
                 selected={selectedMessage === index}
                 activeBox={selectedMessage === index ? activeBox : null}
                 onSelect={() => onSelectMessage(selectedMessage === index ? null : index)}

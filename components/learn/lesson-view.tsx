@@ -193,6 +193,7 @@ function Lesson({ session, signedIn }: { session: TutorSession; signedIn: boolea
           <LessonSteps
             steps={steps}
             glyphs={walkthrough.glyphs}
+            pageId={session.page?.id ?? null}
             openStep={focus?.kind === 'step' ? focus.index : null}
             activeBox={activeBox}
             hasPractice={practice !== null}

@@ -3817,7 +3817,10 @@
       "unnamed": "A letter",
       "alt": "{form} from {charter}",
       "noCrop": "No picture",
-      "open": "Open in the viewer"
+      "open": "Open in the viewer",
+      "thisPage": "This page",
+      "fromThisPage": "Enlarged from this page",
+      "fromThisPageAndOthers": "From this page and other charters"
     },
     "practice": {
       "title": "Practice",

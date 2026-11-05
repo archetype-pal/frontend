@@ -3817,7 +3817,10 @@
       "unnamed": "Ein Buchstabe",
       "alt": "{form} aus {charter}",
       "noCrop": "Kein Bild",
-      "open": "Im Viewer öffnen"
+      "open": "Im Viewer öffnen",
+      "thisPage": "Diese Seite",
+      "fromThisPage": "Vergrößert von dieser Seite",
+      "fromThisPageAndOthers": "Von dieser Seite und aus anderen Urkunden"
     },
     "practice": {
       "title": "Übung",

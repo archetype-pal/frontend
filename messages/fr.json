@@ -3817,7 +3817,10 @@
       "unnamed": "Une lettre",
       "alt": "{form}, {charter}",
       "noCrop": "Pas d'image",
-      "open": "Ouvrir dans la visionneuse"
+      "open": "Ouvrir dans la visionneuse",
+      "thisPage": "Cette page",
+      "fromThisPage": "Agrandies depuis cette page",
+      "fromThisPageAndOthers": "De cette page et d'autres chartes"
     },
     "practice": {
       "title": "Exercice",

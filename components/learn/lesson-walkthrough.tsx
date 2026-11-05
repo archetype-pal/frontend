@@ -75,6 +75,7 @@ function StepCard({
   open,
   activeBox,
   glyphs,
+  pageId,
   hasPractice,
   onSelectStep,
   onSelectBox,
@@ -86,6 +87,7 @@ function StepCard({
   open: boolean;
   activeBox: number | null;
   glyphs: Record<string, LearnGlyph> | undefined;
+  pageId: number | null;
   hasPractice: boolean;
   onSelectStep: (index: number | null) => void;
   onSelectBox: (index: number | null) => void;
@@ -192,7 +194,7 @@ function StepCard({
             </div>
           )}
 
-          <GlyphExamples glyphs={examples} title={t('examples')} />
+          <GlyphExamples glyphs={examples} title={t('examples')} pageId={pageId} />
 
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             {index > 0 ? (
@@ -231,6 +233,7 @@ function StepCard({
 export function LessonSteps({
   steps,
   glyphs,
+  pageId,
   openStep,
   activeBox,
   hasPractice,
@@ -240,6 +243,8 @@ export function LessonSteps({
 }: {
   steps: LearnStep[];
   glyphs: Record<string, LearnGlyph> | undefined;
+  /** The lesson's corpus page, whose own glyphs are marked among the examples; null for an upload. */
+  pageId: number | null;
   openStep: number | null;
   activeBox: number | null;
   hasPractice: boolean;
@@ -277,6 +282,7 @@ export function LessonSteps({
             open={openStep === index}
             activeBox={openStep === index ? activeBox : null}
             glyphs={glyphs}
+            pageId={pageId}
             hasPractice={hasPractice}
             onSelectStep={onSelectStep}
             onSelectBox={onSelectBox}
