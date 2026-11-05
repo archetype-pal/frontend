@@ -3687,5 +3687,68 @@
     "unavailable": "Die Ähnlichkeitssuche ist auf dieser Website noch nicht eingerichtet.",
     "error": "Die Suche ist fehlgeschlagen. Bitte später erneut versuchen.",
     "backToSearch": "Zurück zur Glyphensuche"
+  },
+  "learn": {
+    "metaTitle": "Eine Schrift lesen lernen",
+    "title": "Eine Schrift lesen lernen",
+    "intro": "Bringen Sie eine Seite mit, und ein Tutor führt Sie durch ihre Handschrift: um welche Schrift es sich handelt und warum, welche Buchstabenformen sie ausmachen, wo jede davon auf der Seite steht und wie dieselben Buchstaben in anderen Urkunden aussehen. Danach lesen Sie selbst eine Zeile und fragen nach allem, was Ihnen rätselhaft ist.",
+    "aiNotice": "Die Lektionen schreibt ein Sprachmodell. Seine Beispiele stammen aus den Annotationen von Fachleuten, aber prüfen Sie, was es Ihnen sagt, bevor Sie sich darauf stützen.",
+    "offTitle": "Der Tutor ist ausgeschaltet",
+    "off": "Eine Administratorin oder ein Administrator muss ihn einschalten, bevor hier Lektionen begonnen werden können. Bereits geschriebene Lektionen lassen sich weiterhin über ihren Link lesen.",
+    "statusError": "Es ließ sich gerade nicht feststellen, was der Tutor kann.",
+    "loading": "Wird geladen …",
+    "startingPage": "Lektion zu {label} wird begonnen …",
+    "startingPageUnnamed": "Lektion zu Seite {id} wird begonnen …",
+    "language": "Die Lektionen sind hier auf {language}.",
+    "languageHint": "Um in einer anderen Sprache zu lernen, stellen Sie zuerst die Sprache der Website um.",
+    "languages": {
+      "en": "Englisch",
+      "de": "Deutsch",
+      "fr": "Französisch"
+    },
+    "limits": "Sie können {daily, plural, one {# Lektion} other {# Lektionen}} am Tag beginnen und jeder Lektion bis zu {questions, plural, one {# Frage} other {# Fragen}} stellen.",
+    "pages": {
+      "title": "Wählen Sie eine Seite aus dem Korpus",
+      "intro": "Das sind die Seiten, die Fachleute am ausführlichsten annotiert haben; sie ergeben die reichsten Lektionen.",
+      "start": "Lektion zu {label} beginnen",
+      "cta": "Lektion beginnen",
+      "starting": "Wird begonnen …",
+      "noThumbnail": "Kein Bild",
+      "empty": "Noch sind keine Seiten zum Lernen bereit.",
+      "error": "Die vorgeschlagenen Seiten konnten nicht geladen werden."
+    },
+    "upload": {
+      "title": "Oder bringen Sie ein eigenes Bild mit",
+      "intro": "Ein Foto oder Scan einer mittelalterlichen Hand: eine Urkunde, eine Buchseite, ein Siegel.",
+      "choose": "Bild auswählen",
+      "drop": "oder hierher ziehen",
+      "formats": "JPEG, PNG, WebP oder TIFF, bis {size} MB",
+      "preview": "Das ausgewählte Bild",
+      "noPreview": "Dieser Browser kann das Bild nicht anzeigen, der Tutor kann es aber lesen.",
+      "start": "Lektion beginnen",
+      "remove": "Ein anderes wählen",
+      "privacy": "Ihr Bild wird an ein gehostetes KI-Modell eines Unternehmens außerhalb dieser Website gesendet, das die Lektion schreibt, und hier {days, plural, one {# Tag} other {# Tage}} lang aufbewahrt, damit die Lektion es zeigen kann. Alle, mit denen Sie den Link der Lektion teilen, können es sehen; senden Sie also nichts Privates.",
+      "signIn": "Melden Sie sich an, um ein eigenes Bild zu verwenden.",
+      "signInLink": "Anmelden",
+      "nobody": "Diese Website nimmt keine eigenen Bilder an; wählen Sie stattdessen eine Seite aus dem Korpus.",
+      "problem": {
+        "type": "Diese Datei ist kein JPEG-, PNG-, WebP- oder TIFF-Bild.",
+        "size": "Dieses Bild ist größer als {size} MB.",
+        "empty": "Diese Datei ist leer."
+      }
+    },
+    "failure": {
+      "throttled": "Sie haben die Grenze für den Moment erreicht.",
+      "forbidden": "Das kann der Tutor für Sie nicht tun.",
+      "busy": "Der Tutor arbeitet noch an dieser Lektion.",
+      "invalid": "Der Tutor konnte das nicht annehmen.",
+      "unavailable": "Der Tutor ist gerade nicht verfügbar.",
+      "notFound": "Diese Lektion gibt es nicht.",
+      "unreachable": "Der Tutor ist nicht erreichbar. Bitte versuchen Sie es gleich noch einmal.",
+      "unknown": "Etwas ist schiefgegangen. Bitte versuchen Sie es erneut."
+    },
+    "lesson": {
+      "retry": "Erneut versuchen"
+    }
   }
 }

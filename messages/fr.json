@@ -3687,5 +3687,68 @@
     "unavailable": "La recherche par ressemblance n'est pas encore configurée sur ce site.",
     "error": "La recherche a échoué. Réessayez plus tard.",
     "backToSearch": "Retour à la recherche de glyphes"
+  },
+  "learn": {
+    "metaTitle": "Apprendre à lire une écriture",
+    "title": "Apprendre à lire une écriture",
+    "intro": "Apportez une page, et un tuteur vous guide dans son écriture : de quelle écriture il s'agit et pourquoi, les formes de lettres qui la composent, où chacune se trouve sur la page, et les mêmes lettres dans d'autres chartes. Lisez ensuite une ligne vous-même, et posez des questions sur tout ce qui vous intrigue.",
+    "aiNotice": "Les leçons sont rédigées par un modèle de langue. Les exemples qu'il montre proviennent des annotations d'experts, mais vérifiez ce qu'il vous dit avant de vous y fier.",
+    "offTitle": "Le tuteur est désactivé",
+    "off": "Un administrateur doit l'activer avant que des leçons puissent être commencées ici. Les leçons déjà rédigées restent lisibles depuis leur lien.",
+    "statusError": "Impossible de savoir pour l'instant ce que le tuteur peut faire.",
+    "loading": "Chargement…",
+    "startingPage": "Ouverture d'une leçon sur {label}…",
+    "startingPageUnnamed": "Ouverture d'une leçon sur la page {id}…",
+    "language": "Les leçons sont ici en {language}.",
+    "languageHint": "Pour apprendre dans une autre langue, changez d'abord la langue du site.",
+    "languages": {
+      "en": "anglais",
+      "de": "allemand",
+      "fr": "français"
+    },
+    "limits": "Vous pouvez commencer {daily, plural, one {# leçon} other {# leçons}} par jour, et poser à chaque leçon jusqu'à {questions, plural, one {# question} other {# questions}}.",
+    "pages": {
+      "title": "Choisissez une page du corpus",
+      "intro": "Ce sont les pages les plus annotées par les experts, qui donnent les leçons les plus riches.",
+      "start": "Commencer une leçon sur {label}",
+      "cta": "Commencer une leçon",
+      "starting": "Ouverture…",
+      "noThumbnail": "Pas d'image",
+      "empty": "Aucune page n'est encore prête pour une leçon.",
+      "error": "Impossible de charger les pages suggérées."
+    },
+    "upload": {
+      "title": "Ou apportez votre propre image",
+      "intro": "Une photo ou un scan d'une écriture médiévale : une charte, une page de livre, un sceau.",
+      "choose": "Choisir une image",
+      "drop": "ou la déposer ici",
+      "formats": "JPEG, PNG, WebP ou TIFF, jusqu'à {size} Mo",
+      "preview": "L'image choisie",
+      "noPreview": "Ce navigateur ne peut pas afficher l'image, mais le tuteur peut la lire.",
+      "start": "Commencer la leçon",
+      "remove": "En choisir une autre",
+      "privacy": "Votre image est envoyée à un modèle d'IA hébergé par une entreprise extérieure à ce site, qui rédige la leçon, et elle est conservée ici {days, plural, one {# jour} other {# jours}} pour que la leçon puisse l'afficher. Toute personne à qui vous transmettez le lien de la leçon peut la voir : n'envoyez rien de privé.",
+      "signIn": "Connectez-vous pour utiliser votre propre image.",
+      "signInLink": "Se connecter",
+      "nobody": "Ce site n'accepte pas vos propres images ; choisissez plutôt une page du corpus.",
+      "problem": {
+        "type": "Ce fichier n'est pas une image JPEG, PNG, WebP ou TIFF.",
+        "size": "Cette image dépasse {size} Mo.",
+        "empty": "Ce fichier est vide."
+      }
+    },
+    "failure": {
+      "throttled": "Vous avez atteint la limite pour le moment.",
+      "forbidden": "Le tuteur ne peut pas faire cela pour vous.",
+      "busy": "Le tuteur travaille encore sur cette leçon.",
+      "invalid": "Le tuteur n'a pas pu accepter cela.",
+      "unavailable": "Le tuteur n'est pas disponible pour le moment.",
+      "notFound": "Cette leçon n'existe pas.",
+      "unreachable": "Impossible de joindre le tuteur. Veuillez réessayer dans un instant.",
+      "unknown": "Une erreur s'est produite. Veuillez réessayer."
+    },
+    "lesson": {
+      "retry": "Réessayer"
+    }
   }
 }

@@ -3687,5 +3687,68 @@
     "unavailable": "Searching by likeness is not set up on this site yet.",
     "error": "The search failed. Try again later.",
     "backToSearch": "Back to glyph search"
+  },
+  "learn": {
+    "metaTitle": "Learn to read a hand",
+    "title": "Learn to read a hand",
+    "intro": "Bring a page, and a tutor walks you through its handwriting: what script it is and why, the letter-forms that make it, where each one is on the page, and the same letters in other charters. Then read a line yourself, and ask about anything that puzzles you.",
+    "aiNotice": "Lessons are written by a language model. The examples it shows come from the experts' annotations, but check what it tells you before you rely on it.",
+    "offTitle": "The tutor is switched off",
+    "off": "An administrator has to switch it on before lessons can be started here. Lessons already written can still be read from their links.",
+    "statusError": "Could not find out what the tutor can do just now.",
+    "loading": "Loading…",
+    "startingPage": "Starting a lesson on {label}…",
+    "startingPageUnnamed": "Starting a lesson on page {id}…",
+    "language": "Lessons here are in {language}.",
+    "languageHint": "To learn in another language, switch the site's language first.",
+    "languages": {
+      "en": "English",
+      "de": "German",
+      "fr": "French"
+    },
+    "limits": "You can start {daily, plural, one {# lesson} other {# lessons}} a day, and ask each lesson up to {questions, plural, one {# question} other {# questions}}.",
+    "pages": {
+      "title": "Choose a page from the corpus",
+      "intro": "These are the pages experts annotated most, which give the richest lessons.",
+      "start": "Start a lesson on {label}",
+      "cta": "Start a lesson",
+      "starting": "Starting…",
+      "noThumbnail": "No picture",
+      "empty": "No pages are ready to learn from yet.",
+      "error": "Could not load the suggested pages."
+    },
+    "upload": {
+      "title": "Or bring a picture of your own",
+      "intro": "A photograph or scan of a medieval hand: a charter, a page of a book, a seal.",
+      "choose": "Choose a picture",
+      "drop": "or drop it here",
+      "formats": "JPEG, PNG, WebP or TIFF, up to {size} MB",
+      "preview": "The picture you chose",
+      "noPreview": "This browser cannot preview the picture, but the tutor can read it.",
+      "start": "Start the lesson",
+      "remove": "Choose another",
+      "privacy": "Your picture is sent to a hosted AI model, run by a company outside this site, which writes the lesson, and it is kept here for {days, plural, one {# day} other {# days}} so the lesson can show it. Anyone you share the lesson's link with can see it, so send nothing private.",
+      "signIn": "Sign in to use a picture of your own.",
+      "signInLink": "Sign in",
+      "nobody": "This site does not take pictures of your own; choose a page from the corpus instead.",
+      "problem": {
+        "type": "That file is not a JPEG, PNG, WebP or TIFF picture.",
+        "size": "That picture is larger than {size} MB.",
+        "empty": "That file is empty."
+      }
+    },
+    "failure": {
+      "throttled": "You have reached the limit for now.",
+      "forbidden": "The tutor cannot do that for you.",
+      "busy": "The tutor is still working on this lesson.",
+      "invalid": "The tutor could not take that.",
+      "unavailable": "The tutor is not available just now.",
+      "notFound": "There is no such lesson.",
+      "unreachable": "Could not reach the tutor. Please try again in a moment.",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "lesson": {
+      "retry": "Try again"
+    }
   }
 }
