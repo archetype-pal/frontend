@@ -17,10 +17,15 @@ const mockState = vi.hoisted(() => ({
     enabledSections: ['search'] as string[],
   },
   getAgentTools: vi.fn(),
+  getLearnStatus: vi.fn(),
   getDiplomaticSummary: vi.fn(),
 }));
 
 vi.mock('@/services/agent', () => ({ getAgentTools: mockState.getAgentTools }));
+vi.mock('@/services/learn', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/learn')>()),
+  getLearnStatus: mockState.getLearnStatus,
+}));
 vi.mock('@/services/diplomatic', () => ({
   getDiplomaticSummary: mockState.getDiplomaticSummary,
 }));
@@ -105,6 +110,7 @@ beforeEach(() => {
   mockState.loadGlobalSuggestions.mockClear();
   mockState.getServerSuggestions.mockClear();
   mockState.getAgentTools.mockReset().mockResolvedValue({ enabled: false, tools: [] });
+  mockState.getLearnStatus.mockReset().mockResolvedValue({ enabled: false });
   mockState.getDiplomaticSummary
     .mockReset()
     .mockResolvedValue({ formulae: 0, entities: 0, relations: 0 });
@@ -200,6 +206,7 @@ describe('<Header> Research menu', () => {
   const settled = () =>
     waitFor(() => {
       expect(mockState.getAgentTools).toHaveBeenCalled();
+      expect(mockState.getLearnStatus).toHaveBeenCalled();
       expect(mockState.getDiplomaticSummary).toHaveBeenCalled();
     });
 
@@ -209,6 +216,16 @@ describe('<Header> Research menu', () => {
 
     await screen.findByRole('button', { name: 'research' });
     expect(researchLinks()).toEqual([['ask', '/ask']]);
+  });
+
+  it('lists the palaeography tutor while it is switched on', async () => {
+    mockState.getLearnStatus.mockResolvedValue({ enabled: true });
+    renderHeader();
+
+    await screen.findByRole('button', { name: 'research' });
+    expect(researchLinks()).toEqual([['learn', '/learn']]);
+    // Whether it is on is the same for everyone, so the header asks anonymously.
+    expect(mockState.getLearnStatus).toHaveBeenCalledWith(false);
   });
 
   it('lists the formulary once a formula has been approved', async () => {
@@ -230,14 +247,16 @@ describe('<Header> Research menu', () => {
     expect(researchLinks()).toEqual([['network', '/network']]);
   });
 
-  it('lists all three, Ask Archetype first', async () => {
+  it('lists all four, Ask Archetype and the tutor first', async () => {
     mockState.getAgentTools.mockResolvedValue({ enabled: true, tools: [] });
+    mockState.getLearnStatus.mockResolvedValue({ enabled: true });
     mockState.getDiplomaticSummary.mockResolvedValue({ formulae: 1, entities: 2, relations: 0 });
     renderHeader();
 
-    await waitFor(() => expect(researchLinks()).toHaveLength(3));
+    await waitFor(() => expect(researchLinks()).toHaveLength(4));
     expect(researchLinks()).toEqual([
       ['ask', '/ask'],
+      ['learn', '/learn'],
       ['formulary', '/formulary'],
       ['network', '/network'],
     ]);
@@ -250,8 +269,9 @@ describe('<Header> Research menu', () => {
     expect(researchLinks()).toBeNull();
   });
 
-  it('is absent when neither can be asked', async () => {
+  it('is absent when none can be asked', async () => {
     mockState.getAgentTools.mockRejectedValue(new Error('502'));
+    mockState.getLearnStatus.mockRejectedValue(new Error('502'));
     mockState.getDiplomaticSummary.mockRejectedValue(new Error('502'));
     renderHeader();
 
