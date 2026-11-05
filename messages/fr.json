@@ -2113,6 +2113,8 @@
       "filterAccepted": "Acceptées",
       "filterRejected": "Rejetées",
       "count": "{count, plural, =0 {Aucune proposition} =1 {1 proposition} other {{count} propositions}}",
+      "fromRequest": "De la demande nº {job}",
+      "showAllRequests": "Afficher les propositions de toutes les demandes",
       "failedLoad": "Impossible de charger les propositions.",
       "emptyPending": "Aucune proposition n’attend de relecture.",
       "emptyAccepted": "Aucune proposition n’a encore été acceptée.",

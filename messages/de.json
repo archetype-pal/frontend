@@ -2113,6 +2113,8 @@
       "filterAccepted": "Angenommen",
       "filterRejected": "Abgelehnt",
       "count": "{count, plural, =0 {Keine Vorschläge} =1 {1 Vorschlag} other {{count} Vorschläge}}",
+      "fromRequest": "Aus Anfrage #{job}",
+      "showAllRequests": "Die Vorschläge aller Anfragen zeigen",
       "failedLoad": "Die Vorschläge konnten nicht geladen werden.",
       "emptyPending": "Keine Vorschläge warten auf Prüfung.",
       "emptyAccepted": "Bisher wurde kein Vorschlag angenommen.",

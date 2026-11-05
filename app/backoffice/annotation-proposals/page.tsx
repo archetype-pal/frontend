@@ -10,10 +10,11 @@
  * a proposal becomes one.
  */
 
-import { useMemo, useRef, useState } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { CheckCircle, Sparkles, XCircle } from 'lucide-react';
+import { CheckCircle, Sparkles, X, XCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -39,7 +40,19 @@ import {
 import type { GraphProposalStatus } from '@/types/backoffice';
 
 export default function AnnotationProposalsPage() {
+  return (
+    <Suspense>
+      <AnnotationProposalsPageContent />
+    </Suspense>
+  );
+}
+
+function AnnotationProposalsPageContent() {
   const t = useTranslations('backoffice');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // `?ml_job=` narrows the queue to one request's proposals, as the viewer's "find on page" links it.
+  const mlJob = Number(searchParams.get('ml_job')) || null;
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<GraphProposalStatus>('pending');
@@ -49,7 +62,12 @@ export default function AnnotationProposalsPage() {
   const [bulk, setBulk] = useState<'accept' | 'reject' | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const params = { status, limit: pageSize, offset: page * pageSize };
+  const params = {
+    status,
+    limit: pageSize,
+    offset: page * pageSize,
+    ...(mlJob ? { ml_job: mlJob } : {}),
+  };
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.annotationProposals.list(params),
     queryFn: () => getAnnotationProposals(params),
@@ -103,6 +121,14 @@ export default function AnnotationProposalsPage() {
     setBulk(null);
   };
 
+  const showAllRequests = () => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('ml_job');
+    router.replace(`?${next.toString()}`, { scroll: false });
+    setPage(0);
+    selection.clear();
+  };
+
   const emptyMessage = {
     pending: t('annotationProposals.emptyPending'),
     accepted: t('annotationProposals.emptyAccepted'),
@@ -141,6 +167,21 @@ export default function AnnotationProposalsPage() {
         <span className="text-sm text-muted-foreground">
           {isLoading ? '…' : t('annotationProposals.count', { count: total })}
         </span>
+        {mlJob && (
+          <span className="inline-flex items-center gap-1 rounded-full border bg-muted/50 py-0.5 pr-1 pl-3 text-sm">
+            {t('annotationProposals.fromRequest', { job: mlJob })}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 rounded-full"
+              aria-label={t('annotationProposals.showAllRequests')}
+              title={t('annotationProposals.showAllRequests')}
+              onClick={showAllRequests}
+            >
+              <X className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+          </span>
+        )}
       </div>
 
       {selected.size > 0 && (

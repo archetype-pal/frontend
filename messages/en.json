@@ -2113,6 +2113,8 @@
       "filterAccepted": "Accepted",
       "filterRejected": "Rejected",
       "count": "{count, plural, =0 {No proposals} =1 {1 proposal} other {{count} proposals}}",
+      "fromRequest": "From request #{job}",
+      "showAllRequests": "Show the proposals from every request",
       "failedLoad": "Failed to load the proposals.",
       "emptyPending": "No proposals are waiting for review.",
       "emptyAccepted": "No proposals have been accepted yet.",

@@ -18,6 +18,7 @@ export function getAnnotationProposals(params: {
   offset?: number;
   status?: GraphProposalStatus;
   item_image?: number;
+  ml_job?: number;
 }) {
   return proposalsCrud.list(params);
 }
