@@ -490,6 +490,24 @@
       "regionFailedTitle": "Échec de la suppression",
       "regionFailedDescription": "Impossible de supprimer la région."
     },
+    "findOnPage": {
+      "open": "Trouver une lettre sur cette page",
+      "title": "Trouver sur cette page",
+      "intro": "Demandez une lettre marquée ici : une recherche propose ses autres exemples à la relecture.",
+      "placeholder": "Étiqueter chaque s long de ce folio",
+      "requestLabel": "Ce qu’il faut trouver",
+      "send": "Trouver",
+      "option": "{letter} ({examples})",
+      "proposed": "{count, plural, =1 {1 emplacement proposé} other {# emplacements proposés}} pour {letter}, à partir des {examples} marqués ici.",
+      "noneFound": "Aucun autre emplacement trouvé pour {letter} sur cette page.",
+      "review": "Relire les propositions",
+      "ask": "Quelle lettre voulez-vous dire ?",
+      "unknownLetter": "Aucune des lettres marquées sur cette page ne correspond. Choisissez-en une :",
+      "nothingMarked": "Aucune lettre n’est encore marquée sur cette page. Marquez d’abord quelques exemples : la recherche part d’eux.",
+      "tooFewExamples": "{letter} est marqué {examples, plural, =0 {nulle part} =1 {une fois} other {# fois}} sur cette page ; la recherche a besoin d’au moins {minimum} exemples pour commencer.",
+      "pageTooLarge": "Cette page est trop grande pour être parcourue à la taille où {letter} est écrit.",
+      "failed": "La recherche n’a pas pu s’exécuter : {detail}"
+    },
     "entityCard": {
       "person": "Personne",
       "loading": "Chargement…",

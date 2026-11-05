@@ -490,6 +490,24 @@
       "regionFailedTitle": "Löschen fehlgeschlagen",
       "regionFailedDescription": "Die Region konnte nicht gelöscht werden."
     },
+    "findOnPage": {
+      "open": "Einen Buchstaben auf dieser Seite finden",
+      "title": "Auf dieser Seite finden",
+      "intro": "Fragen Sie nach einem hier markierten Buchstaben; eine Suche schlägt seine übrigen Beispiele zur Prüfung vor.",
+      "placeholder": "Markiere jedes lange s auf diesem Blatt",
+      "requestLabel": "Was gesucht wird",
+      "send": "Finden",
+      "option": "{letter} ({examples})",
+      "proposed": "{count, plural, =1 {1 Stelle} other {# Stellen}} für {letter} vorgeschlagen, ausgehend von den {examples} hier markierten.",
+      "noneFound": "Keine weiteren Stellen für {letter} auf dieser Seite gefunden.",
+      "review": "Vorschläge prüfen",
+      "ask": "Welchen Buchstaben meinen Sie?",
+      "unknownLetter": "Keiner der auf dieser Seite markierten Buchstaben passt dazu. Wählen Sie einen:",
+      "nothingMarked": "Auf dieser Seite ist noch kein Buchstabe markiert. Markieren Sie zuerst einige Beispiele; die Suche geht von ihnen aus.",
+      "tooFewExamples": "{letter} ist auf dieser Seite {examples, plural, =0 {nirgends} =1 {einmal} other {#-mal}} markiert; die Suche braucht mindestens {minimum} Beispiele als Ausgangspunkt.",
+      "pageTooLarge": "Diese Seite ist zu groß, um sie in der Schriftgröße von {letter} zu durchsuchen.",
+      "failed": "Die Suche konnte nicht laufen: {detail}"
+    },
     "entityCard": {
       "person": "Person",
       "loading": "Wird geladen…",

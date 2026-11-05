@@ -490,6 +490,24 @@
       "regionFailedTitle": "Delete failed",
       "regionFailedDescription": "Could not delete region."
     },
+    "findOnPage": {
+      "open": "Find a letter on this page",
+      "title": "Find on this page",
+      "intro": "Ask for a letter marked here, and a search proposes its other examples for review.",
+      "placeholder": "Label every long s on this folio",
+      "requestLabel": "What to find",
+      "send": "Find",
+      "option": "{letter} ({examples})",
+      "proposed": "Proposed {count, plural, =1 {1 place} other {# places}} for {letter}, from the {examples} marked here.",
+      "noneFound": "Found no more places for {letter} on this page.",
+      "review": "Review the proposals",
+      "ask": "Which letter do you mean?",
+      "unknownLetter": "None of the letters marked on this page matches that. Pick one:",
+      "nothingMarked": "No letters are marked on this page yet. Mark a few examples first; the search starts from them.",
+      "tooFewExamples": "{letter} is marked {examples, plural, =0 {nowhere} =1 {once} other {# times}} on this page; the search needs at least {minimum} examples to start from.",
+      "pageTooLarge": "This page is too large to search at the size {letter} is written.",
+      "failed": "The search could not run: {detail}"
+    },
     "entityCard": {
       "person": "Person",
       "loading": "Loading…",

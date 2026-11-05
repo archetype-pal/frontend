@@ -17,6 +17,7 @@ import { AnnotationHeader } from '@/components/annotation/annotation-header';
 import { AnnotationPopupLayer } from '@/components/annotation/annotation-popup-layer';
 import { ViewerTextPanel } from './viewer-text-panel';
 import { ImageToolsControl } from './image-tools-control';
+import { FindOnPageControl } from './find-on-page-control';
 import { ViewerErrorState, ViewerLoadingState } from './viewer-status-screen';
 import { ViewerToolbar } from './viewer-toolbar';
 import { ViewerShortcutsHelp } from './viewer-shortcuts-help';
@@ -92,7 +93,7 @@ export default function ManuscriptViewer({
     [capabilities]
   );
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const tManuscript = useTranslations('manuscript');
 
   const isPublicDemoMode = mode === 'public';
@@ -852,6 +853,9 @@ export default function ManuscriptViewer({
       isSettingsActive={canUseSettings ? isSettingsPanelOpen : false}
       showSettingsButton={canUseSettings}
       imageToolsControl={imageToolsControl}
+      findOnPageControl={
+        user?.capabilities?.manage ? <FindOnPageControl imageId={imageId} /> : undefined
+      }
       isPageInCollection={isPageInCollection}
       onTogglePageCollection={pageCollectionItem ? handleTogglePageCollection : undefined}
       annotationCollectionCount={pageAnnotationCollectionItems.length}
