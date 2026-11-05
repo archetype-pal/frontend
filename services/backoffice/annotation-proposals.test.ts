@@ -35,6 +35,12 @@ describe('annotation proposals service', () => {
     );
   });
 
+  it("narrows the list to one request's proposals", async () => {
+    await getAnnotationProposals({ status: 'pending', ml_job: 31 });
+
+    expect(call().url).toMatch(/\/proposals\/?\?status=pending&ml_job=31$/);
+  });
+
   it('reads the pending depth', async () => {
     await getAnnotationProposalDepth();
 

@@ -6,15 +6,25 @@ import AnnotationProposalsPage from './page';
 import { renderWithQueryClient } from '@/test/render';
 import type { GraphProposalItem } from '@/types/backoffice';
 
-const { getAnnotationProposals, acceptAnnotationProposal, rejectAnnotationProposal } = vi.hoisted(
-  () => ({
-    getAnnotationProposals: vi.fn(),
-    acceptAnnotationProposal: vi.fn(),
-    rejectAnnotationProposal: vi.fn(),
-  })
-);
+const {
+  getAnnotationProposals,
+  acceptAnnotationProposal,
+  rejectAnnotationProposal,
+  routerReplace,
+  urlParams,
+} = vi.hoisted(() => ({
+  getAnnotationProposals: vi.fn(),
+  acceptAnnotationProposal: vi.fn(),
+  rejectAnnotationProposal: vi.fn(),
+  routerReplace: vi.fn(),
+  urlParams: { current: new URLSearchParams() },
+}));
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: routerReplace }),
+  useSearchParams: () => urlParams.current,
+}));
 vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/services/backoffice/annotation-proposals', () => ({
   getAnnotationProposals,
@@ -67,6 +77,8 @@ const renderPage = () => renderWithQueryClient(<AnnotationProposalsPage />);
 
 describe('<AnnotationProposalsPage>', () => {
   beforeEach(() => {
+    urlParams.current = new URLSearchParams();
+    routerReplace.mockReset();
     getAnnotationProposals.mockReset();
     acceptAnnotationProposal.mockReset().mockResolvedValue({ status: 'accepted', graph_id: 1 });
     rejectAnnotationProposal.mockReset().mockResolvedValue({ status: 'rejected' });
@@ -86,6 +98,72 @@ describe('<AnnotationProposalsPage>', () => {
     expect(screen.getByText(/Proposed by google\/gemini-3-pro/)).not.toBeNull();
     const link = screen.getByRole('link', { name: /BL Cotton Ch\. xviii\.2/ });
     expect(link.getAttribute('href')).toBe('/manuscripts/697/images/45');
+  });
+
+  it("shows one request's proposals when the link names its job, and can show every request's", async () => {
+    urlParams.current = new URLSearchParams('ml_job=31&from=viewer');
+    getAnnotationProposals.mockResolvedValue(page([proposal(1, { ml_job: 31 })]));
+    renderPage();
+
+    expect(await screen.findByText('From request #31')).not.toBeNull();
+    expect(getAnnotationProposals).toHaveBeenCalledWith({
+      status: 'pending',
+      limit: 20,
+      offset: 0,
+      ml_job: 31,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show the proposals from every request' }));
+
+    expect(routerReplace).toHaveBeenCalledWith('?from=viewer', { scroll: false });
+  });
+
+  it('clears the request filter to a bare query string when it was the only one', async () => {
+    urlParams.current = new URLSearchParams('ml_job=31');
+    getAnnotationProposals.mockResolvedValue(page([proposal(1, { ml_job: 31 })]));
+    renderPage();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Show the proposals from every request' })
+    );
+
+    expect(routerReplace).toHaveBeenCalledWith('?', { scroll: false });
+  });
+
+  it('ignores a request filter that is not a job number', async () => {
+    urlParams.current = new URLSearchParams('ml_job=latest');
+    getAnnotationProposals.mockResolvedValue(page([proposal(1)]));
+    renderPage();
+
+    await screen.findByText('Hand: Main Hand');
+    expect(getAnnotationProposals).toHaveBeenCalledWith({
+      status: 'pending',
+      limit: 20,
+      offset: 0,
+    });
+    expect(screen.queryByText(/From request/)).toBeNull();
+    expect(document.body.textContent).not.toContain('NaN');
+  });
+
+  it('clearing the request filter goes back to the first page, with nothing selected', async () => {
+    urlParams.current = new URLSearchParams('ml_job=31');
+    getAnnotationProposals.mockImplementation(async ({ offset }: { offset: number }) => ({
+      ...page([proposal(offset + 1, { ml_job: 31 })]),
+      count: 45,
+    }));
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Go to page 2' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Select proposal 21' }));
+    expect(screen.getByText('1 selected')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show the proposals from every request' }));
+
+    await waitFor(() =>
+      expect(getAnnotationProposals).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0 })
+      )
+    );
+    expect(screen.queryByText('1 selected')).toBeNull();
   });
 
   it('will not offer Accept on a proposal with no hand, and says why', async () => {
