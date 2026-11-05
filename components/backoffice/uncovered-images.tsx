@@ -33,6 +33,7 @@ import {
   NewImageTextDialog,
   type NewTextKind,
 } from '@/components/backoffice/new-image-text-dialog';
+import { PageDraftButton, useDraftsUnderWay } from '@/components/backoffice/page-drafts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { cn } from '@/lib/utils';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
@@ -60,6 +61,8 @@ export function UncoveredImages() {
     itemImage: number | null;
     type: NewTextKind;
   }>({ open: false, itemImage: null, type: 'Transcription' });
+
+  const { byPage: draftsUnderWay, draftingOn } = useDraftsUnderWay();
 
   const { data, isFetching, isPlaceholderData, error } = useQuery({
     queryKey: backofficeKeys.uncoveredImages.list(mode, page, pageSize),
@@ -160,7 +163,7 @@ export function UncoveredImages() {
                     {t('quality.uncovered.colAnnotations')}
                   </TableHead>
                   <TableHead className="w-[100px]">{t('quality.uncovered.colHas')}</TableHead>
-                  <TableHead className="w-[220px] text-right">
+                  <TableHead className="w-[380px] text-right">
                     {t('quality.uncovered.colCreate')}
                   </TableHead>
                 </TableRow>
@@ -184,7 +187,9 @@ export function UncoveredImages() {
                     return (
                       <TableRow key={row.id}>
                         <TableCell className="font-mono text-xs">#{row.id}</TableCell>
-                        <TableCell className="text-sm">{row.locus || '—'}</TableCell>
+                        <TableCell className="text-sm [overflow-wrap:anywhere]">
+                          {row.locus || '—'}
+                        </TableCell>
                         <TableCell className="text-right font-mono text-xs">
                           {row.annotation_count}
                         </TableCell>
@@ -200,6 +205,13 @@ export function UncoveredImages() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
+                            {!hasTranscription && (
+                              <PageDraftButton
+                                page={row}
+                                draft={draftsUnderWay.get(row.id)}
+                                draftingOn={draftingOn}
+                              />
+                            )}
                             {!hasTranscription && (
                               <Button
                                 size="sm"

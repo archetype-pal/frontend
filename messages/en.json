@@ -3378,6 +3378,30 @@
       "signOutTitle": "{count, plural, =1 {1 upload is still running} other {{count} uploads are still running}}",
       "signOutDescription": "Signing out stops them. Files that finished uploading will still be processed by the server and appear shortly; anything still transferring is discarded and will need uploading again.",
       "signOutConfirm": "Sign out anyway"
+    },
+    "pageDraft": {
+      "button": "Draft with AI",
+      "buttonTitle": "Have a model draft this page's transcription, for review",
+      "off": "Drafting with a model is switched off on this server.",
+      "drafting": "Drafting…",
+      "draftingTitle": "A model is reading this page. It takes a minute or two.",
+      "dialogTitle": "Draft a transcription of page #{id}?",
+      "noLocus": "No locus",
+      "previewAlt": "Page #{id}",
+      "dialogReader": "Claude Fable 5.1 reads the page and writes the edition's text, marking the abbreviations it expands.",
+      "dialogCost": "It takes a minute or two and costs about $0.28.",
+      "dialogReview": "The result is a Draft transcription, marked as machine-made. Nothing is published until someone reviews it.",
+      "dialogCancel": "Cancel",
+      "dialogConfirm": "Draft this page",
+      "toastQueued": "Page #{id} is being drafted. You will be told when it is done.",
+      "toastAlreadyDrafting": "Page #{id} is already being drafted.",
+      "toastDrafted": "Page #{id} is drafted and waits for review.",
+      "toastOpen": "Open draft",
+      "toastFailed": "Page #{id} could not be drafted",
+      "toastRefused": "Page #{id} was not drafted",
+      "toastHasTranscription": "Page #{id} already has a transcription.",
+      "toastOpenTranscription": "Open it",
+      "toastAskFailed": "Could not start drafting page #{id}"
     }
   },
   "login": {

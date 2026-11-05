@@ -517,6 +517,27 @@ export interface DiplomaticProposalDetail extends DiplomaticProposalItem {
 
 export type MLJobStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'refused';
 
+export type PageDraftStatus = 'queued' | 'working' | 'drafted' | 'failed' | 'refused';
+
+/**
+ * A user's request that a model draft one page's transcription (AI programme
+ * W1.4). What it files is an ordinary Draft, marked machine-drafted, for review.
+ */
+export interface PageDraft {
+  id: number;
+  item_image: number;
+  status: PageDraftStatus;
+  /** Why it stopped, fit to show; empty unless it failed or was refused. */
+  error: string;
+  requested_by: string | null;
+  /** The Draft transcription it filed. */
+  image_text: number | null;
+  ml_job: number | null;
+  cost_micros: number | null;
+  created: string;
+  updated: string;
+}
+
 /** One model call, as the ledger records it (AI programme W0.1). Append-only. */
 export interface MLJobListItem {
   id: number;

@@ -3378,6 +3378,30 @@
       "signOutTitle": "{count, plural, =1 {1 Hochladevorgang läuft noch} other {{count} Hochladevorgänge laufen noch}}",
       "signOutDescription": "Durch das Abmelden werden sie gestoppt. Dateien, deren Hochladen abgeschlossen ist, werden vom Server dennoch verarbeitet und erscheinen in Kürze; alles, was noch übertragen wird, wird verworfen und muss erneut hochgeladen werden.",
       "signOutConfirm": "Trotzdem abmelden"
+    },
+    "pageDraft": {
+      "button": "Mit KI entwerfen",
+      "buttonTitle": "Die Transkription dieser Seite von einem Modell entwerfen lassen, zur Prüfung",
+      "off": "Das Entwerfen mit einem Modell ist auf diesem Server ausgeschaltet.",
+      "drafting": "Wird entworfen…",
+      "draftingTitle": "Ein Modell liest diese Seite. Das dauert ein bis zwei Minuten.",
+      "dialogTitle": "Transkription von Seite #{id} entwerfen?",
+      "noLocus": "Kein Locus",
+      "previewAlt": "Seite #{id}",
+      "dialogReader": "Claude Fable 5.1 liest die Seite und schreibt den Text der Edition; die aufgelösten Abkürzungen werden markiert.",
+      "dialogCost": "Das dauert ein bis zwei Minuten und kostet etwa 0,28 $.",
+      "dialogReview": "Das Ergebnis ist ein Transkriptionsentwurf, als maschinell erstellt gekennzeichnet. Nichts wird veröffentlicht, bevor jemand ihn geprüft hat.",
+      "dialogCancel": "Abbrechen",
+      "dialogConfirm": "Diese Seite entwerfen",
+      "toastQueued": "Seite #{id} wird entworfen. Sie werden benachrichtigt, sobald es fertig ist.",
+      "toastAlreadyDrafting": "Seite #{id} wird bereits entworfen.",
+      "toastDrafted": "Seite #{id} ist entworfen und wartet auf Prüfung.",
+      "toastOpen": "Entwurf öffnen",
+      "toastFailed": "Seite #{id} konnte nicht entworfen werden",
+      "toastRefused": "Seite #{id} wurde nicht entworfen",
+      "toastHasTranscription": "Seite #{id} hat bereits eine Transkription.",
+      "toastOpenTranscription": "Öffnen",
+      "toastAskFailed": "Entwurf von Seite #{id} konnte nicht gestartet werden"
     }
   },
   "login": {

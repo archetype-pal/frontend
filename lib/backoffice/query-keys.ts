@@ -127,6 +127,10 @@ export const backofficeKeys = {
     list: (mode: string, page: number, pageSize: number) =>
       [...backofficeKeys.uncoveredImages.all(), mode, page, pageSize] as const,
   },
+  pageDrafts: {
+    all: () => [...backofficeKeys.all, 'page-drafts'] as const,
+    active: () => [...backofficeKeys.pageDrafts.all(), 'active'] as const,
+  },
   reviewQueue: {
     all: () => [...backofficeKeys.all, 'review-queue'] as const,
   },

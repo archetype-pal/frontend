@@ -3378,6 +3378,30 @@
       "signOutTitle": "{count, plural, =1 {1 téléversement est encore en cours} other {{count} téléversements sont encore en cours}}",
       "signOutDescription": "La déconnexion les interrompt. Les fichiers dont le téléversement est terminé seront tout de même traités par le serveur et apparaîtront sous peu ; ceux encore en cours de transfert sont abandonnés et devront être téléversés à nouveau.",
       "signOutConfirm": "Se déconnecter quand même"
+    },
+    "pageDraft": {
+      "button": "Brouillon par IA",
+      "buttonTitle": "Faire rédiger par un modèle un brouillon de transcription de cette page, à relire",
+      "off": "La rédaction par un modèle est désactivée sur ce serveur.",
+      "drafting": "Rédaction…",
+      "draftingTitle": "Un modèle lit cette page. Cela prend une ou deux minutes.",
+      "dialogTitle": "Rédiger un brouillon de transcription de la page #{id} ?",
+      "noLocus": "Aucun locus",
+      "previewAlt": "Page #{id}",
+      "dialogReader": "Claude Fable 5.1 lit la page et écrit le texte de l’édition, en marquant les abréviations qu’il développe.",
+      "dialogCost": "Cela prend une ou deux minutes et coûte environ 0,28 $.",
+      "dialogReview": "Le résultat est un brouillon de transcription, signalé comme produit par une machine. Rien n’est publié avant d’avoir été relu.",
+      "dialogCancel": "Annuler",
+      "dialogConfirm": "Rédiger cette page",
+      "toastQueued": "La page #{id} est en cours de rédaction. Un message s’affichera quand elle sera terminée.",
+      "toastAlreadyDrafting": "La page #{id} est déjà en cours de rédaction.",
+      "toastDrafted": "La page #{id} est rédigée et attend sa relecture.",
+      "toastOpen": "Ouvrir le brouillon",
+      "toastFailed": "La page #{id} n’a pas pu être rédigée",
+      "toastRefused": "La page #{id} n’a pas été rédigée",
+      "toastHasTranscription": "La page #{id} a déjà une transcription.",
+      "toastOpenTranscription": "L’ouvrir",
+      "toastAskFailed": "Impossible de lancer la rédaction de la page #{id}"
     }
   },
   "login": {
