@@ -62,8 +62,10 @@ import { getCarouselImageUrl } from '@/utils/api';
 import { parseBoolean, useStoredPreference } from '@/hooks/use-stored-preference';
 import { AGENT_TOOLS_KEY } from '@/lib/ask';
 import { DIPLOMATIC_SUMMARY_KEY } from '@/lib/charter-route';
+import { learnStatusKey } from '@/lib/learn';
 import { getAgentTools } from '@/services/agent';
 import { getDiplomaticSummary } from '@/services/diplomatic';
+import { getLearnStatus } from '@/services/learn';
 
 const BANNER_VISIBLE_KEY = 'moa-header-banner-visible';
 const parseBannerVisible = (raw: string | null) => parseBoolean(raw, true);
@@ -134,11 +136,19 @@ export default function Header({
   });
   // The Research menu lists the AI programme's public pages, each only once it
   // has something to show: Ask Archetype while the agent is switched on, the
-  // formulary once a formula has been approved. They follow their own state,
-  // not the admin's nav sections, so the menu is not in the admin's order.
+  // palaeography tutor while it is, the formulary once a formula has been
+  // approved. They follow their own state, not the admin's nav sections, so
+  // the menu is not in the admin's order.
   const agentTools = useQuery({
     queryKey: AGENT_TOOLS_KEY,
     queryFn: getAgentTools,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  // Whether the tutor is on is the same for everyone, so this asks anonymously.
+  const learnStatus = useQuery({
+    queryKey: learnStatusKey(false),
+    queryFn: () => getLearnStatus(false),
     staleTime: 5 * 60_000,
     retry: false,
   });
@@ -150,6 +160,7 @@ export default function Header({
   });
   const researchLinks = [
     ...(agentTools.data?.enabled ? [{ href: '/ask', label: t('ask') }] : []),
+    ...(learnStatus.data?.enabled ? [{ href: '/learn', label: t('learn') }] : []),
     ...((diplomaticSummary.data?.formulae ?? 0) > 0
       ? [{ href: '/formulary', label: t('formulary') }]
       : []),
