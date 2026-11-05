@@ -3690,6 +3690,7 @@
   },
   "learn": {
     "metaTitle": "Apprendre à lire une écriture",
+    "lessonMetaTitle": "Une leçon de paléographie",
     "title": "Apprendre à lire une écriture",
     "intro": "Apportez une page, et un tuteur vous guide dans son écriture : de quelle écriture il s'agit et pourquoi, les formes de lettres qui la composent, où chacune se trouve sur la page, et les mêmes lettres dans d'autres chartes. Lisez ensuite une ligne vous-même, et posez des questions sur tout ce qui vous intrigue.",
     "aiNotice": "Les leçons sont rédigées par un modèle de langue. Les exemples qu'il montre proviennent des annotations d'experts, mais vérifiez ce qu'il vous dit avant de vous y fier.",
@@ -3707,6 +3708,11 @@
       "fr": "français"
     },
     "limits": "Vous pouvez commencer {daily, plural, one {# leçon} other {# leçons}} par jour, et poser à chaque leçon jusqu'à {questions, plural, one {# question} other {# questions}}.",
+    "overview": "Vue d'ensemble",
+    "script": {
+      "title": "L'écriture",
+      "reasons": "Pourquoi le tuteur le pense"
+    },
     "pages": {
       "title": "Choisissez une page du corpus",
       "intro": "Ce sont les pages les plus annotées par les experts, qui donnent les leçons les plus riches.",
@@ -3748,7 +3754,101 @@
       "unknown": "Une erreur s'est produite. Veuillez réessayer."
     },
     "lesson": {
-      "retry": "Réessayer"
+      "back": "Apprendre à lire une écriture",
+      "untitled": "Une leçon",
+      "uploaded": "Une image envoyée au tuteur",
+      "openPage": "Ouvrir la page dans la visionneuse",
+      "copyLink": "Copier le lien",
+      "linkCopied": "Lien copié",
+      "linkCopyFailed": "Impossible de copier le lien",
+      "loading": "Chargement de la leçon…",
+      "notFoundTitle": "Cette leçon est introuvable",
+      "notFound": "Son lien est peut-être mal saisi, ou la leçon a été supprimée une fois son délai écoulé.",
+      "loadError": "Impossible de charger la leçon",
+      "retry": "Réessayer",
+      "startAnother": "Commencer une autre leçon",
+      "tryPageAgain": "Réessayer cette page",
+      "failedTitle": "Le tuteur n'a pas pu terminer cette leçon",
+      "refusedTitle": "Le tuteur n'a pas pu prendre cette leçon",
+      "stoppedFallback": "Veuillez réessayer plus tard."
+    },
+    "waiting": {
+      "title": "Votre leçon est en cours de rédaction",
+      "intro": "Le tuteur étudie l'image et rassemble des exemples tirés d'autres chartes. Une leçon prend quelques minutes. Vous pouvez garder cette page ouverte, ou y revenir plus tard grâce à son lien.",
+      "pictureAlt": "L'image dont traite la leçon",
+      "elapsed": "Temps écoulé : {time}",
+      "progressLabel": "Ce que le tuteur a fait jusqu'ici",
+      "queued": "En attente du tuteur…",
+      "working": "En cours…",
+      "slow": "Cela prend plus de temps que d'habitude. Le tuteur est peut-être occupé ; cette page continue de vérifier.",
+      "paused": "En pause tant que cette page était masquée ; elle vérifie de nouveau dès votre retour.",
+      "pollFailed": "Contact perdu un instant avec le tuteur ; nouvel essai en cours."
+    },
+    "picture": {
+      "boxes": "Endroits que la leçon désigne",
+      "stepBoxes": "Étape {number} : {title} ({count, plural, one {# endroit} other {# endroits}})",
+      "step": "Étape {number}",
+      "wholePage": "La page entière",
+      "focusStep": "Étape {number} sur {count}",
+      "focusPractice": "Exercice",
+      "focusAnswer": "La réponse du tuteur",
+      "previous": "Étape précédente",
+      "next": "Étape suivante",
+      "zoomIn": "Zoomer",
+      "zoomOut": "Page entière",
+      "loadError": "Impossible de charger l'image."
+    },
+    "steps": {
+      "title": "Pas à pas",
+      "hint": "Choisissez une étape pour voir ses endroits sur l'image.",
+      "begin": "Commencer par l'étape 1",
+      "step": "Étape {number}",
+      "character": "Lettre",
+      "places": "Sur l'image",
+      "placeLabel": "Endroit {number}",
+      "lookFor": "À observer",
+      "examples": "La même lettre dans d'autres chartes",
+      "previous": "Précédente",
+      "next": "Étape suivante",
+      "toPractice": "Passer à l'exercice"
+    },
+    "glyph": {
+      "unnamed": "Une lettre",
+      "alt": "{form}, {charter}",
+      "noCrop": "Pas d'image",
+      "open": "Ouvrir dans la visionneuse"
+    },
+    "practice": {
+      "title": "Exercice",
+      "where": "Montrer l'endroit",
+      "attemptLabel": "Votre lecture",
+      "attemptPlaceholder": "Écrivez ici ce que vous lisez.",
+      "attemptHint": "Cela reste sur cette page ; rien n'est envoyé.",
+      "reveal": "Afficher la réponse",
+      "hide": "Masquer la réponse",
+      "yours": "Votre lecture",
+      "answerTitle": "La lecture du tuteur"
+    },
+    "questions": {
+      "title": "Questions",
+      "intro": "Posez au tuteur toute question sur cette écriture ou cette page.",
+      "conversation": "La conversation",
+      "you": "Vous avez demandé :",
+      "tutor": "Tuteur",
+      "label": "Votre question",
+      "placeholder": "Par exemple : comment distinguer c de t dans cette écriture ?",
+      "submit": "Demander",
+      "submitHint": "Entrée pour demander, Maj+Entrée pour aller à la ligne",
+      "left": "{count, plural, =0 {Plus aucune question} one {# question restante} other {# questions restantes}}",
+      "charsLeft": "{count, plural, one {# caractère restant} other {# caractères restants}}",
+      "thinking": "Le tuteur réfléchit à votre question…",
+      "thinkingHint": "Une réponse prend une minute ou deux.",
+      "elapsed": "Temps écoulé : {time}",
+      "show": "{count, plural, one {Montrer sur l'image} other {Montrer # endroits sur l'image}}",
+      "examples": "Exemples tirés d'autres chartes",
+      "failedTitle": "Le tuteur n'a pas pu répondre à cette question",
+      "onlyStarter": "Seule la personne qui a commencé cette leçon peut lui poser des questions.",
+      "usedUp": "Les questions de cette leçon sont épuisées. Commencez une autre leçon pour en poser davantage."
     }
   }
 }

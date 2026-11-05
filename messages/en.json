@@ -3690,6 +3690,7 @@
   },
   "learn": {
     "metaTitle": "Learn to read a hand",
+    "lessonMetaTitle": "A palaeography lesson",
     "title": "Learn to read a hand",
     "intro": "Bring a page, and a tutor walks you through its handwriting: what script it is and why, the letter-forms that make it, where each one is on the page, and the same letters in other charters. Then read a line yourself, and ask about anything that puzzles you.",
     "aiNotice": "Lessons are written by a language model. The examples it shows come from the experts' annotations, but check what it tells you before you rely on it.",
@@ -3707,6 +3708,11 @@
       "fr": "French"
     },
     "limits": "You can start {daily, plural, one {# lesson} other {# lessons}} a day, and ask each lesson up to {questions, plural, one {# question} other {# questions}}.",
+    "overview": "Overview",
+    "script": {
+      "title": "The script",
+      "reasons": "Why the tutor thinks so"
+    },
     "pages": {
       "title": "Choose a page from the corpus",
       "intro": "These are the pages experts annotated most, which give the richest lessons.",
@@ -3748,7 +3754,101 @@
       "unknown": "Something went wrong. Please try again."
     },
     "lesson": {
-      "retry": "Try again"
+      "back": "Learn to read a hand",
+      "untitled": "A lesson",
+      "uploaded": "A picture sent to the tutor",
+      "openPage": "Open the page in the viewer",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
+      "linkCopyFailed": "Could not copy the link",
+      "loading": "Loading the lesson…",
+      "notFoundTitle": "This lesson could not be found",
+      "notFound": "Its link may be mistyped, or the lesson may have been deleted once its time was up.",
+      "loadError": "The lesson could not be loaded",
+      "retry": "Try again",
+      "startAnother": "Start another lesson",
+      "tryPageAgain": "Try this page again",
+      "failedTitle": "The tutor could not finish this lesson",
+      "refusedTitle": "The tutor could not take this lesson",
+      "stoppedFallback": "Please try again later."
+    },
+    "waiting": {
+      "title": "Your lesson is being written",
+      "intro": "The tutor is studying the picture and gathering examples from other charters. A lesson takes a few minutes. You can keep this page open, or leave and come back to it from its link.",
+      "pictureAlt": "The picture the lesson is about",
+      "elapsed": "{time} so far",
+      "progressLabel": "What the tutor has done so far",
+      "queued": "Waiting for the tutor to start…",
+      "working": "Working…",
+      "slow": "This is taking longer than usual. The tutor may be busy; this page keeps checking.",
+      "paused": "Paused while this page was hidden; it checks again as soon as you come back.",
+      "pollFailed": "Lost touch with the tutor for a moment; still trying."
+    },
+    "picture": {
+      "boxes": "Places the lesson points at",
+      "stepBoxes": "Step {number}: {title} ({count, plural, one {# place} other {# places}})",
+      "step": "Step {number}",
+      "wholePage": "The whole page",
+      "focusStep": "Step {number} of {count}",
+      "focusPractice": "Practice",
+      "focusAnswer": "The tutor's answer",
+      "previous": "Previous step",
+      "next": "Next step",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Whole page",
+      "loadError": "The picture could not be loaded."
+    },
+    "steps": {
+      "title": "Walkthrough",
+      "hint": "Choose a step to see its places on the picture.",
+      "begin": "Begin with step 1",
+      "step": "Step {number}",
+      "character": "Letter",
+      "places": "On the picture",
+      "placeLabel": "Place {number}",
+      "lookFor": "Look for",
+      "examples": "The same letter in other charters",
+      "previous": "Previous",
+      "next": "Next step",
+      "toPractice": "On to the practice"
+    },
+    "glyph": {
+      "unnamed": "A letter",
+      "alt": "{form} from {charter}",
+      "noCrop": "No picture",
+      "open": "Open in the viewer"
+    },
+    "practice": {
+      "title": "Practice",
+      "where": "Show me where",
+      "attemptLabel": "Your reading",
+      "attemptPlaceholder": "Type what you read here.",
+      "attemptHint": "This stays on this page; nothing is sent.",
+      "reveal": "Show the answer",
+      "hide": "Hide the answer",
+      "yours": "Your reading",
+      "answerTitle": "The tutor's reading"
+    },
+    "questions": {
+      "title": "Questions",
+      "intro": "Ask the tutor anything about this hand or this page.",
+      "conversation": "The conversation",
+      "you": "You asked:",
+      "tutor": "Tutor",
+      "label": "Your question",
+      "placeholder": "For example: how do I tell c from t in this hand?",
+      "submit": "Ask",
+      "submitHint": "Enter to ask, Shift+Enter for a new line",
+      "left": "{count, plural, =0 {No questions left} one {# question left} other {# questions left}}",
+      "charsLeft": "{count, plural, one {# character left} other {# characters left}}",
+      "thinking": "The tutor is thinking about your question…",
+      "thinkingHint": "An answer takes a minute or two.",
+      "elapsed": "{time} so far",
+      "show": "{count, plural, one {Show on the picture} other {Show # places on the picture}}",
+      "examples": "Examples from other charters",
+      "failedTitle": "The tutor could not answer this question",
+      "onlyStarter": "Only the person who started this lesson can ask it questions.",
+      "usedUp": "This lesson's questions are used up. Start another lesson to ask more."
     }
   }
 }

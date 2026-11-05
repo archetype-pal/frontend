@@ -3690,6 +3690,7 @@
   },
   "learn": {
     "metaTitle": "Eine Schrift lesen lernen",
+    "lessonMetaTitle": "Eine Paläographie-Lektion",
     "title": "Eine Schrift lesen lernen",
     "intro": "Bringen Sie eine Seite mit, und ein Tutor führt Sie durch ihre Handschrift: um welche Schrift es sich handelt und warum, welche Buchstabenformen sie ausmachen, wo jede davon auf der Seite steht und wie dieselben Buchstaben in anderen Urkunden aussehen. Danach lesen Sie selbst eine Zeile und fragen nach allem, was Ihnen rätselhaft ist.",
     "aiNotice": "Die Lektionen schreibt ein Sprachmodell. Seine Beispiele stammen aus den Annotationen von Fachleuten, aber prüfen Sie, was es Ihnen sagt, bevor Sie sich darauf stützen.",
@@ -3707,6 +3708,11 @@
       "fr": "Französisch"
     },
     "limits": "Sie können {daily, plural, one {# Lektion} other {# Lektionen}} am Tag beginnen und jeder Lektion bis zu {questions, plural, one {# Frage} other {# Fragen}} stellen.",
+    "overview": "Überblick",
+    "script": {
+      "title": "Die Schrift",
+      "reasons": "Warum der Tutor das annimmt"
+    },
     "pages": {
       "title": "Wählen Sie eine Seite aus dem Korpus",
       "intro": "Das sind die Seiten, die Fachleute am ausführlichsten annotiert haben; sie ergeben die reichsten Lektionen.",
@@ -3748,7 +3754,101 @@
       "unknown": "Etwas ist schiefgegangen. Bitte versuchen Sie es erneut."
     },
     "lesson": {
-      "retry": "Erneut versuchen"
+      "back": "Eine Schrift lesen lernen",
+      "untitled": "Eine Lektion",
+      "uploaded": "Ein an den Tutor gesendetes Bild",
+      "openPage": "Seite im Viewer öffnen",
+      "copyLink": "Link kopieren",
+      "linkCopied": "Link kopiert",
+      "linkCopyFailed": "Der Link konnte nicht kopiert werden",
+      "loading": "Lektion wird geladen …",
+      "notFoundTitle": "Diese Lektion wurde nicht gefunden",
+      "notFound": "Vielleicht ist der Link falsch geschrieben, oder die Lektion wurde nach Ablauf ihrer Frist gelöscht.",
+      "loadError": "Die Lektion konnte nicht geladen werden",
+      "retry": "Erneut versuchen",
+      "startAnother": "Eine neue Lektion beginnen",
+      "tryPageAgain": "Diese Seite noch einmal versuchen",
+      "failedTitle": "Der Tutor konnte diese Lektion nicht fertigstellen",
+      "refusedTitle": "Der Tutor konnte diese Lektion nicht übernehmen",
+      "stoppedFallback": "Bitte versuchen Sie es später noch einmal."
+    },
+    "waiting": {
+      "title": "Ihre Lektion wird geschrieben",
+      "intro": "Der Tutor studiert das Bild und sammelt Beispiele aus anderen Urkunden. Eine Lektion dauert einige Minuten. Sie können diese Seite geöffnet lassen oder später über ihren Link zurückkehren.",
+      "pictureAlt": "Das Bild, um das es in der Lektion geht",
+      "elapsed": "Bisher {time}",
+      "progressLabel": "Was der Tutor bisher getan hat",
+      "queued": "Warten, bis der Tutor beginnt …",
+      "working": "In Arbeit …",
+      "slow": "Das dauert länger als üblich. Der Tutor ist vielleicht ausgelastet; diese Seite fragt weiter nach.",
+      "paused": "Angehalten, solange diese Seite verborgen war; sie fragt wieder nach, sobald Sie zurückkehren.",
+      "pollFailed": "Die Verbindung zum Tutor war kurz unterbrochen; es wird weiter versucht."
+    },
+    "picture": {
+      "boxes": "Stellen, auf die die Lektion zeigt",
+      "stepBoxes": "Schritt {number}: {title} ({count, plural, one {# Stelle} other {# Stellen}})",
+      "step": "Schritt {number}",
+      "wholePage": "Die ganze Seite",
+      "focusStep": "Schritt {number} von {count}",
+      "focusPractice": "Übung",
+      "focusAnswer": "Die Antwort des Tutors",
+      "previous": "Vorheriger Schritt",
+      "next": "Nächster Schritt",
+      "zoomIn": "Heranzoomen",
+      "zoomOut": "Ganze Seite",
+      "loadError": "Das Bild konnte nicht geladen werden."
+    },
+    "steps": {
+      "title": "Schritt für Schritt",
+      "hint": "Wählen Sie einen Schritt, um seine Stellen auf dem Bild zu sehen.",
+      "begin": "Mit Schritt 1 beginnen",
+      "step": "Schritt {number}",
+      "character": "Buchstabe",
+      "places": "Auf dem Bild",
+      "placeLabel": "Stelle {number}",
+      "lookFor": "Achten Sie auf",
+      "examples": "Derselbe Buchstabe in anderen Urkunden",
+      "previous": "Zurück",
+      "next": "Nächster Schritt",
+      "toPractice": "Weiter zur Übung"
+    },
+    "glyph": {
+      "unnamed": "Ein Buchstabe",
+      "alt": "{form} aus {charter}",
+      "noCrop": "Kein Bild",
+      "open": "Im Viewer öffnen"
+    },
+    "practice": {
+      "title": "Übung",
+      "where": "Stelle zeigen",
+      "attemptLabel": "Ihre Lesung",
+      "attemptPlaceholder": "Schreiben Sie hier, was Sie lesen.",
+      "attemptHint": "Das bleibt auf dieser Seite; nichts wird gesendet.",
+      "reveal": "Lösung zeigen",
+      "hide": "Lösung verbergen",
+      "yours": "Ihre Lesung",
+      "answerTitle": "Die Lesung des Tutors"
+    },
+    "questions": {
+      "title": "Fragen",
+      "intro": "Fragen Sie den Tutor alles zu dieser Hand oder dieser Seite.",
+      "conversation": "Das Gespräch",
+      "you": "Sie fragten:",
+      "tutor": "Tutor",
+      "label": "Ihre Frage",
+      "placeholder": "Zum Beispiel: Wie unterscheide ich in dieser Hand c von t?",
+      "submit": "Fragen",
+      "submitHint": "Eingabetaste zum Fragen, Umschalt+Eingabetaste für eine neue Zeile",
+      "left": "{count, plural, =0 {Keine Fragen mehr} one {Noch # Frage} other {Noch # Fragen}}",
+      "charsLeft": "{count, plural, one {Noch # Zeichen} other {Noch # Zeichen}}",
+      "thinking": "Der Tutor denkt über Ihre Frage nach …",
+      "thinkingHint": "Eine Antwort dauert ein bis zwei Minuten.",
+      "elapsed": "Bisher {time}",
+      "show": "{count, plural, one {Auf dem Bild zeigen} other {# Stellen auf dem Bild zeigen}}",
+      "examples": "Beispiele aus anderen Urkunden",
+      "failedTitle": "Der Tutor konnte diese Frage nicht beantworten",
+      "onlyStarter": "Nur die Person, die diese Lektion begonnen hat, kann ihr Fragen stellen.",
+      "usedUp": "Die Fragen dieser Lektion sind aufgebraucht. Beginnen Sie eine neue Lektion, um weiter zu fragen."
     }
   }
 }
