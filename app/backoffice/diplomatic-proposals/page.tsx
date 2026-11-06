@@ -83,7 +83,11 @@ export default function DiplomaticProposalsPage() {
   const onDecided = (id: number) => {
     const at = rows.findIndex((r) => r.id === id);
     const next = rows[at + 1] ?? rows[at - 1] ?? null;
-    setSelectedId(next?.id ?? null);
+    // The last row of the last page: what is left of the queue is a page back,
+    // and a page past the end would read as an empty queue with no pager.
+    if (rows.length === 1 && page > 0) setPage(page - 1);
+    // A decision can land after the reviewer has opened something else: leave them there.
+    setSelectedId((open) => (open === null || open === id ? (next?.id ?? null) : open));
     void queryClient.invalidateQueries({ queryKey: backofficeKeys.diplomaticProposals.all() });
   };
 
