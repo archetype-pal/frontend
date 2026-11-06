@@ -674,12 +674,19 @@ export default function ManuscriptViewer({
   );
 
   const handleModifyTool = React.useCallback(() => {
+    if (textLinkingActive && !viewerCapabilities.canModifyAnnotations) return;
     cancelPendingPopupClear();
     clearPopupCollection();
     dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
     viewerApiRef.current?.enableModify();
     setActiveTool('modify');
-  }, [cancelPendingPopupClear, clearPopupCollection, setActiveTool]);
+  }, [
+    textLinkingActive,
+    viewerCapabilities.canModifyAnnotations,
+    cancelPendingPopupClear,
+    clearPopupCollection,
+    setActiveTool,
+  ]);
 
   const handleCreateAnnotation = React.useCallback(
     (kind?: AnnotationCreationKind) => {
@@ -1021,6 +1028,7 @@ export default function ManuscriptViewer({
               canCreatePublicAnnotations={
                 canCreatePublicAnnotations && (!textLinkingActive || canEditTexts)
               }
+              canModify={!textLinkingActive || viewerCapabilities.canModifyAnnotations}
               textOnlyMode={textLinkingActive}
               onToggleFullScreen={handleToggleFullScreen}
               onMoveTool={handleMoveTool}
