@@ -257,7 +257,11 @@ export function groupConnections(connections: Connection[]): [string, Connection
   for (const connection of connections) {
     const key = connectionKey(connection);
     const group = groups.get(key) ?? { rank: groupRank(connection), items: [] };
-    group.items.push(connection);
+    // A witness list can name two men alike, and they are one node.
+    const repeated = group.items.some(
+      (item) => item.node.id === connection.node.id && item.charter?.id === connection.charter?.id
+    );
+    if (!repeated) group.items.push(connection);
     groups.set(key, group);
   }
   return [...groups.entries()]

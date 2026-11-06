@@ -145,6 +145,8 @@ function drawnNodes(
 }
 
 /** The box round every node and label, with a margin, so nothing is drawn smaller than it need be. */
+const MIN_VIEW = 480;
+
 function fit(items: DrawnNode[]): string {
   let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
   const take = (x0: number, y0: number, x1: number, y1: number) => {
@@ -167,7 +169,10 @@ function fit(items: DrawnNode[]): string {
     );
   }
   const margin = 12;
-  return `${left - margin} ${top - margin} ${right - left + margin * 2} ${bottom - top + margin * 2}`;
+  // Never closer than this: a node alone would otherwise fill the whole panel.
+  const width = Math.max(right - left + margin * 2, MIN_VIEW);
+  const height = Math.max(bottom - top + margin * 2, MIN_VIEW / 2);
+  return `${(left + right - width) / 2} ${(top + bottom - height) / 2} ${width} ${height}`;
 }
 
 function NetworkDrawing({
