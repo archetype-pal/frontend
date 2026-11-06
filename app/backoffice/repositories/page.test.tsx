@@ -59,7 +59,9 @@ describe('<RepositoriesPage>', () => {
     updateRepositoryMock.mockResolvedValue({});
     renderWithQueryClient(<RepositoriesPage />, { tooltip: true });
 
-    const picker = await screen.findByRole('combobox', { name: 'Place of British Library: London' });
+    const picker = await screen.findByRole('combobox', {
+      name: 'Place of British Library: London',
+    });
     expect(picker.textContent).toContain('London');
     fireEvent.click(picker);
     fireEvent.click(await screen.findByRole('option', { name: 'Paris' }));
