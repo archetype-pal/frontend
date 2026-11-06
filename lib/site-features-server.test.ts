@@ -3,17 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDefaultConfig, getDefaultThemeColors } from './site-features';
 import { jsonResponse } from '@/test/responses';
 
-const { apiFetch, authFetch } = vi.hoisted(() => ({
-  apiFetch: vi.fn(),
-  authFetch: vi.fn(),
-}));
+const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
 
-vi.mock('./api-fetch', () => ({ apiFetch, authFetch }));
+vi.mock('./api-fetch', () => ({ apiFetch }));
 
 // Re-imported per test (after the api-fetch mock, and after `vi.resetModules`)
 // so the module-scope last-known-good starts empty each time.
 let readSiteFeatures: typeof import('./site-features-server').readSiteFeatures;
-let writeSiteFeatures: typeof import('./site-features-server').writeSiteFeatures;
 
 /** The backend response shape as it exists today: no `features` key at all. */
 function legacyResponseBody() {
@@ -23,9 +19,8 @@ function legacyResponseBody() {
 
 beforeEach(async () => {
   apiFetch.mockReset();
-  authFetch.mockReset();
   vi.resetModules();
-  ({ readSiteFeatures, writeSiteFeatures } = await import('./site-features-server'));
+  ({ readSiteFeatures } = await import('./site-features-server'));
 });
 
 afterEach(() => {
@@ -39,9 +34,7 @@ describe('readSiteFeatures', () => {
     );
     const config = await readSiteFeatures();
     expect(config.features.manuscriptDescriptions).toBe(false);
-    expect(apiFetch).toHaveBeenCalledWith('/api/v1/app-settings/', {
-      next: { revalidate: 60, tags: ['site-features'] },
-    });
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/app-settings/', { cache: 'no-store' });
   });
 
   it('defaults every flag to enabled when the backend response has no `features` key', async () => {
@@ -67,7 +60,7 @@ describe('readSiteFeatures', () => {
     expect(config.searchCategories).not.toBe(defaults.searchCategories);
   });
 
-  it('flags the fallback as degraded rather than passing it off as a real config', async () => {
+  it('falls back to the defaults when it has never read a config', async () => {
     const failures: unknown[] = [
       jsonResponse({ error: 'nope' }, 500),
       ...[null, [], 'oops', 7].map((junk) => jsonResponse(junk)),
@@ -75,10 +68,10 @@ describe('readSiteFeatures', () => {
     ];
     for (const failure of failures) {
       apiFetch.mockResolvedValueOnce(failure as Response);
-      expect(await readSiteFeatures()).toEqual({ ...getDefaultConfig(), degraded: true });
+      expect(await readSiteFeatures()).toEqual(getDefaultConfig());
     }
     apiFetch.mockRejectedValueOnce(new Error('network down'));
-    expect(await readSiteFeatures()).toEqual({ ...getDefaultConfig(), degraded: true });
+    expect(await readSiteFeatures()).toEqual(getDefaultConfig());
   });
 
   it('serves the last successful config when a later read fails', async () => {
@@ -92,7 +85,6 @@ describe('readSiteFeatures', () => {
     const config = await readSiteFeatures();
     expect(config.sections.lightbox).toBe(false);
     expect(config.features.manuscriptDescriptions).toBe(false);
-    expect(config.degraded).toBe(true);
   });
 
   it('hands out copies, so a consumer mutation cannot corrupt the remembered config', async () => {
@@ -136,80 +128,5 @@ describe('readSiteFeatures', () => {
     );
     const config = await readSiteFeatures();
     expect(config.theme).toEqual(getDefaultThemeColors());
-  });
-});
-
-describe('writeSiteFeatures', () => {
-  it('PUTs the normalized config with the token and returns it on success', async () => {
-    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
-    const config = getDefaultConfig();
-    config.features.manuscriptDescriptions = false;
-
-    const normalized = await writeSiteFeatures(config, 'staff-token');
-
-    expect(normalized.features.manuscriptDescriptions).toBe(false);
-    expect(authFetch).toHaveBeenCalledTimes(1);
-    const [path, token, init] = authFetch.mock.calls[0];
-    expect(path).toBe('/api/v1/app-settings/');
-    expect(token).toBe('staff-token');
-    expect(init).toMatchObject({
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    expect(JSON.parse(init.body as string)).toEqual(normalized);
-  });
-
-  it('persists a complete boolean map even if the caller hands over a partial one', async () => {
-    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
-    const config = getDefaultConfig();
-    // @ts-expect-error — a hand-rolled/older payload without the flag map
-    delete config.features;
-
-    const normalized = await writeSiteFeatures(config, 'staff-token');
-    expect(normalized.features).toEqual({ manuscriptDescriptions: true });
-  });
-
-  it('becomes the last-known-good, so a read failing right after a save keeps it', async () => {
-    apiFetch.mockResolvedValueOnce(jsonResponse(getDefaultConfig()));
-    await readSiteFeatures();
-
-    const saved = getDefaultConfig();
-    saved.sections.lightbox = false;
-    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
-    await writeSiteFeatures(saved, 'staff-token');
-
-    apiFetch.mockRejectedValueOnce(new Error('network down'));
-    expect((await readSiteFeatures()).sections.lightbox).toBe(false);
-  });
-
-  it('throws when the backend responds with a non-ok status', async () => {
-    authFetch.mockResolvedValueOnce(jsonResponse({ error: 'bad request' }, 400));
-    await expect(writeSiteFeatures(getDefaultConfig(), 'staff-token')).rejects.toThrow();
-  });
-
-  it('propagates a network error', async () => {
-    authFetch.mockRejectedValueOnce(new Error('network down'));
-    await expect(writeSiteFeatures(getDefaultConfig(), 'staff-token')).rejects.toThrow(
-      'network down'
-    );
-  });
-
-  it('persists a complete, validated theme even if the caller hands over a partial one', async () => {
-    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
-    const config = getDefaultConfig();
-    // @ts-expect-error — a hand-rolled/older payload without the theme
-    delete config.theme;
-
-    const normalized = await writeSiteFeatures(config, 'staff-token');
-    expect(normalized.theme).toEqual(getDefaultThemeColors());
-  });
-
-  it('drops a malformed theme colour rather than persisting it', async () => {
-    authFetch.mockResolvedValueOnce(jsonResponse({ ok: true }));
-    const config = getDefaultConfig();
-    config.theme = { ...config.theme, primaryColor: 'not-a-colour' };
-
-    const normalized = await writeSiteFeatures(config, 'staff-token');
-    expect(normalized.theme.primaryColor).toBe(getDefaultThemeColors().primaryColor);
   });
 });

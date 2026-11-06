@@ -1,11 +1,10 @@
 'use client';
 
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useTranslations } from 'next-intl';
-import type { SortingState } from '@tanstack/react-table';
-import { Archive, Trash2 } from 'lucide-react';
+import { Archive, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Select,
@@ -21,18 +20,15 @@ import {
   type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { CurrentItemEditButton } from '@/components/backoffice/manuscripts/current-item-edit-dialog';
-import { DataPagination } from '@/components/ui/data-pagination';
+import { CurrentItemEditDialog } from '@/components/backoffice/manuscripts/current-item-edit-dialog';
 import { deleteCurrentItem, getCurrentItems } from '@/services/backoffice/manuscripts';
-import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { BackofficeInlineError } from '@/components/backoffice/common/query-state';
 import { listAllPages } from '@/lib/backoffice/list-all-pages';
-import { toOrdering } from '@/lib/backoffice/ordering';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { CurrentItemOption, Repository } from '@/types/backoffice';
 import { useModelLabels } from '@/contexts/model-labels-context';
-import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+import { useServerList } from '@/hooks/backoffice/use-server-list';
 import { useRepositories } from '@/hooks/backoffice/use-lookups';
 
 const ORDERING_FIELDS = {
@@ -48,11 +44,9 @@ export default function PhysicalVolumesPage() {
   const { getLabel } = useModelLabels();
   const [repoFilter, setRepoFilter] = useState<string>('__all');
   const [deleteTarget, setDeleteTarget] = useState<CurrentItemOption | null>(null);
-  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = usePageSize('physical-volumes', 50);
-  const tableRef = useRef<HTMLDivElement>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const ordering = toOrdering(sorting, ORDERING_FIELDS);
+  const [editTarget, setEditTarget] = useState<CurrentItemOption | null>(null);
+  const editOpener = useRef<HTMLElement | null>(null);
+  const list = useServerList('physical-volumes', 50, ORDERING_FIELDS);
   const shelfmarkLabel = getLabel('fieldShelfmark');
   const appManuscriptsLabel = getLabel('appManuscripts');
 
@@ -91,14 +85,22 @@ export default function PhysicalVolumesPage() {
         id: 'actions',
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
-            <CurrentItemEditButton
-              itemId={row.original.id}
-              label={t('physicalVolumes.editAriaLabel', {
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              aria-label={t('physicalVolumes.editAriaLabel', {
                 repo: row.original.repository_name,
                 shelfmark: row.original.shelfmark,
               })}
-              className="h-7 w-7"
-            />
+              onClick={(e) => {
+                editOpener.current = e.currentTarget;
+                setEditTarget(row.original);
+              }}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
             {row.original.part_count === 0 ? (
               <Button
                 type="button"
@@ -137,12 +139,10 @@ export default function PhysicalVolumesPage() {
 
   const repositories: Repository[] = repositoriesData ?? [];
 
-  const listParams = {
+  const filterParams = {
+    ...list.params,
     ...(repoFilter !== '__all' ? { repository: Number(repoFilter) } : {}),
-    ...(search ? { search } : {}),
-    ...(ordering ? { ordering } : {}),
   };
-  const filterParams = { ...listParams, limit: pageSize, offset: page * pageSize };
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.currentItems.list(filterParams),
@@ -190,7 +190,7 @@ export default function PhysicalVolumesPage() {
             value={repoFilter}
             onValueChange={(v) => {
               setRepoFilter(v);
-              setPage(0);
+              list.setPage(0);
             }}
           >
             <SelectTrigger className="w-[220px] h-9">
@@ -209,43 +209,31 @@ export default function PhysicalVolumesPage() {
       </div>
 
       <DataTable
-        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
+        {...list.searchProps}
         searchPlaceholder={t('physicalVolumes.searchPlaceholder', {
           label: shelfmarkLabel.toLowerCase(),
         })}
-        pagination={false}
-        sorting={sorting}
-        onSortingChange={(next) => {
-          setSorting(next);
-          setPage(0);
-        }}
+        {...list.tableProps(data?.count)}
         enableColumnVisibility
         enableExport
         fetchAllRows={(options) =>
-          listAllPages((p) => getCurrentItems({ ...listParams, ...p }), options)
+          listAllPages((p) => getCurrentItems({ ...filterParams, ...p }), options)
         }
         exportFilename="items"
       />
 
-      {data && (
-        <DataPagination
-          scrollTargetRef={tableRef}
-          totalItems={data.count}
-          page={page + 1}
-          pageSize={pageSize}
-          onPageChange={(p) => setPage(p - 1)}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(0);
-          }}
+      {editTarget && (
+        <CurrentItemEditDialog
+          itemId={editTarget.id}
+          open
+          onOpenChange={(open) => !open && setEditTarget(null)}
+          onCloseAutoFocus={() => editOpener.current?.focus()}
         />
       )}
 

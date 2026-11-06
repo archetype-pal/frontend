@@ -39,14 +39,7 @@ export function useCollectionActions({
   allographLabelById,
   handNameById,
 }: UseCollectionActionsArgs) {
-  const {
-    addItem,
-    removeItem,
-    isInCollection,
-    collections,
-    canManageCollections,
-    createCollection,
-  } = useCollection();
+  const { addItem, removeItem, isInCollection, collections, createCollection } = useCollection();
 
   const collectionContext = React.useMemo<ViewerCollectionContext | null>(() => {
     if (!manuscriptImage) return null;
@@ -85,8 +78,7 @@ export function useCollectionActions({
       )
       .filter((item): item is CollectionItem => item !== null);
   }, [allographLabelById, collectionContext, editorRecords, handNameById, imageHeight]);
-  const canCreateAnnotationCollection =
-    canManageCollections && pageAnnotationCollectionItems.length > 0;
+  const canCreateAnnotationCollection = pageAnnotationCollectionItems.length > 0;
 
   // Closes over collectionContext + imageHeight so AnnotationPopupLayer
   // doesn't need to know either type. Returns null when collection items
@@ -115,9 +107,7 @@ export function useCollectionActions({
   }, [addItem, isInCollection, pageCollectionItem, removeItem]);
 
   const handleCreateAnnotationCollection = React.useCallback(() => {
-    if (!canManageCollections || !collectionContext || pageAnnotationCollectionItems.length === 0) {
-      return;
-    }
+    if (!collectionContext || pageAnnotationCollectionItems.length === 0) return;
 
     const pageLabel =
       [collectionContext.shelfmark, collectionContext.locus].filter(Boolean).join(' ') ||
@@ -132,13 +122,7 @@ export function useCollectionActions({
         pageAnnotationCollectionItems.length
       )} from this page.`,
     });
-  }, [
-    canManageCollections,
-    collectionContext,
-    collections,
-    createCollection,
-    pageAnnotationCollectionItems,
-  ]);
+  }, [collectionContext, collections, createCollection, pageAnnotationCollectionItems]);
 
   const handleToggleAnnotationCollection = React.useCallback(
     (annotation: A9sAnnotation) => {

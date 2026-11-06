@@ -2,18 +2,14 @@ import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { HandViewer } from './hand-viewer';
+import { loadHand } from './hand';
 import type { HandDetail, HandImage, HandScribe, HandManuscript } from '@/types/hand-detail';
 import { apiFetch } from '@/lib/api-fetch';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
 async function getHand(id: string): Promise<HandDetail> {
-  const response = await apiFetch(`/api/v1/hands/${id}/`);
-  if (!response.ok) {
-    if (response.status === 404) notFound();
-    throw new Error('Failed to fetch hand');
-  }
-  return response.json();
+  return (await loadHand(id)) ?? notFound();
 }
 
 async function getHandImages(itemPartId: number): Promise<HandImage[]> {

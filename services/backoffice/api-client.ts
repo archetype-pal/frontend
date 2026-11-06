@@ -80,6 +80,14 @@ export function backofficePost<T>(path: string, data: unknown): Promise<T> {
   });
 }
 
+/** PUT with auth + JSON body */
+export function backofficePut<T>(path: string, data: unknown): Promise<T> {
+  return apiRequest<T>(path, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
 /** PATCH with auth + JSON body */
 export function backofficePatch<T>(path: string, data: unknown): Promise<T> {
   return apiRequest<T>(path, {

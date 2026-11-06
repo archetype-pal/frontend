@@ -10,7 +10,8 @@ interface StaffEditLinkProps {
 
 export function StaffEditLink({ textId }: StaffEditLinkProps) {
   const { user } = useAuth();
-  if (!user?.is_staff) return null;
+  // The link opens the backoffice editor, which only users who may manage can use.
+  if (!user?.capabilities?.manage) return null;
   return (
     <Link
       href={`/backoffice/image-texts/${textId}`}

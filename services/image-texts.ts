@@ -48,7 +48,7 @@ export async function fetchImageText(
 
 export async function updateImageText(
   textId: number,
-  payload: Partial<Pick<ImageTextDetail, 'content' | 'status' | 'language' | 'type'>>
+  payload: Partial<Pick<ImageTextDetail, 'content' | 'language' | 'type'>>
 ): Promise<ImageTextDetail> {
   const response = await proxyFetch(`/api/v1/manuscripts/management/image-texts/${textId}/`, {
     method: 'PATCH',
@@ -171,7 +171,6 @@ export interface CreateImageTextPayload {
   type: ImageTextKind;
   language?: string;
   content?: string;
-  status?: ImageTextStatus;
 }
 
 export async function createImageText(payload: CreateImageTextPayload): Promise<ImageTextDetail> {
@@ -179,7 +178,6 @@ export async function createImageText(payload: CreateImageTextPayload): Promise<
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      status: 'Draft',
       content: '',
       language: '',
       ...payload,

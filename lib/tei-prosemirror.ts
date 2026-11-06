@@ -243,6 +243,19 @@ export function docToTei(doc: PMDoc): string {
   return out.join('');
 }
 
+/**
+ * The round-trip gate: whether `tei` survives the editor model byte for byte.
+ * Rich editing is offered only then, so it can never drop markup the model
+ * cannot hold. Unparseable input fails the gate rather than throwing.
+ */
+export function roundTripsExactly(tei: string): boolean {
+  try {
+    return docToTei(teiToDoc(tei)) === tei;
+  } catch {
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Link-target indexing (text↔region linking)
 // ---------------------------------------------------------------------------

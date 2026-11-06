@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { SortingState } from '@tanstack/react-table';
 import { ScanLine, ExternalLink, Trash2, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DataPagination } from '@/components/ui/data-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,9 +25,8 @@ import {
 } from '@/components/backoffice/common/data-table';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getGraphs, deleteGraph } from '@/services/backoffice/annotations';
-import { usePageSize } from '@/hooks/backoffice/use-page-size';
+import { useServerList } from '@/hooks/backoffice/use-server-list';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { toOrdering } from '@/lib/backoffice/ordering';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { GraphItem } from '@/types/backoffice';
@@ -163,27 +160,18 @@ export default function AnnotationsPage() {
     [t]
   );
 
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = usePageSize('annotations', 50);
-  const tableRef = useRef<HTMLDivElement>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const ordering = toOrdering(sorting, ORDERING_FIELDS);
+  const list = useServerList('annotations', 50, ORDERING_FIELDS);
   const [annotationType, setAnnotationType] = useState('__all');
   const [handFilter, setHandFilter] = useState('');
   const [allographFilter, setAllographFilter] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<GraphItem | null>(null);
 
-  const filters = useMemo(() => {
-    const params: Record<string, string | number> = {
-      limit: pageSize,
-      offset: page * pageSize,
-    };
-    if (annotationType !== '__all') params.annotation_type = annotationType;
-    if (handFilter.trim()) params.hand = Number(handFilter);
-    if (allographFilter.trim()) params.allograph = Number(allographFilter);
-    if (ordering) params.ordering = ordering;
-    return params;
-  }, [page, pageSize, annotationType, handFilter, allographFilter, ordering]);
+  const filters = {
+    ...list.params,
+    ...(annotationType !== '__all' ? { annotation_type: annotationType } : {}),
+    ...(handFilter.trim() ? { hand: Number(handFilter) } : {}),
+    ...(allographFilter.trim() ? { allograph: Number(allographFilter) } : {}),
+  };
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list(filters),
@@ -254,7 +242,7 @@ export default function AnnotationsPage() {
               value={annotationType}
               onValueChange={(val) => {
                 setAnnotationType(val);
-                setPage(0);
+                list.setPage(0);
               }}
             >
               <SelectTrigger className="h-8 text-xs">
@@ -277,7 +265,7 @@ export default function AnnotationsPage() {
               value={handFilter}
               onChange={(e) => {
                 setHandFilter(e.target.value);
-                setPage(0);
+                list.setPage(0);
               }}
             />
           </div>
@@ -289,7 +277,7 @@ export default function AnnotationsPage() {
               value={allographFilter}
               onChange={(e) => {
                 setAllographFilter(e.target.value);
-                setPage(0);
+                list.setPage(0);
               }}
             />
           </div>
@@ -303,7 +291,7 @@ export default function AnnotationsPage() {
               setAnnotationType('__all');
               setHandFilter('');
               setAllographFilter('');
-              setPage(0);
+              list.setPage(0);
             }}
           >
             Clear all filters
@@ -313,37 +301,19 @@ export default function AnnotationsPage() {
 
       {/* Data Table */}
       <DataTable
-        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={graphs}
-        pagination={false}
-        sorting={sorting}
-        onSortingChange={(next) => {
-          setSorting(next);
-          setPage(0);
-        }}
+        {...list.tableProps(data?.count)}
         enableRowSelection
         bulkActions={bulkActions}
         enableColumnVisibility
         enableExport
         exportSelectionOnly
         exportFilename="annotations"
-      />
-
-      <DataPagination
-        scrollTargetRef={tableRef}
-        totalItems={totalCount}
-        page={page + 1}
-        pageSize={pageSize}
-        onPageChange={(p) => setPage(p - 1)}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(0);
-        }}
       />
 
       <ConfirmDialog

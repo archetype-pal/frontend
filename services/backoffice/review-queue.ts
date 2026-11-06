@@ -1,39 +1,14 @@
 /**
- * Phase G — reviewer queue + status transitions.
- *
- * Mirrors `apps/manuscripts/views.py:ReviewQueueViewSet` and the
- * `transition` action on `ImageTextManagementViewSet`. The queue is
- * staff-only; the actions assume the caller is a reviewer.
+ * The reviewer queue and a text's status transitions. The queue serves the
+ * same rows as the management texts list, so it reuses `ImageTextListRow`.
  */
 
 import { proxyFetch } from '@/lib/api-fetch';
 
 import type { ImageTextStatus } from '@/types/image-text';
+import type { ImageTextListRow } from './image-texts-list';
 
-export type { ImageTextStatus };
-
-export interface QueueEntry {
-  id: number;
-  item_image: number;
-  type: string;
-  status: ImageTextStatus;
-  language: string;
-  review_assignee: number | null;
-  review_assignee_username: string | null;
-  last_transition: {
-    id: number;
-    from_status: ImageTextStatus;
-    to_status: ImageTextStatus;
-    actor: number | null;
-    actor_username: string | null;
-    note: string;
-    created: string;
-  } | null;
-  created: string;
-  modified: string;
-}
-
-export async function fetchReviewQueue(): Promise<QueueEntry[]> {
+export async function fetchReviewQueue(): Promise<ImageTextListRow[]> {
   const r = await proxyFetch('/api/v1/manuscripts/management/review-queue/', {
     cache: 'no-store',
   });
@@ -56,7 +31,7 @@ export interface TransitionPayload {
 export async function transitionImageText(
   id: number,
   payload: TransitionPayload
-): Promise<QueueEntry> {
+): Promise<ImageTextListRow> {
   const r = await proxyFetch(`/api/v1/manuscripts/management/image-texts/${id}/transition/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -5,7 +5,7 @@ import * as React from 'react';
 import ManuscriptViewer from '@/components/manuscript/manuscript-viewer';
 import { ViewerLoadingState } from '@/components/manuscript/viewer-status-screen';
 import { useAuth } from '@/contexts/auth-context';
-import { resolveManuscriptViewerAccess } from '@/lib/manuscript-viewer-access';
+import { getViewerCapabilities, getViewerMode } from '@/lib/viewer-capabilities';
 
 interface ManuscriptViewerAuthGateProps {
   imageId: string;
@@ -14,23 +14,17 @@ interface ManuscriptViewerAuthGateProps {
 export default function ManuscriptViewerAuthGate({
   imageId,
 }: ManuscriptViewerAuthGateProps): React.JSX.Element {
-  const { isAuthenticated, isReady } = useAuth();
+  const { user, isReady } = useAuth();
 
   if (!isReady) {
     return <ViewerLoadingState />;
   }
 
-  const viewerAccess = resolveManuscriptViewerAccess({
-    isAuthenticated,
-    isEditor: false,
-    isAdmin: false,
-  });
-
   return (
     <ManuscriptViewer
       imageId={imageId}
-      mode={viewerAccess.mode}
-      capabilities={viewerAccess.capabilities}
+      mode={getViewerMode(user?.capabilities)}
+      capabilities={getViewerCapabilities(user?.capabilities)}
     />
   );
 }

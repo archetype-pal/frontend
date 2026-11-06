@@ -78,7 +78,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const [showThumbnails, setShowThumbnails] = useShowThumbnails();
   const { getLabel } = useModelLabels();
   const { user } = useAuth();
-  const isStaff = Boolean(user?.is_staff);
+  const canAnnotate = Boolean(user?.capabilities?.annotate);
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
   const activeCount = s.countsByType[s.resultType];
   const router = useRouter();
@@ -469,7 +469,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               counts={s.countsByType}
             />
           </div>
-          {s.resultType === 'graphs' && isStaff && (
+          {s.resultType === 'graphs' && canAnnotate && (
             <div className="flex items-center gap-2">
               <Label
                 htmlFor="annotating-mode-toggle"
@@ -593,7 +593,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             {/* Table view renders flush (its sticky header carries the divider);
                 the other views get their own padding. */}
             <div className={cn('flex min-w-0 flex-col', s.viewMode !== 'table' && 'p-3')}>
-              {s.resultType === 'graphs' && s.annotatingMode && isStaff && (
+              {s.resultType === 'graphs' && s.annotatingMode && canAnnotate && (
                 <GraphSelectionToolbar
                   selectedCount={s.selection.selected.size}
                   pageCount={pageGraphIds.length}
@@ -693,7 +693,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     isFetching={s.isFetching}
                     thumbnailSize={thumbnailSize}
-                    annotatingMode={s.annotatingMode && isStaff}
+                    annotatingMode={s.annotatingMode && canAnnotate}
                     selectedIds={s.selection.selected}
                     onToggleSelect={toggleSelectionCapped}
                     onSelectMany={addManySelectionCapped}

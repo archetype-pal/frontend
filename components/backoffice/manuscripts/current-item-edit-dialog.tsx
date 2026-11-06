@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -25,6 +25,7 @@ import { useModelLabels } from '@/contexts/model-labels-context';
 import { getCurrentItem, updateCurrentItem } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
+import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { CurrentItemOption, ItemPartNested } from '@/types/backoffice';
 import { useRepositories } from '@/hooks/backoffice/use-lookups';
 
@@ -32,6 +33,86 @@ interface CurrentItemValues {
   repository: number;
   shelfmark: string;
   description: string;
+}
+
+class DuplicateItemError extends Error {}
+
+/** Refuses a repository and shelfmark another item already has, which the pickers cannot tell apart. */
+async function assertNotDuplicate(itemId: number, { repository, shelfmark }: CurrentItemValues) {
+  const items = await walkPaginated<CurrentItemOption>(
+    `/api/v1/manuscripts/management/current-items/?repository=${repository}&limit=100`
+  );
+  const duplicate = items.some(
+    (ci) => ci.id !== itemId && ci.shelfmark.toLowerCase() === shelfmark.toLowerCase()
+  );
+  if (duplicate) throw new DuplicateItemError();
+}
+
+export function CurrentItemEditDialog({
+  itemId,
+  open,
+  onOpenChange,
+  trigger,
+  onCloseAutoFocus,
+}: {
+  itemId: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  trigger?: ReactNode;
+  onCloseAutoFocus?: () => void;
+}) {
+  const t = useTranslations('backoffice');
+  const queryClient = useQueryClient();
+
+  const saveMut = useMutation({
+    mutationFn: async ({ values, moved }: { values: CurrentItemValues; moved: boolean }) => {
+      if (moved) await assertNotDuplicate(itemId, values);
+      return updateCurrentItem(itemId, values);
+    },
+    onSuccess: (saved) => {
+      toast.success(t('physicalVolumes.toastUpdated'));
+      // Reopening before the refetch below lands must not seed the form with the old values.
+      queryClient.setQueryData<CurrentItemOption>(
+        backofficeKeys.currentItems.detail(itemId),
+        (old) => (old ? { ...old, ...saved } : old)
+      );
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.currentItems.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.repositories.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.manuscripts.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.all() });
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.scribes.all() });
+      onOpenChange(false);
+    },
+    onError: (err) => {
+      if (err instanceof DuplicateItemError) {
+        toast.error(t('physicalVolumes.duplicateItem'));
+      } else {
+        toastApiError(t('physicalVolumes.toastFailedUpdate'), err);
+      }
+    },
+  });
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!saveMut.isPending) onOpenChange(next);
+      }}
+    >
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogContent className="max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
+        <DialogHeader>
+          <DialogTitle>{t('physicalVolumes.editTitle')}</DialogTitle>
+        </DialogHeader>
+        <CurrentItemForm
+          itemId={itemId}
+          saving={saveMut.isPending}
+          onCancel={() => onOpenChange(false)}
+          onSave={(values, moved) => saveMut.mutate({ values, moved })}
+        />
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function CurrentItemEditButton({
@@ -43,49 +124,19 @@ export function CurrentItemEditButton({
   label: string;
   className?: string;
 }) {
-  const t = useTranslations('backoffice');
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
-  const saveMut = useMutation({
-    mutationFn: (values: CurrentItemValues) => updateCurrentItem(itemId, values),
-    onSuccess: () => {
-      toast.success(t('physicalVolumes.toastUpdated'));
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.currentItems.all() });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.manuscripts.all() });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.hands.all() });
-      queryClient.invalidateQueries({ queryKey: backofficeKeys.scribes.all() });
-      setOpen(false);
-    },
-    onError: (err) => {
-      toastApiError(t('physicalVolumes.toastFailedUpdate'), err);
-    },
-  });
-
   return (
-    <Dialog
+    <CurrentItemEditDialog
+      itemId={itemId}
       open={open}
-      onOpenChange={(next) => {
-        if (!saveMut.isPending) setOpen(next);
-      }}
-    >
-      <DialogTrigger asChild>
+      onOpenChange={setOpen}
+      trigger={
         <Button type="button" variant="ghost" size="icon" className={className} aria-label={label}>
           <Pencil className="h-3.5 w-3.5" />
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t('physicalVolumes.editTitle')}</DialogTitle>
-        </DialogHeader>
-        <CurrentItemForm
-          itemId={itemId}
-          saving={saveMut.isPending}
-          onCancel={() => setOpen(false)}
-          onSave={(values) => saveMut.mutate(values)}
-        />
-      </DialogContent>
-    </Dialog>
+      }
+    />
   );
 }
 
@@ -131,7 +182,7 @@ export function CurrentItemPicker({
 interface CurrentItemFormProps {
   saving: boolean;
   onCancel: () => void;
-  onSave: (values: CurrentItemValues) => void;
+  onSave: (values: CurrentItemValues, moved: boolean) => void;
 }
 
 function CurrentItemForm({ itemId, ...props }: CurrentItemFormProps & { itemId: number }) {
@@ -196,9 +247,17 @@ function CurrentItemFields({
     [repositories]
   );
 
+  const trimmedShelfmark = shelfmark.trim();
+  const moved = Number(repository) !== item.repository || trimmedShelfmark !== item.shelfmark;
+
   return (
     <>
       <DialogBody className="space-y-4">
+        {item.part_count > 1 && (
+          <p className="text-sm text-muted-foreground">
+            {t('physicalVolumes.sharedItemNote', { count: item.part_count })}
+          </p>
+        )}
         <div className="space-y-1.5">
           <FieldLabel required htmlFor="current-item-repository">
             {t('manuscriptsNew.fieldRepository')}
@@ -254,10 +313,15 @@ function CurrentItemFields({
         <Button
           onClick={() => {
             if (!saving) {
-              onSave({ repository: Number(repository), shelfmark: shelfmark.trim(), description });
+              onSave(
+                { repository: Number(repository), shelfmark: trimmedShelfmark, description },
+                moved
+              );
             }
           }}
-          disabled={!repository || !shelfmark.trim()}
+          disabled={
+            !repository || !trimmedShelfmark || (!moved && description === item.description)
+          }
         >
           {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
           {tCommon('save')}

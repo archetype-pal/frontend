@@ -31,7 +31,7 @@ import {
   highlightableOptions,
   type HighlightOption,
 } from '@/lib/tei-highlight';
-import { docToTei, teiToDoc } from '@/lib/tei-prosemirror';
+import { roundTripsExactly } from '@/lib/tei-prosemirror';
 import type { EditorLinkSelection } from '@/lib/tei-tiptap';
 import { formatTei, validateTei, type TeiValidationError } from '@/services/image-texts';
 
@@ -121,13 +121,7 @@ export function TeiTextEditor({
 
   // Rich mode only activates when the content round-trips byte-exactly through
   // the serializer, so editing it can never lose markup the model can't hold.
-  const richAvailable = React.useMemo(() => {
-    try {
-      return docToTei(teiToDoc(value)) === value;
-    } catch {
-      return false;
-    }
-  }, [value]);
+  const richAvailable = React.useMemo(() => roundTripsExactly(value), [value]);
 
   // Derive the *effective* mode in render rather than chasing the stored `mode`
   // with an effect: the stored value can name a tab that isn't currently usable

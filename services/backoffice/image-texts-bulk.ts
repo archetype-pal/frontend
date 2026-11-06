@@ -1,8 +1,8 @@
 import { proxyFetch } from '@/lib/api-fetch';
-import type { ImageTextStatus } from './review-queue';
+import type { TransitionPayload } from './review-queue';
 
 export type BulkAction =
-  | { ids: number[]; action: 'transition'; payload: { to_status: ImageTextStatus; note?: string } }
+  | { ids: number[]; action: 'transition'; payload: TransitionPayload }
   | { ids: number[]; action: 'set_language'; payload: { language: string } }
   | { ids: number[]; action: 'delete' };
 

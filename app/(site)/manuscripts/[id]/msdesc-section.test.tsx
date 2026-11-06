@@ -1,8 +1,9 @@
 /** @vitest-environment jsdom */
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { renderPublicMsDescAreas } from '@/lib/msdesc-public';
+import { renderWithQueryClient } from '@/test/render';
 import en from '@/messages/en.json';
 import fr from '@/messages/fr.json';
 import { lookupMessage, tBackoffice } from '@/test/messages';
@@ -22,7 +23,9 @@ const FULL: PublicMsDescArea[] = [
 ];
 
 function renderSection(areas: PublicMsDescArea[]) {
-  return render(<MsDescSection areas={renderPublicMsDescAreas(areas, tBackoffice)} />);
+  return renderWithQueryClient(
+    <MsDescSection areas={renderPublicMsDescAreas(areas, tBackoffice)} />
+  );
 }
 
 describe('MsDescSection', () => {

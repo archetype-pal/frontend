@@ -23,6 +23,7 @@ const updateCurrentItemMock = vi.fn();
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('sonner', () => import('@/test/mocks/sonner'));
+vi.mock('@/lib/backoffice/walk-paginated', () => ({ walkPaginated: async () => [] }));
 vi.mock('@/services/backoffice/manuscripts', () => ({
   getCurrentItems: async () => ({ count: rows.length, next: null, previous: null, results: rows }),
   getCurrentItem: async (id: number) => rows.find((r) => r.id === id),
@@ -63,6 +64,22 @@ describe('<PhysicalVolumesPage>', () => {
 
     expect(screen.getByRole('dialog')).toBeDefined();
     expect((screen.getByLabelText(/Shelfmark/) as HTMLInputElement).value).toBe('Cotton Ch. 1a');
+  });
+
+  it('keeps the edit dialog when its row leaves the table', async () => {
+    const client = renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit item BL Cotton Ch. 1' }));
+    await screen.findByLabelText(/Shelfmark/);
+    rows = [UNLINKED];
+    await client.invalidateQueries({ queryKey: backofficeKeys.currentItems.all() });
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Edit item BL Cotton Ch. 1', hidden: true })
+      ).toBeNull()
+    );
+    expect(screen.getByRole('dialog')).toBeDefined();
   });
 
   it('returns focus to the pencil after saving', async () => {

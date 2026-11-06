@@ -109,7 +109,7 @@ describe('CollectionProvider', () => {
     vi.stubGlobal('localStorage', createStorageStub());
   });
 
-  it('hydrates editorial annotation items from storage', async () => {
+  it("imports a browser's pre-versioned collection once, then removes the old key", async () => {
     localStorage.setItem(LEGACY_COLLECTION_STORAGE_KEY, JSON.stringify([editorialItem]));
 
     renderHarness();
@@ -125,6 +125,7 @@ describe('CollectionProvider', () => {
         collections: [{ id: 'default', name: 'Collection', items: [editorialItem] }],
       })
     );
+    expect(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY)).toBeNull();
   });
 
   it('allows adding editorial annotation items', async () => {
@@ -135,10 +136,9 @@ describe('CollectionProvider', () => {
 
     await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
     expect(screen.getByTestId('is-editorial-collected').textContent).toBe('true');
-    expect(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY)).toContain(
-      '"annotation_type":"editorial"'
-    );
     expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).toContain('"annotation_type":"editorial"');
+    // Only the versioned key is written; nothing mirrors the items to the old one.
+    expect(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY)).toBeNull();
   });
 
   it('removes multiple selected items in one collection update', async () => {
@@ -154,7 +154,7 @@ describe('CollectionProvider', () => {
     expect(screen.getByTestId('is-editorial-collected').textContent).toBe('false');
   });
 
-  it('hydrates the active collection from versioned storage and mirrors its items', async () => {
+  it('hydrates the active collection from versioned storage and ignores the old key', async () => {
     localStorage.setItem(
       COLLECTION_STORAGE_KEY,
       JSON.stringify({
@@ -167,30 +167,31 @@ describe('CollectionProvider', () => {
       })
     );
 
+    localStorage.setItem(LEGACY_COLLECTION_STORAGE_KEY, JSON.stringify([]));
+
     renderHarness();
 
     await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
     expect(screen.getByTestId('is-editorial-collected').textContent).toBe('true');
-    await waitFor(() =>
-      expect(JSON.parse(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY) ?? '[]')).toEqual([
-        editorialItem,
-      ])
-    );
+    await waitFor(() => expect(localStorage.getItem(LEGACY_COLLECTION_STORAGE_KEY)).toBeNull());
   });
 
-  it('does not overwrite a storage version it does not understand', async () => {
-    const futureState = JSON.stringify({
-      version: COLLECTION_STORAGE_VERSION + 1,
-      activeCollectionId: 'future',
-      collections: [{ id: 'future', name: 'Future', items: [] }],
-    });
-    localStorage.setItem(COLLECTION_STORAGE_KEY, futureState);
-    localStorage.setItem(LEGACY_COLLECTION_STORAGE_KEY, JSON.stringify([editorialItem]));
+  it('replaces stored data it cannot read with a working default', async () => {
+    localStorage.setItem(
+      COLLECTION_STORAGE_KEY,
+      JSON.stringify({ version: COLLECTION_STORAGE_VERSION + 1, collections: 'not a list' })
+    );
 
     renderHarness();
 
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem(COLLECTION_STORAGE_KEY) ?? '{}')).toMatchObject({
+        version: COLLECTION_STORAGE_VERSION,
+        collections: [{ id: 'default', name: 'Collection', items: [] }],
+      })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add editorial annotation' }));
     await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
-    expect(localStorage.getItem(COLLECTION_STORAGE_KEY)).toBe(futureState);
   });
 
   it('creates, activates, and switches between named collections', async () => {

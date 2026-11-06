@@ -2,36 +2,25 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Trash2, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { ImageUploadZone } from '@/components/backoffice/common/image-upload-zone';
-import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { getCarouselImageUrl } from '@/utils/api';
 import type { PartnerItem } from '@/types/backoffice';
 import { Input } from '@/components/ui/input';
+import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 
 interface PartnerEditorPanelProps {
   /** The item being edited, or null for "create new" mode. */
   item: PartnerItem | null;
   /** Whether a save mutation is in progress. */
   saving: boolean;
-  /** Whether a delete mutation is in progress. */
-  deleting: boolean;
   onSave: (data: { name: string; url: string; logo?: File | string }) => void;
-  onDelete: () => void;
   onCancel: () => void;
 }
 
-export function PartnerEditorPanel({
-  item,
-  saving,
-  deleting,
-  onSave,
-  onDelete,
-  onCancel,
-}: PartnerEditorPanelProps) {
+export function PartnerEditorPanel({ item, saving, onSave, onCancel }: PartnerEditorPanelProps) {
   const t = useTranslations('backoffice');
   const isNew = !item;
 
@@ -39,7 +28,6 @@ export function PartnerEditorPanel({
   const [url, setUrl] = useState(item?.url ?? '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPath, setLogoPath] = useState(item?.logo ?? '');
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Reset form when the selected item changes
   useEffect(() => {
@@ -68,26 +56,12 @@ export function PartnerEditorPanel({
     });
   }, [canSave, name, url, logoFile, logoPath, onSave]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      // Caps Lock makes `e.key` come through as 'S', so lower-case the
-      // letter before comparing — otherwise Cmd/Ctrl+S silently fails to
-      // save for caps-locked users.
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        handleSave();
-      }
-      if (e.key === 'Escape') {
-        onCancel();
-      }
-    },
-    [handleSave, onCancel]
-  );
+  useKeyboardShortcut('mod+s', handleSave);
 
   const currentLogoUrl = logoPath ? getCarouselImageUrl(logoPath) : null;
 
   return (
-    <div className="space-y-5" onKeyDown={handleKeyDown}>
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
           {isNew ? t('partners.newItemTitle') : t('partners.editItemTitle')}
@@ -153,33 +127,6 @@ export function PartnerEditorPanel({
         />
         <p className="text-xs text-muted-foreground">{t('partners.urlHint')}</p>
       </div>
-
-      {!isNew && (
-        <>
-          <Separator />
-          <div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setConfirmDeleteOpen(true)}
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              {t('partners.deleteItemButton')}
-            </Button>
-          </div>
-
-          <ConfirmDialog
-            open={confirmDeleteOpen}
-            onOpenChange={setConfirmDeleteOpen}
-            title={t('partners.deleteTitle', { name: item.name })}
-            description={t('partners.deleteDesc')}
-            confirmLabel={t('partners.deleteConfirm')}
-            loading={deleting}
-            onConfirm={onDelete}
-          />
-        </>
-      )}
     </div>
   );
 }

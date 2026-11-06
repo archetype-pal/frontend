@@ -3,11 +3,18 @@ import * as React from 'react';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { toast } from 'sonner';
+
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import type { CurrentItemOption } from '@/types/backoffice';
 import { renderWithQueryClient } from '@/test/render';
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
+const walkPaginatedMock = vi.fn();
+vi.mock('@/lib/backoffice/walk-paginated', () => ({
+  walkPaginated: (...args: unknown[]) => walkPaginatedMock(...args),
+}));
 
 vi.mock('@/contexts/model-labels-context', () => ({
   useModelLabels: () => ({ getLabel: () => 'Shelfmark' }),
@@ -49,6 +56,8 @@ beforeEach(() => {
   getCurrentItemMock.mockResolvedValue(ITEM);
   updateCurrentItemMock.mockReset();
   updateCurrentItemMock.mockResolvedValue({});
+  walkPaginatedMock.mockReset();
+  walkPaginatedMock.mockResolvedValue([]);
 });
 
 describe('CurrentItemEditButton', () => {
@@ -85,6 +94,66 @@ describe('CurrentItemEditButton', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: backofficeKeys.manuscripts.all() });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: backofficeKeys.hands.all() });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: backofficeKeys.scribes.all() });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: backofficeKeys.repositories.all() });
+  });
+
+  it('refuses a repository and shelfmark another item already has', async () => {
+    walkPaginatedMock.mockResolvedValue([{ ...ITEM, id: 8, shelfmark: 'DD/CC 10' }]);
+    renderButton();
+
+    fireEvent.change(await screen.findByLabelText(/Shelfmark/), {
+      target: { value: 'dd/cc 10' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        'Another item already has this repository and shelfmark.'
+      )
+    );
+    expect(updateCurrentItemMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('does not look for duplicates when only the description changed', async () => {
+    renderButton();
+
+    fireEvent.change(await screen.findByLabelText(/Description/), {
+      target: { value: 'New note' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(updateCurrentItemMock).toHaveBeenCalled());
+    expect(walkPaginatedMock).not.toHaveBeenCalled();
+  });
+
+  it('reopens with the saved values even while the refetch is in flight', async () => {
+    updateCurrentItemMock.mockResolvedValue({ ...ITEM, shelfmark: '12093' });
+    renderButton();
+
+    fireEvent.change(await screen.findByLabelText(/Shelfmark/), { target: { value: '12093' } });
+    getCurrentItemMock.mockReturnValue(new Promise(() => {}));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit item Winchester Coll. 12092' }));
+
+    expect(((await screen.findByLabelText(/Shelfmark/)) as HTMLInputElement).value).toBe('12093');
+  });
+
+  it('warns when other manuscript parts share the item', async () => {
+    getCurrentItemMock.mockResolvedValue({ ...ITEM, part_count: 3 });
+    renderButton();
+
+    expect(await screen.findByText(/used by 3 manuscript parts/)).toBeDefined();
+  });
+
+  it('cannot save when nothing changed', async () => {
+    renderButton();
+
+    await screen.findByLabelText(/Shelfmark/);
+
+    expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('cannot save an item without a shelfmark', async () => {
@@ -99,7 +168,9 @@ describe('CurrentItemEditButton', () => {
     updateCurrentItemMock.mockReturnValue(new Promise(() => {}));
     renderButton();
 
-    await screen.findByLabelText(/Shelfmark/);
+    fireEvent.change(await screen.findByLabelText(/Description/), {
+      target: { value: 'New note' },
+    });
     const save = screen.getByRole('button', { name: 'Save' });
     fireEvent.click(save);
     await waitFor(() => expect(updateCurrentItemMock).toHaveBeenCalledTimes(1));
