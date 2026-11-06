@@ -13,8 +13,8 @@ vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 vi.mock('@/lib/backoffice/walk-paginated', () => ({ walkPaginated: async () => [] }));
 vi.mock('@/services/backoffice/scribes', () => ({
-  getScribe: async () => ({
-    id: 4,
+  getScribe: async (id: number) => ({
+    id,
     name: 'Scribe A',
     period: null,
     period_display: null,
@@ -54,5 +54,21 @@ describe('<ScribeDetailPage>', () => {
     await waitFor(() =>
       expect(updateScribeMock).toHaveBeenCalledWith(4, expect.objectContaining({ scriptorium: 11 }))
     );
+  });
+
+  it.each([
+    ['links a scribe to their public profile', '5', true],
+    ['has no profile link for the placeholder scribe, which has no public page', '-1', false],
+  ])('%s', async (_name, id, linked) => {
+    await act(async () => {
+      renderWithQueryClient(
+        <Suspense fallback={null}>
+          <ScribeDetailPage params={Promise.resolve({ id })} />
+        </Suspense>
+      );
+    });
+
+    await screen.findByRole('combobox', { name: 'Scriptorium' });
+    expect(screen.queryByRole('link', { name: /public profile/i }) !== null).toBe(linked);
   });
 });

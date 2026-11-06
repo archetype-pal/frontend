@@ -144,14 +144,17 @@ export default function ScribeDetailPage({ params }: { params: Promise<{ id: str
       </div>
 
       {/* Quick links */}
-      <div className="flex items-center gap-2">
-        <Link href={`/scribes/${id}`} target="_blank">
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-            <ExternalLink className="h-3 w-3" />
-            {t('scribesDetail.viewPublicProfile')}
-          </Button>
-        </Link>
-      </div>
+      {/* The import's placeholder scribe (pk < 1) has no public page. */}
+      {id >= 1 && (
+        <div className="flex items-center gap-2">
+          <Link href={`/scribes/${id}`} target="_blank">
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+              <ExternalLink className="h-3 w-3" />
+              {t('scribesDetail.viewPublicProfile')}
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Hands list */}
       <div className="space-y-3">
