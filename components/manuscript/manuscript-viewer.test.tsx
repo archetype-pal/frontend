@@ -597,10 +597,16 @@ describe('ManuscriptViewer smoke test', () => {
       modified: '2026-01-01T00:00:00Z',
     };
 
-    const renderWithText = (capabilities: ViewerCapabilities) => {
+    const renderWithText = (capabilities?: ViewerCapabilities) => {
       localStorage.setItem('annotationViewerSettings', JSON.stringify({ viewMode: 'text' }));
       vi.mocked(fetchImageTextsForImage).mockResolvedValue([transcription]);
-      render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={capabilities} />);
+      render(
+        <ManuscriptViewer
+          imageId="4432"
+          mode={capabilities ? 'editor' : 'public'}
+          capabilities={capabilities}
+        />
+      );
     };
 
     const pressKeysWithSpyApi = async (keys: string[], spies: Record<string, () => void>) => {
@@ -651,6 +657,29 @@ describe('ManuscriptViewer smoke test', () => {
       await pressKeysWithSpyApi(['d', ' '], { enableDraw });
       expect(enableDraw).not.toHaveBeenCalled();
     });
+
+    it('offers no region reshaping to a visitor', async () => {
+      renderWithText();
+      await screen.findByText('Willelmus rex');
+
+      expect(screen.queryByRole('button', { name: 'Reshape region (m)' })).toBeNull();
+
+      const enableModify = vi.fn();
+      await pressKeysWithSpyApi(['m'], { enableModify });
+      expect(enableModify).not.toHaveBeenCalled();
+    });
+
+    it('offers region reshaping to a user who may annotate', async () => {
+      renderWithText(makeCaps({ canEditTexts: false }));
+
+      expect(await screen.findByRole('button', { name: 'Reshape region (m)' })).toBeTruthy();
+    });
+  });
+
+  it('keeps Modify outside Text view for a visitor', async () => {
+    render(<ManuscriptViewer imageId="4432" mode="public" />);
+
+    expect(await screen.findByRole('button', { name: 'Modify (m)' })).toBeTruthy();
   });
 
   it('keeps drawing outside Text view for a user who may annotate but not manage', async () => {
