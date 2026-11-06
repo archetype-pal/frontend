@@ -155,6 +155,48 @@ describe('<DiplomaticProposalsPage>', () => {
     expect(services.getDiplomaticProposalDepth).toHaveBeenCalledTimes(2);
   });
 
+  it('stays on the proposal the reviewer has since opened when an earlier decision lands', async () => {
+    let finish: (value: unknown) => void = () => {};
+    services.getDiplomaticProposals.mockResolvedValue(
+      page([proposal(1), proposal(2), proposal(3)])
+    );
+    services.acceptDiplomaticProposal.mockImplementation(
+      () => new Promise((resolve) => (finish = resolve))
+    );
+    renderPage();
+    await screen.findByRole('article');
+
+    fireEvent.click(acceptButton());
+    fireEvent.click(screen.getByRole('button', { name: /Sacr\.3/ }));
+    await waitFor(() => expect(within(review()).getByText(/Sacr\.3/)).toBeTruthy());
+    finish({ status: 'accepted', created: 3 });
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    expect(within(review()).getByText(/Sacr\.3/)).toBeTruthy();
+  });
+
+  it('goes back a page when the last row of the last page has been decided', async () => {
+    let count = 26;
+    services.getDiplomaticProposals.mockImplementation(async ({ offset }: { offset: number }) => ({
+      count,
+      next: null,
+      previous: null,
+      results: offset >= count ? [] : [proposal(offset + 1)],
+    }));
+    services.acceptDiplomaticProposal.mockImplementation(async () => {
+      count = 25;
+      return { status: 'accepted', created: 3 };
+    });
+    renderPage();
+    await screen.findByRole('article');
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+    await waitFor(() => expect(within(review()).getByText(/Sacr\.26/)).toBeTruthy());
+
+    fireEvent.click(acceptButton());
+
+    await waitFor(() => expect(within(review()).getByText(/Sacr\.1\b/)).toBeTruthy());
+  });
+
   it('records only the items left ticked, and says the rest are left out', async () => {
     services.getDiplomaticProposals.mockResolvedValue(page([proposal(1)]));
     renderPage();
