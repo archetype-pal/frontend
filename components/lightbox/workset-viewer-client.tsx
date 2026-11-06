@@ -22,7 +22,7 @@ import type { WorksetDetail } from '@/types/workset';
 export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
   const router = useRouter();
   const t = useTranslations('lightbox');
-  const { collections, canManageCollections, createCollection } = useCollection();
+  const { collections, createCollection } = useCollection();
   const [ready, setReady] = React.useState(false);
   const sharedCollection = workset.payload.collection;
 
@@ -51,7 +51,7 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
   };
 
   const saveCollectionCopy = () => {
-    if (!sharedCollection || !canManageCollections) return;
+    if (!sharedCollection) return;
 
     const name = getAvailableCollectionName(collections, sharedCollection.name);
     if (!name || !createCollection(name, sharedCollection.items)) {
@@ -81,13 +81,7 @@ export function WorksetViewerClient({ workset }: { workset: WorksetDetail }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {sharedCollection ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={saveCollectionCopy}
-              disabled={!canManageCollections}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={saveCollectionCopy}>
               <FolderPlus className="mr-2 h-4 w-4" />
               {t('workset.saveCollectionCopy')}
             </Button>

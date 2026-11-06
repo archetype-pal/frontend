@@ -3,25 +3,9 @@ import { getLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { PageBanner } from '@/components/layout/page-banner';
 import { AboutSidebar } from '../_components/about-sidebar';
-import { getMenuHeadings, getPublishedPageBySlug } from '@/lib/pages-server';
-import { isListedUnderAbout, resolvePageText, type Page, type PageLocale } from '@/lib/pages';
-import { readSiteFeatures } from '@/lib/site-features-server';
+import { getVisiblePage } from './visible-page';
+import { resolvePageText, type PageLocale } from '@/lib/pages';
 import { sanitizeHtml } from '@/lib/sanitize-html';
-
-/**
- * The page, or null when it's missing or listed under About while the About
- * section is off. proxy.ts can't gate `/about/*` itself: pages under a custom
- * heading share the prefix and stay reachable with About off.
- */
-async function getVisiblePage(slug: string): Promise<Page | null> {
-  const [page, siteFeatures, menuHeadings] = await Promise.all([
-    getPublishedPageBySlug(slug),
-    readSiteFeatures(),
-    getMenuHeadings(),
-  ]);
-  if (!page || siteFeatures.sections.about !== false) return page;
-  return isListedUnderAbout(page.menu_heading, menuHeadings) ? null : page;
-}
 
 export async function generateMetadata({
   params,

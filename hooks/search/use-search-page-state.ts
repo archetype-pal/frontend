@@ -143,7 +143,6 @@ export function useSearchPageState(initialType?: ResultType) {
   // previous type's facets, and its totals.
   const awaitingResults = isLoading || dataResultType !== resultType;
   const timelineDistribution = data.facetDistribution?.date_min ?? {};
-  const cityDistribution = data.facetDistribution?.repository_city ?? {};
 
   const exportHook = useSearchExport({
     queryState: queryHook.queryState,
@@ -261,7 +260,6 @@ export function useSearchPageState(initialType?: ResultType) {
   const showTimelineToggle = !isTableOnlyType(resultType);
   const showDistributionToggle = true;
   const distributionEnabled = resultType === 'graphs';
-  const showMapToggle = !isTableOnlyType(resultType);
   const resultCount = data.count;
 
   // --- Hotkeys ---
@@ -305,7 +303,6 @@ export function useSearchPageState(initialType?: ResultType) {
     awaitingResults,
     filtered,
     timelineDistribution,
-    cityDistribution,
     countsByType: dataHook.countsByType,
     graphDistributionQuery: dataHook.graphDistributionQuery,
     // Computed
@@ -316,7 +313,6 @@ export function useSearchPageState(initialType?: ResultType) {
     showTimelineToggle,
     showDistributionToggle,
     distributionEnabled,
-    showMapToggle,
     resultCount,
     // Mobile
     mobileQueryDraft: mobileHook.mobileQueryDraft,

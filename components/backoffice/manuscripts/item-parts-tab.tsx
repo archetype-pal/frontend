@@ -18,14 +18,12 @@ import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
 import { ItemImageEditDialog } from './item-image-edit-dialog';
 import { ItemImageUploadDialog } from './item-image-upload-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
-import { CurrentItemCombobox } from './current-item-combobox';
+import { PartLocationFields, usePartLocation } from './part-location-fields';
 import { ItemPartHandsSection } from './item-part-hands-section';
-import { createItemPart, updateItemPart, deleteItemPart } from '@/services/backoffice/manuscripts';
+import { createItemPart, deleteItemPart } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
 import type { ItemPartImage, ItemPartNested } from '@/types/backoffice';
@@ -100,10 +98,10 @@ function ItemPartCard({
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
 
-  const [currentItemId, setCurrentItemId] = useState<number | null>(part.current_item);
-  const [locus, setLocus] = useState(part.current_item_locus);
-  const [customLabel, setCustomLabel] = useState(part.custom_label);
-  const [dirty, setDirty] = useState(false);
+  const { location, change, dirty, save } = usePartLocation(part, historicalItemId, {
+    saved: t('manuscriptsDetail.partUpdated'),
+    failed: t('manuscriptsDetail.partUpdateFailed'),
+  });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
 
@@ -111,23 +109,6 @@ function ItemPartCard({
     queryClient.invalidateQueries({
       queryKey: backofficeKeys.manuscripts.detail(historicalItemId),
     });
-
-  const saveMut = useMutation({
-    mutationFn: () =>
-      updateItemPart(part.id, {
-        current_item: currentItemId,
-        current_item_locus: locus,
-        custom_label: customLabel,
-      }),
-    onSuccess: () => {
-      toast.success(t('manuscriptsDetail.partUpdated'));
-      invalidate();
-      setDirty(false);
-    },
-    onError: (err) => {
-      toastApiError(t('manuscriptsDetail.partUpdateFailed'), err);
-    },
-  });
 
   const deleteMut = useMutation({
     mutationFn: () => deleteItemPart(part.id),
@@ -168,50 +149,7 @@ function ItemPartCard({
 
       <CollapsibleContent>
         <div className="border-t px-4 py-4 space-y-4">
-          {/* Location fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="space-y-1.5 sm:col-span-2">
-              <FieldLabel helpField="itemPart.currentItem">
-                {t('manuscriptsDetail.physicalVolume')}
-              </FieldLabel>
-              <CurrentItemCombobox
-                value={currentItemId}
-                onChange={(id) => {
-                  setCurrentItemId(id);
-                  setDirty(true);
-                }}
-                selectedLabel={part.current_item_display}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <FieldLabel helpField="itemPart.locus">{t('manuscriptsNew.fieldLocus')}</FieldLabel>
-              <Input
-                value={locus}
-                onChange={(e) => {
-                  setLocus(e.target.value);
-                  setDirty(true);
-                }}
-                placeholder={t('manuscriptsNew.locusPlaceholder')}
-                className="h-9"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <FieldLabel helpField="itemPart.customLabel">
-              {t('manuscriptsDetail.customLabel')}
-            </FieldLabel>
-            <Input
-              value={customLabel}
-              onChange={(e) => {
-                setCustomLabel(e.target.value);
-                setDirty(true);
-              }}
-              placeholder={t('manuscriptsDetail.customLabelPlaceholder')}
-              className="h-9"
-            />
-          </div>
+          <PartLocationFields location={location} onChange={change} part={part} />
 
           <ItemPartHandsSection itemPartId={part.id} />
 
@@ -265,10 +203,10 @@ function ItemPartCard({
             <Button
               size="sm"
               className="h-7 text-xs gap-1"
-              onClick={() => saveMut.mutate()}
-              disabled={!dirty || saveMut.isPending}
+              onClick={() => save.mutate()}
+              disabled={!dirty || save.isPending}
             >
-              {saveMut.isPending ? (
+              {save.isPending ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
                 <Save className="h-3 w-3" />

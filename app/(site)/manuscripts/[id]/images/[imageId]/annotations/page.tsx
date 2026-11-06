@@ -6,7 +6,6 @@ import {
 } from '@/services/manuscripts';
 import { fetchAnnotationsForImage, type BackendGraph } from '@/services/annotations';
 import { AnnotationGallery } from '@/components/manuscript/annotation-gallery';
-import { sortHandsByPriority } from '@/lib/hand-ordering';
 import { getTranslations } from 'next-intl/server';
 
 // The gallery reads filter state from the URL via useSearchParams, which
@@ -67,7 +66,7 @@ export default async function AnnotationsTabPage({ params }: PageProps) {
         locus={image.locus ?? ''}
         shelfmark={manuscript?.display_label ?? ''}
         graphs={graphs}
-        hands={sortHandsByPriority(hands)}
+        hands={hands}
         allographs={allographs}
         loadError={loadError}
         supportingDataIncomplete={supportingDataIncomplete}

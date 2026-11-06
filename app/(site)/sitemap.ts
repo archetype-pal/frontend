@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { apiFetch } from '@/lib/api-fetch';
 import { env } from '@/lib/env';
 import { getPublishedPages } from '@/lib/pages-server';
+import { pageHref } from '@/lib/pages';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { getEnabledSearchCategories } from '@/lib/site-features';
 import { getPublicationRoutes } from '@/lib/publications';
@@ -57,7 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages = await getPublishedPages();
   for (const page of pages) {
     dynamicRoutes.push({
-      url: `${BASE_URL}/about/${page.slug}`,
+      url: `${BASE_URL}${pageHref(page.slug)}`,
       lastModified: page.updated_at ? new Date(page.updated_at) : undefined,
       changeFrequency: 'yearly',
       priority: 0.4,

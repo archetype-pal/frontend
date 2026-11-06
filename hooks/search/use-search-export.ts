@@ -67,13 +67,14 @@ export function useSearchExport(opts: {
       try {
         const params = new URLSearchParams(buildQueryString(queryState));
         if (submittedKeyword) params.set('q', submittedKeyword);
-        params.set('format', 'json');
+        params.set('export_format', 'json');
         params.set('scope', scope);
+        // The rows as the API's JSON file; the columns are formatted here.
+        params.set('download', '1');
         const endpoint = `${API_BASE_URL}/api/v1/search/${SEARCH_RESULT_CONFIG[resultType].apiPath}/export/?${params.toString()}`;
         const res = await fetch(endpoint, { cache: 'no-store' });
         if (!res.ok) throw new Error(`Export failed: ${res.status}`);
-        const payload = (await res.json()) as { results?: Record<string, unknown>[] };
-        const rows = payload.results ?? [];
+        const rows = (await res.json()) as Record<string, unknown>[];
         const content =
           format === 'csv'
             ? buildFormattedCsv(resultType, rows, visibleColumns)

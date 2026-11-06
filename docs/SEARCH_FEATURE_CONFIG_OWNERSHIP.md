@@ -21,9 +21,11 @@ each deployment shows.
 The live config is backend-owned: `AppSettings` rows under `site_features.*`,
 served at `/api/v1/app-settings/` (`SiteFeaturesView` in
 `api/apps/common/views.py`) and edited by superusers at
-`/backoffice/site-features`. `readSiteFeatures()` (`lib/site-features-server.ts`)
-merges each stored category over `getDefaultConfig()`. When the backend can't be
-read it serves the last config it read, or the defaults.
+`/backoffice/site-features`, which reads and saves it through the proxy.
+`parseSiteFeatures()` (`lib/site-features.ts`) merges each stored category over
+`getDefaultConfig()`, for the editor and for `readSiteFeatures()`
+(`lib/site-features-server.ts`), which reads it fresh on every request. When the
+backend can't be read it serves the last config it read, or the defaults.
 
 `visibleColumns` and `visibleFacets` are explicit lists: a stored list replaces
 the default one. Guests see exactly that list. Signed-in users can hide more
@@ -48,6 +50,7 @@ from it in the field-visibility menu, kept in `localStorage`
 - `pnpm lint`, `pnpm format`, `pnpm test` and `pnpm build` (the CI gates).
 - `/search/<type>` shows the expected columns and facets, signed out and signed
   in.
-- A disabled section rewrites to `/not-found`. `/search`, an unknown category and
-  a disabled one redirect to the first enabled category, or to `/not-found` when
-  none is enabled (`proxy.ts`).
+- A disabled section answers 404 (its layout, through `lib/route-gates.ts`).
+  `/search`, an unknown category and a disabled one redirect to the first
+  enabled category, or to `/not-found` when none is enabled (the two search
+  pages).

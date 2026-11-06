@@ -11,7 +11,7 @@ Components are organized by feature/domain:
 - **compare/** – Compare: toggle button, store hydrator, Mirador viewer
 - **lightbox/** – Lightbox image comparison and tools
 - **content/** – Publications & content: intro section, article list, blog post preview, publication pages, share buttons
-- **search/** – Search page, results table, grid, timeline and map views, keyword bar, sort and view controls
+- **search/** – Search page, results table, grid and timeline views, keyword bar, sort and view controls
 - **filters/** – Dynamic facets and facet panels
 - **backoffice/** – Backoffice screens; shared building blocks in `backoffice/common/`, the shell in `backoffice/layout/`
 - **common/** – "View in backoffice" link shown on public pages to signed-in users

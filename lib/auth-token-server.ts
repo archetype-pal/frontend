@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
-import { authFetch } from '@/lib/api-fetch';
 import {
   AUTH_COOKIE_MAX_AGE_SECONDS,
   AUTH_SESSION_COOKIE,
@@ -15,34 +14,6 @@ import {
 export async function getServerAuthToken(): Promise<string | null> {
   const store = await cookies();
   return store.get(AUTH_TOKEN_COOKIE)?.value ?? null;
-}
-
-/** Whether `token` belongs to a superuser; any failure reads as "no". */
-export async function verifySuperuser(token: string): Promise<boolean> {
-  try {
-    const res = await authFetch('/api/v1/auth/profile', token);
-    if (!res.ok) return false;
-    const user = await res.json();
-    return user.is_superuser === true;
-  } catch {
-    return false;
-  }
-}
-
-type SuperuserCheck = { token: string; refusal?: never } | { token?: never; refusal: NextResponse };
-
-/**
- * The 401/403 gate every superuser-only route handler starts with: pass the
- * caller's token and either use `token` or return `refusal`.
- */
-export async function authorizeSuperuser(token: string | null): Promise<SuperuserCheck> {
-  if (!token) {
-    return { refusal: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
-  }
-  if (!(await verifySuperuser(token))) {
-    return { refusal: NextResponse.json({ error: 'Superuser access required' }, { status: 403 }) };
-  }
-  return { token };
 }
 
 function isHttps(request: NextRequest): boolean {

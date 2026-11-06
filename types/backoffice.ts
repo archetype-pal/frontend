@@ -236,9 +236,7 @@ export interface AdminHandListItem {
   item_part_display: string;
   script: number | null;
   script_name: string | null;
-  num: number;
-  priority: number;
-  is_default: boolean;
+  display_order: number;
   date: number | null;
   date_display: string | null;
   place: number | null;

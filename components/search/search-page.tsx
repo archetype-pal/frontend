@@ -39,9 +39,6 @@ const SearchDistributionPanel = React.lazy(() =>
 import { AdvancedSearchPanel } from '@/components/search/advanced-search-panel';
 import { MobileFilterSheet } from '@/components/search/mobile-filter-sheet';
 import { FieldVisibilityMenu } from '@/components/search/field-visibility-menu';
-const SearchMapView = React.lazy(() =>
-  import('@/components/search/search-map-view').then((m) => ({ default: m.SearchMapView }))
-);
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -78,7 +75,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
   const [showThumbnails, setShowThumbnails] = useShowThumbnails();
   const { getLabel } = useModelLabels();
   const { user } = useAuth();
-  const isStaff = Boolean(user?.is_staff);
+  const canAnnotate = Boolean(user?.capabilities?.annotate);
   const typeLabel = resolveResultTypeLabel(s.resultType, getLabel);
   const activeCount = s.countsByType[s.resultType];
   const router = useRouter();
@@ -320,7 +317,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               showGridToggle={s.showGridToggle}
               showTimelineToggle={s.showTimelineToggle}
               showDistributionToggle={s.showDistributionToggle}
-              showMapToggle={s.showMapToggle}
               hasTimelineData={s.hasTimelineData}
               distributionEnabled={s.distributionEnabled}
               className="hidden sm:inline-flex"
@@ -439,7 +435,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               showGridToggle={s.showGridToggle}
               showTimelineToggle={s.showTimelineToggle}
               showDistributionToggle={s.showDistributionToggle}
-              showMapToggle={s.showMapToggle}
               hasTimelineData={s.hasTimelineData}
               distributionEnabled={s.distributionEnabled}
               advancedEnabled={s.advancedSearch.enabled}
@@ -469,7 +464,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               counts={s.countsByType}
             />
           </div>
-          {s.resultType === 'graphs' && isStaff && (
+          {s.resultType === 'graphs' && canAnnotate && (
             <div className="flex items-center gap-2">
               <Label
                 htmlFor="annotating-mode-toggle"
@@ -593,7 +588,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
             {/* Table view renders flush (its sticky header carries the divider);
                 the other views get their own padding. */}
             <div className={cn('flex min-w-0 flex-col', s.viewMode !== 'table' && 'p-3')}>
-              {s.resultType === 'graphs' && s.annotatingMode && isStaff && (
+              {s.resultType === 'graphs' && s.annotatingMode && canAnnotate && (
                 <GraphSelectionToolbar
                   selectedCount={s.selection.selected.size}
                   pageCount={pageGraphIds.length}
@@ -644,25 +639,6 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       }
                     />
                   </React.Suspense>
-                ) : s.viewMode === 'map' ? (
-                  <React.Suspense
-                    fallback={
-                      <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
-                        {t('loadingMap')}
-                      </div>
-                    }
-                  >
-                    <SearchMapView
-                      cityDistribution={s.cityDistribution}
-                      onSelectCity={(city) =>
-                        s.handleFacetClick('', {
-                          type: 'selectFacet',
-                          facetKey: 'repository_city',
-                          value: city,
-                        })
-                      }
-                    />
-                  </React.Suspense>
                 ) : s.viewMode === 'distribution' ? (
                   <React.Suspense
                     fallback={
@@ -693,7 +669,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     highlightKeyword={s.submittedKeyword}
                     isFetching={s.isFetching}
                     thumbnailSize={thumbnailSize}
-                    annotatingMode={s.annotatingMode && isStaff}
+                    annotatingMode={s.annotatingMode && canAnnotate}
                     selectedIds={s.selection.selected}
                     onToggleSelect={toggleSelectionCapped}
                     onSelectMany={addManySelectionCapped}

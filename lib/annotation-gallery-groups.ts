@@ -9,7 +9,6 @@ import {
   allographGroupComparator,
   applyGraphFilters,
 } from '@/lib/annotation-gallery-filters';
-import { sortHandsByPriority } from '@/lib/hand-ordering';
 
 // Hand → allograph grouping for the per-image annotation gallery. Kept out of
 // the gallery component so it can be unit-tested in isolation.
@@ -36,7 +35,7 @@ export interface GroupLabels {
 }
 
 /**
- * Groups graphs by hand (in hand priority order, unattributed last), then by
+ * Groups graphs by hand (in the order `hands` arrives, the display order; unattributed last), then by
  * allograph in the given sort. A graph without an allograph still counts on
  * the tab, so it is listed too, in a group of its own that always sorts last.
  */
@@ -47,9 +46,8 @@ export function groupAnnotations(
   labels: GroupLabels,
   sort: SortKey = DEFAULT_SORT
 ): HandGroup[] {
-  const sortedHands = sortHandsByPriority(hands);
-  const handLabelById = new Map(sortedHands.map((h) => [h.id, h.name]));
-  const handRankById = new Map(sortedHands.map((h, index) => [h.id, index]));
+  const handLabelById = new Map(hands.map((h) => [h.id, h.name]));
+  const handRankById = new Map(hands.map((h, index) => [h.id, index]));
   const allographLabelById = new Map(allographs.map((a) => [a.id, formatAllographLabel(a)]));
   const compare = allographGroupComparator(sort);
   const handMap = new Map<number | null, Map<number | null, BackendGraph[]>>();

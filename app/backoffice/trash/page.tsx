@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { SortingState } from '@tanstack/react-table';
 import { Trash2, ExternalLink, RotateCcw, Image as ImageIcon, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DataPagination } from '@/components/ui/data-pagination';
 import {
   DataTable,
   sortableHeader,
@@ -32,9 +30,8 @@ import {
   restoreGraph,
   purgeGraph,
 } from '@/services/backoffice/annotations';
-import { usePageSize } from '@/hooks/backoffice/use-page-size';
+import { useServerList } from '@/hooks/backoffice/use-server-list';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { toOrdering } from '@/lib/backoffice/ordering';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { formatAge } from '@/lib/backoffice/format-age';
@@ -72,11 +69,7 @@ export default function TrashPage() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<TrashTabKey>('annotations');
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = usePageSize('trash', 50);
-  const tableRef = useRef<HTMLDivElement>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const ordering = toOrdering(sorting, ORDERING_FIELDS);
+  const list = useServerList('trash', 50, ORDERING_FIELDS);
   const [purgeTarget, setPurgeTarget] = useState<GraphItem | null>(null);
   const [bulkPurge, setBulkPurge] = useState<{
     ids: string[];
@@ -94,21 +87,13 @@ export default function TrashPage() {
   // Reset to page 0: a narrower result set can strand you on a page that's gone.
   const updateFilter = (patch: Partial<typeof filterState>) => {
     setFilterState((prev) => ({ ...prev, ...patch }));
-    setPage(0);
+    list.setPage(0);
   };
 
   // One object for both the cache key and the request, so they cannot drift.
   // getTrashedGraphs adds `deleted`; it is in the key to keep the trash list
   // from colliding with the live list on the same filters.
-  const params = useMemo(
-    () => ({
-      limit: pageSize,
-      offset: page * pageSize,
-      ...buildTrashFilterParams(filterState),
-      ...(ordering ? { ordering } : {}),
-    }),
-    [page, pageSize, filterState, ordering]
-  );
+  const params = { ...list.params, ...buildTrashFilterParams(filterState) };
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.graphs.list({ deleted: 'true', ...params }),
@@ -438,7 +423,7 @@ export default function TrashPage() {
             className="mt-2 text-xs"
             onClick={() => {
               setFilterState(EMPTY_TRASH_FILTERS);
-              setPage(0);
+              list.setPage(0);
             }}
           >
             {t('trash.clearFilters')}
@@ -447,7 +432,6 @@ export default function TrashPage() {
       </div>
 
       <DataTable
-        tableRef={tableRef}
         key={`${activeTab}-${tableEpoch}`}
         columns={columns}
         data={rows}
@@ -455,28 +439,11 @@ export default function TrashPage() {
         isLoading={isLoading}
         isStale={isPlaceholderData}
         onRetry={refetch}
-        pagination={false}
-        sorting={sorting}
-        onSortingChange={(next) => {
-          setSorting(next);
-          setPage(0);
-        }}
+        {...list.tableProps(data?.count)}
         enableRowSelection
         enableColumnVisibility
         bulkActions={bulkActions}
       />
-      <DataPagination
-        scrollTargetRef={tableRef}
-        totalItems={totalCount}
-        page={page + 1}
-        pageSize={pageSize}
-        onPageChange={(p) => setPage(p - 1)}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(0);
-        }}
-      />
-
       <ConfirmDialog
         open={!!purgeTarget}
         onOpenChange={(open) => !open && setPurgeTarget(null)}
