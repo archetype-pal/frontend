@@ -220,6 +220,18 @@ describe('<NetworkExplorer>', () => {
     expect(heading().textContent).toBe('GD55/1');
   });
 
+  it('draws a node with no connections at the size of any other', async () => {
+    const lone = { id: 'charter:9', label: 'A lone charter', kind: 'charter' as const, record: 9 };
+    services.getNetwork.mockResolvedValue({ ...NETWORK, nodes: [...NETWORK.nodes, lone] });
+    renderWithQueryClient(<NetworkExplorer initialNode={lone.id} />);
+    await waitFor(() => expect(heading().textContent).toBe(lone.label));
+
+    const drawing = screen.getByTestId('network-drawing');
+    const width = Number(drawing.getAttribute('viewBox')!.split(' ')[2]);
+
+    expect(width).toBeGreaterThanOrEqual(480);
+  });
+
   it('says how many connections are left out of a crowded drawing', async () => {
     const people = Array.from({ length: 130 }, (_, i) =>
       node(`person:p${i}`, `Person ${i}`, 'person')

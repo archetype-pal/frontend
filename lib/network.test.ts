@@ -224,6 +224,19 @@ describe('nodeHref', () => {
 });
 
 describe('groupConnections', () => {
+  it('lists one name once, however many times a charter repeats it', () => {
+    const repeated = indexNetwork({
+      nodes: [node('charter:1', 'A charter', 'charter'), node('person:w', 'Willelmus', 'person')],
+      edges: [edge('person:w', 'charter:1', 'witness'), edge('person:w', 'charter:1', 'witness')],
+    });
+
+    const [[, items]] = groupConnections(repeated.connections.get('charter:1')!) as [
+      [string, unknown[]],
+    ];
+
+    expect(items).toHaveLength(1);
+  });
+
   it('phrases a connection from the side it is seen from, and a statement apart from a role', () => {
     const [toCharter] = index.connections.get('person:hugo')!;
     const [fromPerson] = index.connections
