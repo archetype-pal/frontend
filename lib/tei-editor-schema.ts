@@ -1,6 +1,7 @@
 import StarterKit from '@tiptap/starter-kit';
 
 import { teiEditorExtensions } from '@/lib/tei-tiptap';
+import { DeleteDropsMarks } from '@/lib/tiptap-delete-drops-marks';
 
 /**
  * The schema both TEI rich editors share (the charter text editor and the
@@ -32,4 +33,5 @@ export const teiEditorSchema = [
     underline: false,
   }),
   ...teiEditorExtensions,
+  DeleteDropsMarks,
 ];
