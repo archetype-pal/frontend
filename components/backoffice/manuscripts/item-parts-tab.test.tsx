@@ -9,6 +9,8 @@ import type { CurrentItemOption, ItemPartNested } from '@/types/backoffice';
 import { createTestQueryClient } from '@/test/query-client';
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+// The tab follows its pages' letter requests, which link to the review queue.
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
 
 vi.mock('@/contexts/model-labels-context', () => ({
   useModelLabels: () => ({ getLabel: () => 'Shelfmark' }),
