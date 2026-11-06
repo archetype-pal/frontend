@@ -57,7 +57,9 @@ describe('<BreakerSummary>', () => {
       <BreakerSummary summary={summary({ per_actor_cap_micros: 1_000_000, currencies: ['USD'] })} />
     );
 
-    expect(screen.getByText('No daily cap is set, so hosted providers are refused.')).not.toBeNull();
+    expect(
+      screen.getByText('No daily cap is set, so hosted providers are refused.')
+    ).not.toBeNull();
     expect(screen.queryByRole('meter')).toBeNull();
     expect(screen.getByText('Each person may spend up to $1.00 a day.')).not.toBeNull();
   });
