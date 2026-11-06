@@ -382,6 +382,7 @@ export interface GraphItem {
   item_image: number;
   image_display: string;
   historical_item: number;
+  item_part: number;
   annotation: Record<string, unknown>;
   annotation_type: string | null;
   // Null for editorial and TEXT-typed graphs: the backend's

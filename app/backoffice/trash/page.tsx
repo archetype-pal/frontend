@@ -265,7 +265,7 @@ export default function TrashPage() {
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
             <Link
-              href={`/manuscripts/${row.original.historical_item}/images/${row.original.item_image}`}
+              href={`/manuscripts/${row.original.item_part}/images/${row.original.item_image}`}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t('trash.openImage')}

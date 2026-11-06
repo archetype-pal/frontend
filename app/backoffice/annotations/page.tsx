@@ -146,7 +146,7 @@ export default function AnnotationsPage() {
         id: 'actions',
         cell: ({ row }) => (
           <Link
-            href={`/manuscripts/${row.original.historical_item}/images/${row.original.item_image}`}
+            href={`/manuscripts/${row.original.item_part}/images/${row.original.item_image}`}
             target="_blank"
           >
             <Button variant="ghost" size="icon" className="h-7 w-7">
