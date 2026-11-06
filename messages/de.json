@@ -3429,6 +3429,28 @@
       "toastHasTranscription": "Seite #{id} hat bereits eine Transkription.",
       "toastOpenTranscription": "Öffnen",
       "toastAskFailed": "Entwurf von Seite #{id} konnte nicht gestartet werden"
+    },
+    "pageLetters": {
+      "title": "Buchstaben",
+      "intro": "Die Buchstabenmodelle finden die Buchstaben dieser Seite und legen von jedem Allograph die wenigen wahrscheinlichsten in die Prüfwarteschlange, aber keinen, der hier schon markiert oder vorgeschlagen ist. Sie laufen auf diesem Server: Die Seite geht nirgendwohin, und nichts wird berechnet.",
+      "button": "Buchstaben vorschlagen",
+      "off": "Das Vorschlagen von Buchstaben durch ein Modell ist auf diesem Server ausgeschaltet.",
+      "working": "Buchstaben werden vorgeschlagen…",
+      "workingTitle": "Die Buchstabenmodelle lesen diese Seite. Das dauert weniger als eine Minute.",
+      "thumbnailWorking": "Buchstaben werden vorgeschlagen",
+      "toastQueued": "Die Buchstaben von Seite #{id} werden vorgeschlagen. Sie erfahren, wenn sie in der Warteschlange sind.",
+      "toastAlready": "Die Buchstaben von Seite #{id} werden bereits vorgeschlagen.",
+      "toastProposed": "{count, plural, =1 {1 Buchstabe} other {# Buchstaben}} von Seite #{id} warten in der Prüfwarteschlange.",
+      "toastNone": "Die Modelle fanden auf Seite #{id} nichts, was sich vorzuschlagen lohnt.",
+      "toastNoneDescription": "{found, plural, =0 {Sie lasen keinen Buchstaben.} =1 {Sie lasen 1 Buchstaben, aber er ist schon markiert, oder sie waren sich nicht sicher.} other {Sie lasen # Buchstaben, aber diese sind schon markiert, oder sie waren sich nicht sicher.}}",
+      "toastReview": "Prüfen",
+      "toastFailed": "Die Buchstaben von Seite #{id} konnten nicht vorgeschlagen werden",
+      "toastRefused": "Die Buchstaben von Seite #{id} wurden nicht vorgeschlagen",
+      "toastAskFailed": "Das Vorschlagen der Buchstaben von Seite #{id} konnte nicht gestartet werden",
+      "lastProposed": "Zuletzt {count, plural, =1 {wurde 1 Buchstabe} other {wurden # Buchstaben}} vorgeschlagen",
+      "lastReview": "Prüfen",
+      "lastNone": "Zuletzt fand sich nichts, was sich vorzuschlagen lohnte",
+      "lastFailed": "Zuletzt brach es ab: {error}"
     }
   },
   "login": {

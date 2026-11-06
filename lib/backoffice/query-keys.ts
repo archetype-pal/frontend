@@ -131,6 +131,11 @@ export const backofficeKeys = {
     all: () => [...backofficeKeys.all, 'page-drafts'] as const,
     active: () => [...backofficeKeys.pageDrafts.all(), 'active'] as const,
   },
+  pageLetters: {
+    all: () => [...backofficeKeys.all, 'page-letters'] as const,
+    active: () => [...backofficeKeys.pageLetters.all(), 'active'] as const,
+    page: (id: number) => [...backofficeKeys.pageLetters.all(), 'page', id] as const,
+  },
   reviewQueue: {
     all: () => [...backofficeKeys.all, 'review-queue'] as const,
   },

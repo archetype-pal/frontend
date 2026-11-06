@@ -27,13 +27,14 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
+import { PageLettersSection } from '@/components/backoffice/page-letters';
 import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
 import { updateItemImage, deleteItemImage } from '@/services/backoffice/manuscripts';
 import { searchItemParts } from '@/services/tei-ref-search';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { formatApiError, toastApiError } from '@/lib/backoffice/format-api-error';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
-import type { ItemPartImage } from '@/types/backoffice';
+import type { ItemPartImage, LetterRequest } from '@/types/backoffice';
 
 interface ItemImageEditDialogProps {
   open: boolean;
@@ -42,6 +43,8 @@ interface ItemImageEditDialogProps {
   historicalItemId: number;
   itemPartId: number;
   itemPartLabel: string;
+  /** The page's letters request under way, if any, and whether asking is on; omitted for a user who cannot ask. */
+  letters?: { run: LetterRequest | undefined; on: boolean | undefined };
 }
 
 interface PartChoice {
@@ -56,6 +59,7 @@ export function ItemImageEditDialog({
   historicalItemId,
   itemPartId,
   itemPartLabel,
+  letters,
 }: ItemImageEditDialogProps) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
@@ -199,6 +203,10 @@ export function ItemImageEditDialog({
                 className="h-9"
               />
             </div>
+
+            {letters && (
+              <PageLettersSection pageId={image.id} run={letters.run} lettersOn={letters.on} />
+            )}
           </div>
 
           <DialogFooter className="border-t pt-3 sm:justify-between">

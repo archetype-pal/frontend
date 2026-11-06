@@ -3429,6 +3429,28 @@
       "toastHasTranscription": "Page #{id} already has a transcription.",
       "toastOpenTranscription": "Open it",
       "toastAskFailed": "Could not start drafting page #{id}"
+    },
+    "pageLetters": {
+      "title": "Letters",
+      "intro": "The letter models find this page's letters and file the likeliest few of each allograph in the review queue, none already marked or proposed here. They run on this server: the page is sent nowhere else, and nothing is billed.",
+      "button": "Propose letters",
+      "off": "Proposing letters with a model is switched off on this server.",
+      "working": "Proposing letters…",
+      "workingTitle": "The letter models are reading this page. It takes under a minute.",
+      "thumbnailWorking": "Proposing letters",
+      "toastQueued": "Page #{id}'s letters are being proposed. You will be told when they are in the queue.",
+      "toastAlready": "Page #{id}'s letters are already being proposed.",
+      "toastProposed": "{count, plural, =1 {1 letter} other {# letters}} from page #{id} wait in the review queue.",
+      "toastNone": "The models found nothing on page #{id} worth proposing.",
+      "toastNoneDescription": "{found, plural, =0 {They read no letters.} =1 {They read 1 letter, but it is marked already, or they were not sure of it.} other {They read # letters, but those are marked already, or they were not sure of them.}}",
+      "toastReview": "Review",
+      "toastFailed": "Page #{id}'s letters could not be proposed",
+      "toastRefused": "Page #{id}'s letters were not proposed",
+      "toastAskFailed": "Could not start proposing page #{id}'s letters",
+      "lastProposed": "Last time, {count, plural, =1 {1 letter was} other {# letters were}} proposed",
+      "lastReview": "Review them",
+      "lastNone": "Last time, nothing worth proposing was found",
+      "lastFailed": "Last time it stopped: {error}"
     }
   },
   "login": {

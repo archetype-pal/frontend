@@ -537,6 +537,25 @@ export type PageDraftStatus = 'queued' | 'working' | 'drafted' | 'failed' | 'ref
  * A user's request that a model draft one page's transcription (AI programme
  * W1.4). What it files is an ordinary Draft, marked machine-drafted, for review.
  */
+export type LetterRequestStatus = 'queued' | 'working' | 'proposed' | 'failed' | 'refused';
+
+/** A user's request that one page's letters be proposed by the letter models (AI programme W1.1). */
+export interface LetterRequest {
+  id: number;
+  item_image: number;
+  status: LetterRequestStatus;
+  /** Why it stopped, fit to show; empty unless it failed or was refused. */
+  error: string;
+  requested_by: string | null;
+  /** The inference that found the letters: the review queue filters by it. */
+  ml_job: number | null;
+  /** The letters the models found on the page, and how many were filed as proposals. */
+  found: number;
+  proposed: number;
+  created: string;
+  updated: string;
+}
+
 export interface PageDraft {
   id: number;
   item_image: number;

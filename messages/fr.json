@@ -3429,6 +3429,28 @@
       "toastHasTranscription": "La page #{id} a déjà une transcription.",
       "toastOpenTranscription": "L’ouvrir",
       "toastAskFailed": "Impossible de lancer la rédaction de la page #{id}"
+    },
+    "pageLetters": {
+      "title": "Lettres",
+      "intro": "Les modèles de lettres repèrent les lettres de cette page et versent dans la file de relecture les quelques plus probables de chaque allographe, sauf celles déjà marquées ou proposées ici. Ils tournent sur ce serveur : la page n’est envoyée nulle part ailleurs, et rien n’est facturé.",
+      "button": "Proposer les lettres",
+      "off": "La proposition de lettres par un modèle est désactivée sur ce serveur.",
+      "working": "Proposition des lettres…",
+      "workingTitle": "Les modèles de lettres lisent cette page. Cela prend moins d’une minute.",
+      "thumbnailWorking": "Proposition des lettres en cours",
+      "toastQueued": "Les lettres de la page n° {id} sont en cours de proposition. Vous serez prévenu quand elles seront dans la file.",
+      "toastAlready": "Les lettres de la page n° {id} sont déjà en cours de proposition.",
+      "toastProposed": "{count, plural, =1 {1 lettre} other {# lettres}} de la page n° {id} attendent dans la file de relecture.",
+      "toastNone": "Les modèles n’ont rien trouvé à proposer sur la page n° {id}.",
+      "toastNoneDescription": "{found, plural, =0 {Ils n’ont lu aucune lettre.} =1 {Ils ont lu 1 lettre, mais elle est déjà marquée, ou ils n’en étaient pas sûrs.} other {Ils ont lu # lettres, mais elles sont déjà marquées, ou ils n’en étaient pas sûrs.}}",
+      "toastReview": "Relire",
+      "toastFailed": "Les lettres de la page n° {id} n’ont pas pu être proposées",
+      "toastRefused": "Les lettres de la page n° {id} n’ont pas été proposées",
+      "toastAskFailed": "Impossible de lancer la proposition des lettres de la page n° {id}",
+      "lastProposed": "La dernière fois, {count, plural, =1 {1 lettre a été proposée} other {# lettres ont été proposées}}",
+      "lastReview": "Les relire",
+      "lastNone": "La dernière fois, rien ne valait d’être proposé",
+      "lastFailed": "La dernière fois, cela s’est arrêté : {error}"
     }
   },
   "login": {
