@@ -2336,7 +2336,7 @@
       "spent": "{amount} dépensés",
       "ofCap": "sur un plafond quotidien de {cap} ({percent} %).",
       "capMeterLabel": "Part du plafond quotidien dépensée",
-      "noCap": "Aucun plafond quotidien n’est fixé.",
+      "noCap": "Aucun plafond quotidien n’est fixé : les fournisseurs hébergés sont donc refusés.",
       "perActorCap": "Chaque personne peut dépenser jusqu’à {cap} par jour.",
       "mixedCurrencies": "Ces coûts sont en {currencies}, et les plafonds les additionnent comme s’ils étaient dans une seule devise.",
       "outcomesTitle": "Appels des dernières 24 heures",

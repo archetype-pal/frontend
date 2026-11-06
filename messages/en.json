@@ -2336,7 +2336,7 @@
       "spent": "{amount} spent",
       "ofCap": "of a {cap} daily cap ({percent}%).",
       "capMeterLabel": "Share of the daily cap spent",
-      "noCap": "No daily cap is set.",
+      "noCap": "No daily cap is set, so hosted providers are refused.",
       "perActorCap": "Each person may spend up to {cap} a day.",
       "mixedCurrencies": "These costs are in {currencies}, and the caps add them as if they were one currency.",
       "outcomesTitle": "Calls in the last 24 hours",

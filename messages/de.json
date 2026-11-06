@@ -2336,7 +2336,7 @@
       "spent": "{amount} ausgegeben",
       "ofCap": "von einer Tagesgrenze von {cap} ({percent} %).",
       "capMeterLabel": "Ausgeschöpfter Anteil der Tagesgrenze",
-      "noCap": "Es ist keine Tagesgrenze gesetzt.",
+      "noCap": "Es ist keine Tagesgrenze gesetzt, daher werden gehostete Anbieter abgelehnt.",
       "perActorCap": "Jede Person darf bis zu {cap} am Tag ausgeben.",
       "mixedCurrencies": "Diese Kosten sind in {currencies}, und die Grenzen addieren sie, als wären sie eine Währung.",
       "outcomesTitle": "Aufrufe der letzten 24 Stunden",
