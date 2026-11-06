@@ -20,11 +20,8 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 
 import { useAuth } from '@/contexts/auth-context';
-import {
-  fetchReviewQueue,
-  transitionImageText,
-  type QueueEntry,
-} from '@/services/backoffice/review-queue';
+import { fetchReviewQueue, transitionImageText } from '@/services/backoffice/review-queue';
+import type { ImageTextListRow } from '@/services/backoffice/image-texts-list';
 import { Button } from '@/components/ui/button';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
@@ -33,7 +30,7 @@ export default function ReviewQueuePage() {
   const queryClient = useQueryClient();
   const t = useTranslations('backoffice');
 
-  const { data: queue = [], isLoading } = useQuery<QueueEntry[]>({
+  const { data: queue = [], isLoading } = useQuery<ImageTextListRow[]>({
     queryKey: backofficeKeys.reviewQueue.all(),
     queryFn: () => fetchReviewQueue(),
     enabled: isAuthenticated,
@@ -83,7 +80,7 @@ export default function ReviewQueuePage() {
   );
 }
 
-function ReviewRow({ row, onTransitioned }: { row: QueueEntry; onTransitioned: () => void }) {
+function ReviewRow({ row, onTransitioned }: { row: ImageTextListRow; onTransitioned: () => void }) {
   const [note, setNote] = useState('');
   const t = useTranslations('backoffice');
   const approve = useMutation({

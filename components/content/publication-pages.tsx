@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { cache, Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -21,14 +21,15 @@ import { BackofficeLink } from '@/components/common/backoffice-link';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
 
-export async function fetchPublicationBySlug(slug: string): Promise<Publication | null> {
+/** One read per request: the route's layout checks it exists, then the page renders it. */
+export const fetchPublicationBySlug = cache(async (slug: string): Promise<Publication | null> => {
   try {
     return await getPublicationItem(slug);
   } catch (error) {
     if (error instanceof PublicationNotFoundError) return null;
     throw error;
   }
-}
+});
 
 export async function PublicationListPage({ kind }: { kind: PublicationKind }) {
   const config = PUBLICATION_KIND_CONFIG[kind];

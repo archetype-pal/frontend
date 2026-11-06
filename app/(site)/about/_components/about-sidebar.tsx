@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { getMenuHeadings, getPublishedPages } from '@/lib/pages-server';
-import { pageHref, resolvePageText, type PageLocale } from '@/lib/pages';
+import { listedHeading, pageHref, resolvePageText, type PageLocale } from '@/lib/pages';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { getDefaultSearchCategory } from '@/lib/site-features';
 import { searchHref } from '@/lib/search-routing';
@@ -19,9 +19,6 @@ export async function AboutSidebar({ menuHeading }: { menuHeading: string | null
     readSiteFeatures(),
   ]);
   const heading = menuHeadings.find((h) => h.slug === menuHeading) ?? null;
-  // Same fallback as the header: a page whose heading is unknown sits under About.
-  const pageHeading = (slug: string | null) =>
-    slug && menuHeadings.some((h) => h.slug === slug) ? slug : null;
   const defaultSearchType = getDefaultSearchCategory(siteFeatures);
   // All about pages (including the 3 former built-in ones — About the
   // Project, Historical Context, Accessibility Statement) are now DB-backed
@@ -29,7 +26,7 @@ export async function AboutSidebar({ menuHeading }: { menuHeading: string | null
   // non-page link kept alongside them, under About only.
   const links = [
     ...pages
-      .filter((page) => pageHeading(page.menu_heading) === (heading?.slug ?? null))
+      .filter((page) => listedHeading(page.menu_heading, menuHeadings) === (heading?.slug ?? null))
       .map((page) => ({
         href: pageHref(page.slug),
         label: resolvePageText(page.title, locale as PageLocale) || page.slug,

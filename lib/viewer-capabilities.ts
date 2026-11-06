@@ -3,33 +3,32 @@ import type {
   ViewerCapabilities,
   ViewerMode,
 } from '@/types/annotation-viewer';
+import type { UserCapabilities } from '@/types';
 
-export function getViewerCapabilities(mode: ViewerMode = 'public'): ViewerCapabilities {
-  if (mode === 'editor') {
-    return {
-      canCreatePublicAnnotations: true,
-      canPersistPublicAnnotations: true,
-      canCreateEditorialAnnotations: true,
-      canPersistEditorialAnnotations: true,
-      canDeleteAnnotations: true,
-      canModifyAnnotations: true,
-      canViewEditorialControls: true,
-      canUseSettings: true,
-      canUseEditorSettings: true,
-    };
-  }
-
+/**
+ * What the viewer offers, from what the API says the user may do. Anyone may sketch a draft;
+ * saving, editing and deleting need `annotate`, and the editorial kind needs
+ * `annotate_editorially`, the same rules the write endpoints enforce.
+ */
+export function getViewerCapabilities(user?: UserCapabilities | null): ViewerCapabilities {
+  const annotate = Boolean(user?.annotate);
+  const editorial = Boolean(user?.annotate_editorially);
   return {
     canCreatePublicAnnotations: true,
-    canPersistPublicAnnotations: false,
-    canCreateEditorialAnnotations: false,
-    canPersistEditorialAnnotations: false,
-    canDeleteAnnotations: false,
-    canModifyAnnotations: false,
-    canViewEditorialControls: false,
+    canPersistPublicAnnotations: annotate,
+    canCreateEditorialAnnotations: editorial,
+    canPersistEditorialAnnotations: editorial,
+    canDeleteAnnotations: annotate,
+    canModifyAnnotations: annotate,
+    canViewEditorialControls: annotate,
     canUseSettings: true,
-    canUseEditorSettings: false,
+    canUseEditorSettings: annotate,
   };
+}
+
+/** The viewer's mode follows whether the user may annotate. */
+export function getViewerMode(user?: UserCapabilities | null): ViewerMode {
+  return user?.annotate ? 'editor' : 'public';
 }
 
 export function canCreateAnnotationKind(

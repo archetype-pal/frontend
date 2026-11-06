@@ -58,7 +58,6 @@ describe('image-text write helpers', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        status: 'Draft',
         content: '',
         language: '',
         item_image: 1,

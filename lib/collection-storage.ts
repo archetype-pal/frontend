@@ -34,16 +34,12 @@ export type CollectionStorageState = {
   collections: NamedCollection[];
 };
 
-export type CollectionPersistenceOptions = {
-  writeVersionedState: boolean;
-  writeLegacyItems: boolean;
-};
-
 type StorageReader = Pick<Storage, 'getItem'>;
-type StorageWriter = Pick<Storage, 'setItem'>;
+type StorageWriter = Pick<Storage, 'setItem' | 'removeItem'>;
 
 export const COLLECTION_STORAGE_VERSION = 2;
 export const COLLECTION_STORAGE_KEY = 'archetype_collections';
+/** The single-collection key the app wrote before the versioned format; read once, then removed. */
 export const LEGACY_COLLECTION_STORAGE_KEY = 'archetype_collection';
 export const MAX_COLLECTION_NAME_LENGTH = 100;
 
@@ -76,19 +72,13 @@ function sanitizeItems(value: unknown): CollectionItem[] {
   return items;
 }
 
-function readLegacyItems(storage: StorageReader): {
-  items: CollectionItem[];
-  canWriteLegacyItems: boolean;
-} {
+function readLegacyItems(storage: StorageReader): CollectionItem[] {
   const raw = storage.getItem(LEGACY_COLLECTION_STORAGE_KEY);
-  if (raw === null) return { items: [], canWriteLegacyItems: true };
-
+  if (raw === null) return [];
   try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return { items: [], canWriteLegacyItems: false };
-    return { items: sanitizeItems(parsed), canWriteLegacyItems: true };
+    return sanitizeItems(JSON.parse(raw));
   } catch {
-    return { items: [], canWriteLegacyItems: false };
+    return [];
   }
 }
 
@@ -161,43 +151,15 @@ export function createDefaultCollectionStorage(
   };
 }
 
-export function loadCollectionStorage(storage: StorageReader): {
-  state: CollectionStorageState;
-  persistenceOptions: CollectionPersistenceOptions;
-} {
+/**
+ * The stored collections. Versioned data that will not parse is replaced by a fresh default on
+ * the next save. A browser that last ran before the versioned format has only the legacy key:
+ * its items become the default collection, once, and `saveCollectionStorage` then removes the key.
+ */
+export function loadCollectionStorage(storage: StorageReader): CollectionStorageState {
   const versionedRaw = storage.getItem(COLLECTION_STORAGE_KEY);
-  const legacy = readLegacyItems(storage);
-
-  if (versionedRaw !== null) {
-    const state = parseVersionedState(versionedRaw);
-    if (state) {
-      return {
-        state,
-        persistenceOptions: {
-          writeVersionedState: true,
-          writeLegacyItems: true,
-        },
-      };
-    }
-
-    // Preserve malformed or newer-version data. The app can still use the
-    // legacy mirror without destructively replacing data it does not understand.
-    return {
-      state: createDefaultCollectionStorage(legacy.items),
-      persistenceOptions: {
-        writeVersionedState: false,
-        writeLegacyItems: legacy.canWriteLegacyItems,
-      },
-    };
-  }
-
-  return {
-    state: createDefaultCollectionStorage(legacy.items),
-    persistenceOptions: {
-      writeVersionedState: legacy.canWriteLegacyItems,
-      writeLegacyItems: legacy.canWriteLegacyItems,
-    },
-  };
+  const state = versionedRaw === null ? null : parseVersionedState(versionedRaw);
+  return state ?? createDefaultCollectionStorage(readLegacyItems(storage));
 }
 
 export function getActiveCollection(state: CollectionStorageState): NamedCollection {
@@ -383,27 +345,12 @@ export function setActiveCollection(
   };
 }
 
-export function saveCollectionStorage(
-  storage: StorageWriter,
-  state: CollectionStorageState,
-  options: CollectionPersistenceOptions
-): void {
-  if (options.writeVersionedState) {
-    try {
-      storage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // Ignore storage errors so collection actions still work for this tab.
-    }
-  }
-
-  if (options.writeLegacyItems) {
-    try {
-      storage.setItem(
-        LEGACY_COLLECTION_STORAGE_KEY,
-        JSON.stringify(getActiveCollection(state).items)
-      );
-    } catch {
-      // Keep the versioned write independent from the rollback-compatible mirror.
-    }
+export function saveCollectionStorage(storage: StorageWriter, state: CollectionStorageState): void {
+  try {
+    storage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify(state));
+    // The versioned write landed, so a legacy key read at load has been carried over.
+    storage.removeItem(LEGACY_COLLECTION_STORAGE_KEY);
+  } catch {
+    // Ignore storage errors so collection actions still work for this tab.
   }
 }

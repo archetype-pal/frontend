@@ -1,11 +1,10 @@
 /**
  * msDesc vocabulary module (TEI descriptions roadmap Phase 0.2) — the msDesc
  * analog of the charter editor's `SEG_TYPES`: one source of truth for the four
- * description areas, the ODD's controlled attribute vocabularies, the
- * prose-vs-phrase leaf classification, and each area's element palette.
+ * description areas and the ODD's controlled attribute vocabularies.
  *
  * Derived from `msdesc-minimal/msdesc-minimal.odd` (valItem lists transcribed
- * verbatim) and `msdesc-minimal-template.xml` (area skeletons). Canonical TEI
+ * verbatim). Canonical TEI
  * attribute values (e.g. `@material="perg"`) are serialized untranslated; the
  * display labels this module points at are next-intl KEYS relative to the
  * `backoffice` namespace (components call `useTranslations('backoffice')`).
@@ -181,103 +180,3 @@ export function msdescVocabLabelKey<V extends MsDescVocabId>(
 ): string {
   return `msdesc.vocab.${vocab}.${value}`;
 }
-
-// ── Leaf classification (roadmap 0.2 / findings §8.1) ───────────────────
-
-/**
- * `<p>`-rooted prose leaves: their inner `<p>`-sequence round-trips
- * byte-exact through the Phase-H rich editor, so they are rich-editable
- * (the form/section layer owns the container element itself; `summary` is
- * specialPara content authored as prose).
- */
-export const MSDESC_PROSE_LEAVES = [
-  'provenance',
-  'decoNote',
-  'layout',
-  'summary',
-  'note',
-  'seal',
-] as const;
-
-/**
- * Phrase-content leaves: they cannot legally contain `<p>`, so they fail the
- * byte-exact rich gate — edited as plain form fields with the `@key`/`@target`
- * stamping shim (roadmap 3.2) instead of the rich editor.
- */
-export const MSDESC_PHRASE_LEAVES = ['author', 'origPlace', 'origDate', 'title'] as const;
-
-// ── Per-area element palettes ───────────────────────────────────────────
-
-/**
- * The elements each area's canonical skeleton contains, derived from
- * `msdesc-minimal-template.xml` (including its commented-out optional
- * elements). `<p>` is listed only where the skeleton itself carries
- * `<p>`-sequences; inline phrase markup (persName, date, q, hi, ref, …) is
- * the rich editor's concern and is deliberately not listed here.
- */
-export const MSDESC_AREA_PALETTES = {
-  msIdentifier: [
-    'country',
-    'settlement',
-    'institution',
-    'repository',
-    'idno',
-    'msName',
-    'altIdentifier',
-  ],
-  msContents: [
-    'summary',
-    'textLang',
-    'msItem',
-    'locus',
-    'author',
-    'title',
-    'rubric',
-    'incipit',
-    'explicit',
-    'finalRubric',
-    'note',
-    'bibl',
-  ],
-  physDesc: [
-    'objectDesc',
-    'supportDesc',
-    'support',
-    'material',
-    'extent',
-    'measure',
-    'dimensions',
-    'height',
-    'width',
-    'foliation',
-    'collation',
-    'catchwords',
-    'signatures',
-    'condition',
-    'layoutDesc',
-    'layout',
-    'handDesc',
-    'handNote',
-    'decoDesc',
-    'summary',
-    'decoNote',
-    'additions',
-    'bindingDesc',
-    'binding',
-    'sealDesc',
-    'seal',
-    'accMat',
-    'p',
-  ],
-  history: [
-    'origin',
-    'origDate',
-    'origPlace',
-    'country',
-    'region',
-    'settlement',
-    'provenance',
-    'acquisition',
-    'p',
-  ],
-} as const satisfies Record<MsDescAreaId, readonly string[]>;

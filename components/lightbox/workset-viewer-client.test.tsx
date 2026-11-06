@@ -18,7 +18,6 @@ vi.mock('@/components/lightbox/lightbox-viewer', () => ({
 vi.mock('@/contexts/collection-context', () => ({
   useCollection: () => ({
     collections: [{ id: 'existing', name: 'Research', items: [] }],
-    canManageCollections: true,
     createCollection: createCollectionMock,
   }),
 }));

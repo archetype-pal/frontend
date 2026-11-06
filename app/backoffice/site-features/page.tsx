@@ -24,6 +24,8 @@ import {
   hasEnabledSearchCategory,
   hasInvalidThemeColor,
   normalizeSectionOrder,
+  parseSiteFeatures,
+  SITE_FEATURES_PATH,
   type NavKey,
   type SiteFeaturesConfig,
   type SectionKey,
@@ -34,26 +36,20 @@ import {
 import type { ResultType } from '@/lib/search-types';
 import { getMenuHeadings } from '@/services/backoffice/pages';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
+import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { backofficeGet, backofficePut } from '@/services/backoffice/api-client';
 
 async function fetchSiteFeatures(): Promise<SiteFeaturesConfig> {
-  const res = await fetch('/api/app-settings');
-  if (!res.ok) throw new Error('Failed to load site features');
-  return res.json();
+  const config = parseSiteFeatures(await backofficeGet<unknown>(SITE_FEATURES_PATH));
+  if (!config) throw new Error('Unexpected site features response');
+  return config;
 }
 
+/** Django merges the flags, theme and branding over what it stores, and answers with the result. */
 async function saveSiteFeatures(config: SiteFeaturesConfig): Promise<SiteFeaturesConfig> {
-  const res = await fetch('/api/app-settings', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(config),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error || 'Failed to save');
-  }
-  return res.json();
+  const saved = parseSiteFeatures(await backofficePut<unknown>(SITE_FEATURES_PATH, config));
+  if (!saved) throw new Error('Unexpected site features response');
+  return saved;
 }
 
 export default function SiteFeaturesPage() {
@@ -103,7 +99,7 @@ export default function SiteFeaturesPage() {
       router.refresh();
     },
     onError: (err: Error) => {
-      toast.error(t('siteFeatures.toastFailedSave'), { description: err.message });
+      toast.error(t('siteFeatures.toastFailedSave'), { description: formatApiError(err) });
     },
   });
 

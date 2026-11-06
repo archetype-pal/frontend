@@ -18,7 +18,6 @@ import {
   setActiveCollection,
   updateActiveCollectionItems,
   type CollectionItem,
-  type CollectionPersistenceOptions,
   type NamedCollection,
 } from '@/lib/collection-storage';
 
@@ -31,7 +30,6 @@ type CollectionContextType = {
   // False until localStorage has been read after mount; until then `items` is
   // the empty default, not the user's real collection.
   isHydrated: boolean;
-  canManageCollections: boolean;
   addItem: (item: CollectionItem) => void;
   mergeCollectionItems: (collectionId: string, items: CollectionItem[]) => void;
   removeItem: (id: number, type: 'image' | 'graph') => void;
@@ -47,11 +45,6 @@ type CollectionContextType = {
 
 const CollectionContext = React.createContext<CollectionContextType | undefined>(undefined);
 
-const DEFAULT_PERSISTENCE_OPTIONS: CollectionPersistenceOptions = {
-  writeVersionedState: true,
-  writeLegacyItems: true,
-};
-
 function mergeDefinedItemFields(current: CollectionItem, update: CollectionItem): CollectionItem {
   return Object.fromEntries([
     ...Object.entries(current),
@@ -62,7 +55,6 @@ function mergeDefinedItemFields(current: CollectionItem, update: CollectionItem)
 export function CollectionProvider({ children }: { children: React.ReactNode }) {
   // Always start with an empty collection to avoid hydration mismatch.
   const [storageState, setStorageState] = React.useState(createDefaultCollectionStorage);
-  const [persistenceOptions, setPersistenceOptions] = React.useState(DEFAULT_PERSISTENCE_OPTIONS);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const activeCollection = React.useMemo(() => getActiveCollection(storageState), [storageState]);
   const items = activeCollection.items;
@@ -74,8 +66,7 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
 
     queueMicrotask(() => {
       if (isCancelled) return;
-      setStorageState(loaded.state);
-      setPersistenceOptions(loaded.persistenceOptions);
+      setStorageState(loaded);
       setIsHydrated(true);
     });
 
@@ -84,12 +75,11 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
     };
   }, []);
 
-  // Keep the new model and the rollback-compatible active-items mirror in sync.
   React.useEffect(() => {
     if (isHydrated) {
-      saveCollectionStorage(localStorage, storageState, persistenceOptions);
+      saveCollectionStorage(localStorage, storageState);
     }
-  }, [storageState, persistenceOptions, isHydrated]);
+  }, [storageState, isHydrated]);
 
   const addItem = React.useCallback((item: CollectionItem) => {
     setStorageState((prev) =>
@@ -168,8 +158,6 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
 
   const createCollection = React.useCallback(
     (requestedName: string, items: CollectionItem[] = []) => {
-      if (!persistenceOptions.writeVersionedState) return false;
-
       const name = normalizeCollectionName(requestedName);
       if (!name || hasCollectionName(storageState, name)) return false;
 
@@ -177,34 +165,26 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       setStorageState((prev) => addCollection(prev, { id, name }, items));
       return true;
     },
-    [persistenceOptions.writeVersionedState, storageState]
+    [storageState]
   );
 
-  const switchCollection = React.useCallback(
-    (collectionId: string) => {
-      if (!persistenceOptions.writeVersionedState) return;
-      setStorageState((prev) => setActiveCollection(prev, collectionId));
-    },
-    [persistenceOptions.writeVersionedState]
-  );
+  const switchCollection = React.useCallback((collectionId: string) => {
+    setStorageState((prev) => setActiveCollection(prev, collectionId));
+  }, []);
 
   const renameActiveCollection = React.useCallback(
     (requestedName: string) => {
-      if (!persistenceOptions.writeVersionedState) return false;
-
       const name = normalizeCollectionName(requestedName);
       if (!name || hasCollectionName(storageState, name, activeCollection.id)) return false;
 
       setStorageState((prev) => renameCollection(prev, activeCollection.id, name));
       return true;
     },
-    [activeCollection.id, persistenceOptions.writeVersionedState, storageState]
+    [activeCollection.id, storageState]
   );
 
   const duplicateActiveCollection = React.useCallback(
     (requestedName: string) => {
-      if (!persistenceOptions.writeVersionedState) return false;
-
       const name = normalizeCollectionName(requestedName);
       if (!name || hasCollectionName(storageState, name)) return false;
 
@@ -212,21 +192,15 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       setStorageState((prev) => duplicateCollection(prev, activeCollection.id, { id, name }));
       return true;
     },
-    [activeCollection.id, persistenceOptions.writeVersionedState, storageState]
+    [activeCollection.id, storageState]
   );
 
   const deleteActiveCollection = React.useCallback(() => {
-    if (!persistenceOptions.writeVersionedState || storageState.collections.length <= 1) {
-      return false;
-    }
+    if (storageState.collections.length <= 1) return false;
 
     setStorageState((prev) => deleteCollection(prev, activeCollection.id));
     return true;
-  }, [
-    activeCollection.id,
-    persistenceOptions.writeVersionedState,
-    storageState.collections.length,
-  ]);
+  }, [activeCollection.id, storageState.collections.length]);
 
   const value = React.useMemo(
     () => ({
@@ -234,7 +208,6 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       collections: storageState.collections,
       activeCollection,
       isHydrated,
-      canManageCollections: persistenceOptions.writeVersionedState,
       addItem,
       mergeCollectionItems,
       removeItem,
@@ -252,7 +225,6 @@ export function CollectionProvider({ children }: { children: React.ReactNode }) 
       storageState.collections,
       activeCollection,
       isHydrated,
-      persistenceOptions.writeVersionedState,
       addItem,
       mergeCollectionItems,
       removeItem,

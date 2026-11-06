@@ -60,7 +60,6 @@ export function CollectionManagerControls() {
   const {
     collections,
     activeCollection,
-    canManageCollections,
     createCollection,
     mergeCollectionItems,
     renameActiveCollection,
@@ -220,11 +219,7 @@ export function CollectionManagerControls() {
             >
               {t('manager.activeCollection')}
             </Label>
-            <Select
-              value={activeCollection.id}
-              onValueChange={switchCollection}
-              disabled={!canManageCollections}
-            >
+            <Select value={activeCollection.id} onValueChange={switchCollection}>
               <SelectTrigger id="active-collection" className="w-full sm:max-w-sm">
                 <SelectValue />
               </SelectTrigger>
@@ -238,12 +233,7 @@ export function CollectionManagerControls() {
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsCreateOpen(true)}
-              disabled={!canManageCollections}
-            >
+            <Button type="button" variant="outline" onClick={() => setIsCreateOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               {t('manager.newCollection')}
             </Button>
@@ -253,7 +243,6 @@ export function CollectionManagerControls() {
                   type="button"
                   variant="outline"
                   size="icon"
-                  disabled={!canManageCollections}
                   aria-label={t('manager.collectionActions')}
                 >
                   <MoreHorizontal className="h-4 w-4" />

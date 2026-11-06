@@ -7,8 +7,6 @@ import { describe, expect, it } from 'vitest';
 import {
   ALL_FEATURE_KEYS,
   ALL_SECTION_KEYS,
-  FEATURE_DESCRIPTIONS,
-  FEATURE_LABELS,
   getDefaultSearchCategory,
   getEnabledSearchCategories,
   getDefaultConfig,
@@ -19,6 +17,7 @@ import {
   mergeFeatureFlags,
   mergeThemeColors,
   normalizeSectionOrder,
+  parseSiteFeatures,
   resolveNavOrder,
   type FeatureKey,
   type SectionKey,
@@ -297,11 +296,6 @@ describe('feature metadata', () => {
       };
     };
 
-  it.each(ALL_FEATURE_KEYS)('%s has a label and a human description', (key: FeatureKey) => {
-    expect(FEATURE_LABELS[key]?.length).toBeGreaterThan(0);
-    expect(FEATURE_DESCRIPTIONS[key]?.length).toBeGreaterThan(0);
-  });
-
   it.each(ALL_FEATURE_KEYS)('%s is localized in both catalogues', (key: FeatureKey) => {
     for (const locale of ['en', 'fr'] as const) {
       const siteFeatures = catalogue(locale).backoffice.siteFeatures;
@@ -311,15 +305,17 @@ describe('feature metadata', () => {
       expect(siteFeatures.featureDescriptions[key].length).toBeGreaterThan(0);
     }
   });
+});
 
-  it.each(ALL_FEATURE_KEYS)(
-    '%s: the English catalogue and the module constants say the same thing',
-    (key: FeatureKey) => {
-      // Two copies of a label drift silently; this pins them together so a
-      // reword has to happen in both places.
-      const siteFeatures = catalogue('en').backoffice.siteFeatures;
-      expect(siteFeatures.features[key]).toBe(FEATURE_LABELS[key]);
-      expect(siteFeatures.featureDescriptions[key]).toBe(FEATURE_DESCRIPTIONS[key]);
-    }
-  );
+describe('parseSiteFeatures', () => {
+  it('is null for a body that is not a settings object', () => {
+    for (const junk of [null, [], 'oops', 7]) expect(parseSiteFeatures(junk)).toBeNull();
+  });
+
+  it('reads a stored document over the defaults', () => {
+    const config = parseSiteFeatures({ sections: { lightbox: false } });
+    expect(config?.sections.lightbox).toBe(false);
+    expect(config?.sections.search).toBe(true);
+    expect(config?.theme).toEqual(getDefaultThemeColors());
+  });
 });

@@ -1,81 +1,32 @@
-import { apiFetch, authFetch } from './api-fetch';
+import { cache } from 'react';
+import { apiFetch } from './api-fetch';
 import {
   getDefaultModelLabelsConfig,
-  normalizeModelLabels,
-  type LocalizedLabel,
-  type ModelLabelKey,
+  parseModelLabels,
+  SITE_LABELS_PATH,
   type ModelLabelsConfig,
 } from './model-labels';
 
-const SITE_LABELS_PATH = '/api/v1/site-labels/';
-
-/** The stored labels of a `{ labels: {...} }` body, or null if there are none to read. */
-function storedLabels(raw: unknown): Partial<Record<ModelLabelKey, unknown>> | null {
-  const labels = (raw as { labels?: unknown } | null)?.labels;
-  if (!labels || typeof labels !== 'object' || Array.isArray(labels)) return null;
-  return Object.keys(labels).length ? (labels as Partial<Record<ModelLabelKey, unknown>>) : null;
-}
-
-/**
- * Cache tag shared with the PUT route below: `revalidateTag(SITE_LABELS_TAG)`
- * there invalidates the entry this `next: { tags }` writes here.
- */
-export const SITE_LABELS_TAG = 'site-labels';
-
 /**
  * Model labels are backend-owned (`SiteLabel` rows, superuser-editable via the
- * backoffice); they previously lived in a container-local JSON file that
- * survived neither a restart nor a second replica. Any failure — network
- * error, non-200, or a 200 carrying no stored labels — falls back to defaults so
- * SSR never 500s over a backend hiccup, flagged `degraded` so the GET route can
- * refuse to serve them as if they were the stored labels.
+ * backoffice). Any failure — network error, non-200, or a 200 carrying no
+ * stored labels — falls back to the defaults so SSR never 500s over a backend
+ * hiccup.
  *
- * The root layout awaits this on every render, hence the revalidation window
- * (backstop) plus `revalidateTag` on write (immediate) — see the PUT handler in
- * `app/api/model-labels/route.ts`.
+ * Read fresh for every request, never from Next's data cache, so a save shows
+ * on the next page; within a request the read is shared.
  */
-export async function readModelLabels(): Promise<ModelLabelsConfig & { degraded?: boolean }> {
-  const defaults = getDefaultModelLabelsConfig();
+export const readModelLabels = cache(async (): Promise<ModelLabelsConfig> => {
   try {
-    const res = await apiFetch(SITE_LABELS_PATH, {
-      next: { revalidate: 60, tags: [SITE_LABELS_TAG] },
-    });
-    if (!res.ok) return { ...defaults, degraded: true }; // apiFetch already logged the non-2xx.
+    const res = await apiFetch(SITE_LABELS_PATH, { cache: 'no-store' });
+    if (!res.ok) return getDefaultModelLabelsConfig(); // apiFetch already logged the non-2xx.
     const raw = await res.json();
-    const labels = storedLabels(raw);
-    if (!labels) {
-      // A 200 with no stored labels isn't an HTTP-layer failure, so apiFetch never sees it.
-      console.error(`[API] GET ${SITE_LABELS_PATH} → 200 without a usable labels map`, raw);
-      return { ...defaults, degraded: true };
-    }
-    return { labels: normalizeModelLabels(labels) };
+    const config = parseModelLabels(raw);
+    if (config) return config;
+    // A 200 with no stored labels isn't an HTTP-layer failure, so apiFetch never sees it.
+    console.error(`[API] GET ${SITE_LABELS_PATH} → 200 without a usable labels map`, raw);
   } catch {
-    return { ...defaults, degraded: true };
+    // apiFetch has logged the network failure.
   }
-}
-
-/**
- * Upserts only the given keys via the backend's superuser-only PUT; throws if
- * the write itself fails. Returns the backend's post-write re-read, or null if
- * the write landed but its response body carried no labels — never the
- * defaults, which the caller would cache as if they were stored values.
- */
-export async function writeModelLabels(
-  labels: Partial<Record<ModelLabelKey, LocalizedLabel>>,
-  token: string
-): Promise<ModelLabelsConfig | null> {
-  const res = await authFetch(SITE_LABELS_PATH, token, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ labels }),
-  });
-  if (!res.ok) {
-    const details = await res.text().catch(() => '');
-    throw Object.assign(
-      new Error(`Failed to write site labels: ${res.status}${details ? ` - ${details}` : ''}`),
-      { status: res.status }
-    );
-  }
-  const stored = storedLabels(await res.json().catch(() => null));
-  return stored ? { labels: normalizeModelLabels(stored) } : null;
-}
+  return getDefaultModelLabelsConfig();
+});

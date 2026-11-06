@@ -9,8 +9,10 @@ import {
   uploadErrorStatus,
   uploadImageFile,
   watchUploadSession,
+  workerOwns,
   type UploadProgress,
   type UploadSession,
+  type UploadSessionStatus,
 } from './uploads';
 import { backofficeGet, backofficePost } from './api-client';
 
@@ -71,6 +73,23 @@ describe('describeUploadError', () => {
     );
     expect(describeUploadError(new Error('boom'))).toBe('boom');
     expect(describeUploadError('weird')).toBe('An unexpected error occurred');
+  });
+});
+
+describe('workerOwns', () => {
+  it('is true from finalize until the session completes or fails', () => {
+    const statuses: UploadSessionStatus[] = [
+      'pending',
+      'uploading',
+      'assembled',
+      'processing',
+      'complete',
+      'failed',
+    ];
+    expect(statuses.filter((status) => workerOwns({ status }))).toEqual([
+      'assembled',
+      'processing',
+    ]);
   });
 });
 

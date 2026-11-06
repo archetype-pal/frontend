@@ -98,7 +98,7 @@ export function AnnotationGallery({
   const searchParams = useSearchParams();
   const { isInCollection, isHydrated } = useCollection();
   const { addGraphs, toggleGraph } = useGraphCollection();
-  const canEdit = user?.is_staff ?? false;
+  const canEdit = Boolean(user?.capabilities?.annotate);
   // Editing needs the hand and allograph names; without them it would half-work.
   const editingAvailable = canEdit && !supportingDataIncomplete;
   const viewerHref = `/manuscripts/${manuscriptId}/images/${imageId}`;

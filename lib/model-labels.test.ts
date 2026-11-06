@@ -4,6 +4,7 @@ import {
   DEFAULT_MODEL_LABELS,
   getDefaultModelLabelsConfig,
   normalizeModelLabels,
+  parseModelLabels,
   pluralizeLabel,
   resolveModelLabel,
   safeLinkHref,
@@ -159,5 +160,19 @@ describe('safeLinkHref', () => {
     expect(safeLinkHref('//evil.example')).toBeNull();
     expect(safeLinkHref('/\\evil.example')).toBeNull();
     expect(safeLinkHref('about/project')).toBeNull();
+  });
+});
+
+describe('parseModelLabels', () => {
+  it('reads the stored labels over the defaults', () => {
+    const config = parseModelLabels({ labels: { siteTitle: { en: 'MoA', fr: 'MoA', de: 'MoA' } } });
+    expect(config?.labels.siteTitle).toEqual({ en: 'MoA', fr: 'MoA', de: 'MoA' });
+    expect(config?.labels.appManuscripts).toEqual(DEFAULT_MODEL_LABELS.appManuscripts);
+  });
+
+  it('is null when nothing is stored, so defaults are never passed off as stored labels', () => {
+    for (const body of [{ labels: {} }, { labels: [] }, {}, null]) {
+      expect(parseModelLabels(body)).toBeNull();
+    }
   });
 });

@@ -3,19 +3,18 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { toast } from 'sonner';
 import { Link2, Unlink } from 'lucide-react';
 
-import { docToTei, teiToDoc, type PMDoc, type StackEntry } from '@/lib/tei-prosemirror';
+import { teiEditorSchema } from '@/lib/tei-editor-schema';
 import {
-  currentElement,
-  currentStack,
-  setTeiAttrs,
-  teiEditorExtensions,
-  unwrapTei,
-  wrapTei,
-} from '@/lib/tei-tiptap';
+  docToTei,
+  roundTripsExactly,
+  teiToDoc,
+  type PMDoc,
+  type StackEntry,
+} from '@/lib/tei-prosemirror';
+import { currentElement, currentStack, setTeiAttrs, unwrapTei, wrapTei } from '@/lib/tei-tiptap';
 import { refAttrs } from '@/lib/tei-ref-picker';
 import type { ResourceKind, ResourceRef } from '@/lib/tei-ref';
 import { TeiRefPicker } from '@/components/backoffice/tei-ref-picker';
@@ -29,8 +28,8 @@ import { MsProseTextarea } from './fields';
  * — while guaranteeing zero data loss. A drop-in for {@link MsProseTextarea}.
  *
  * DATA-SAFETY CONTRACT:
- *  - Rich editing is offered ONLY when the value passes the byte-exact gate
- *    (`'' || docToTei(teiToDoc(value)) === value`). When it fails, we fall back
+ *  - Rich editing is offered ONLY when the value is empty or passes the shared
+ *    byte-exact gate (`roundTripsExactly`). When it fails, we fall back
  *    to {@link MsProseTextarea} — a plain textarea that round-trips the raw
  *    string verbatim — so the markup is still editable without loss.
  *  - On edit the editor emits `docToTei(getJSON())` (its own canonical form);
@@ -42,7 +41,7 @@ import { MsProseTextarea } from './fields';
  * `validate-tei` server call the roadmap forbids per-leaf — area-level
  * validation in `msdesc-area-panel` covers it) nor `tei-rich-editor.tsx` (ships
  * the charter clause/`seg`-type toolbar, wrong for msDesc prose). It builds
- * directly on the shared `teiEditorExtensions` + `teiToDoc`/`docToTei` with
+ * directly on the shared `teiEditorSchema` + `teiToDoc`/`docToTei` with
  * compact, toolbar-free chrome.
  *
  * Phase 4 adds two controls: link (open the shared {@link TeiRefPicker} and
@@ -64,12 +63,7 @@ const EMPTY_LEAF_TEI = '<p></p>';
  * round-trip is NOT mounted on the rich path.
  */
 export function leafIsRichRepresentable(value: string): boolean {
-  if (value === '') return true;
-  try {
-    return docToTei(teiToDoc(value)) === value;
-  } catch {
-    return false;
-  }
+  return value === '' || roundTripsExactly(value);
 }
 
 /**
@@ -293,29 +287,7 @@ function RichLeaf({
   const editor = useEditor({
     immediatelyRender: false,
     editable: !disabled,
-    extensions: [
-      StarterKit.configure({
-        bold: false,
-        italic: false,
-        strike: false,
-        code: false,
-        codeBlock: false,
-        heading: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
-        blockquote: false,
-        horizontalRule: false,
-        hardBreak: false,
-        // `docToTei` only reads the `tei` mark, so a `link`/`underline` mark
-        // (e.g. from pasted HTML) renders in the editor and is then silently
-        // dropped on serialize. Keeping them out of the schema makes the
-        // WYSIWYG surface match exactly what is saved; TEI links are `<ref>`.
-        link: false,
-        underline: false,
-      }),
-      ...teiEditorExtensions,
-    ],
+    extensions: teiEditorSchema,
     content: toLeafContent(value),
     editorProps: {
       attributes: {

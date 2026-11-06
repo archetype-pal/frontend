@@ -3,24 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_MODEL_LABELS, getDefaultModelLabelsConfig } from './model-labels';
 import { jsonResponse } from '@/test/responses';
 
-const { apiFetch, authFetch } = vi.hoisted(() => ({
-  apiFetch: vi.fn(),
-  authFetch: vi.fn(),
-}));
+const { apiFetch } = vi.hoisted(() => ({ apiFetch: vi.fn() }));
 
-vi.mock('./api-fetch', () => ({ apiFetch, authFetch }));
+vi.mock('./api-fetch', () => ({ apiFetch }));
 
-const { readModelLabels, writeModelLabels, SITE_LABELS_TAG } =
-  await import('./model-labels-server');
+const { readModelLabels } = await import('./model-labels-server');
 
 beforeEach(() => {
   apiFetch.mockReset();
-  authFetch.mockReset();
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 describe('readModelLabels', () => {
-  it('returns the backend labels merged over defaults, from a tagged fetch', async () => {
+  it('returns the backend labels merged over defaults, read fresh', async () => {
     apiFetch.mockResolvedValueOnce(
       jsonResponse({
         labels: { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } },
@@ -35,10 +30,7 @@ describe('readModelLabels', () => {
       de: 'Archetype DE',
     });
     expect(config.labels.appManuscripts).toEqual(DEFAULT_MODEL_LABELS.appManuscripts);
-    expect(config.degraded).toBeUndefined();
-    expect(apiFetch).toHaveBeenCalledWith('/api/v1/site-labels/', {
-      next: { revalidate: 60, tags: [SITE_LABELS_TAG] },
-    });
+    expect(apiFetch).toHaveBeenCalledWith('/api/v1/site-labels/', { cache: 'no-store' });
   });
 
   it.each([
@@ -50,44 +42,11 @@ describe('readModelLabels', () => {
       'a 200 with an empty labels map',
       () => apiFetch.mockResolvedValueOnce(jsonResponse({ labels: {} })),
     ],
-  ])('flags the defaults as degraded on %s', async (_case, arrange) => {
+  ])('falls back to the defaults on %s', async (_case, arrange) => {
     arrange();
 
     const config = await readModelLabels();
 
-    expect(config.labels).toEqual(getDefaultModelLabelsConfig().labels);
-    expect(config.degraded).toBe(true);
-  });
-});
-
-describe('writeModelLabels', () => {
-  it('sends only the given keys and returns the backend re-read', async () => {
-    authFetch.mockResolvedValueOnce(
-      jsonResponse({ labels: { siteTitle: { en: 'Stored', fr: 'Stocké', de: 'Gespeichert' } } })
-    );
-
-    const config = await writeModelLabels(
-      { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } },
-      'tok'
-    );
-
-    const body = JSON.parse(authFetch.mock.calls[0][2].body);
-    expect(Object.keys(body.labels)).toEqual(['siteTitle']);
-    expect(config?.labels.siteTitle).toEqual({
-      en: 'Stored',
-      fr: 'Stocké',
-      de: 'Gespeichert',
-    });
-  });
-
-  it('returns null rather than defaults when the write lands but returns no labels', async () => {
-    authFetch.mockResolvedValueOnce(jsonResponse({ labels: {} }));
-
-    await expect(
-      writeModelLabels(
-        { siteTitle: { en: 'Archetype EN', fr: 'Archetype FR', de: 'Archetype DE' } },
-        'tok'
-      )
-    ).resolves.toBeNull();
+    expect(config).toEqual(getDefaultModelLabelsConfig());
   });
 });

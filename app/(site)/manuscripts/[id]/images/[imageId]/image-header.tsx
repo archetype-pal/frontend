@@ -1,0 +1,148 @@
+import Link from 'next/link';
+import { getLocale } from 'next-intl/server';
+import { ManuscriptTabs } from '@/components/manuscript/manuscript-tabs';
+import { BackofficeLink } from '@/components/common/backoffice-link';
+import { Skeleton } from '@/components/ui/skeleton';
+import { fetchManuscript } from '@/services/manuscripts';
+import { fetchImageTextsForImage } from '@/services/image-texts';
+import { fetchOtherImages } from '@/services/manuscript-image-tabs';
+import { renderPublicDescription } from '@/lib/description-public';
+import { readSiteFeatures } from '@/lib/site-features-server';
+import { isSearchCategoryEnabled } from '@/lib/site-features';
+import { readModelLabels } from '@/lib/model-labels-server';
+import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
+import type { ManuscriptImage } from '@/types/manuscript-image';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+
+interface ImageHeaderProps {
+  id: string;
+  imageId: string;
+  image: ManuscriptImage;
+}
+
+/** The breadcrumb, title, description and tabs above every image tab. */
+export async function ImageHeader({ id, imageId, image }: ImageHeaderProps) {
+  const [manuscript, otherImages, visibleTexts, siteFeatures, locale, modelLabels] =
+    await Promise.all([
+      fetchManuscript(image.item_part).catch(() => null),
+      fetchOtherImages(image.item_part, image.id).catch(() => []),
+      fetchImageTextsForImage(imageId).catch(() => []),
+      readSiteFeatures(),
+      getLocale(),
+      readModelLabels(),
+    ]);
+
+  const label = manuscript?.display_label?.trim() || 'Unknown manuscript';
+  const locus = image.locus?.trim() || '';
+  const description = manuscript?.historical_item?.descriptions?.[0]?.content;
+  const manuscriptsSearchEnabled =
+    siteFeatures.sections.search !== false && isSearchCategoryEnabled(siteFeatures, 'manuscripts');
+  const manuscriptsLabel = resolveModelLabel(
+    modelLabels.labels.appManuscripts,
+    locale as ModelLabelLocale
+  );
+
+  return (
+    <header className="border-b border-border bg-card px-4 pb-0 pt-4 sm:px-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/">Home</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            {manuscriptsSearchEnabled ? (
+              <BreadcrumbLink asChild>
+                <Link href="/search/manuscripts">{manuscriptsLabel}</Link>
+              </BreadcrumbLink>
+            ) : (
+              <BreadcrumbPage>{manuscriptsLabel}</BreadcrumbPage>
+            )}
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={`/manuscripts/${id}`}>{label}: Item overview</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {locus ? (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="capitalize">{locus}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </>
+          ) : null}
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="mt-3 flex items-start justify-between gap-4">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
+          {label}
+          {locus ? (
+            <span className="font-normal capitalize text-muted-foreground"> · {locus}</span>
+          ) : null}
+        </h1>
+        {/* Reverse of the frontend "View in backoffice" link: editors get a jump
+            straight from the image viewer to this item's backoffice workspace.
+            Renders null for anonymous visitors. archetype-pal/frontend#77 */}
+        <BackofficeLink
+          kind="item-part"
+          id={id}
+          label="Edit in Backoffice"
+          className="mt-1 shrink-0"
+        />
+      </div>
+
+      {description ? (
+        // Descriptions are authored as HTML and can contain block elements
+        // (e.g. <p>). Render into a <div>, NOT a <p>: a <p> cannot legally
+        // nest a <p>, so the browser would reparent the injected markup into
+        // siblings and desync from the server HTML → hydration mismatch. The
+        // `[&_p]:inline` + `[&_p]:m-0` rules flow the inner blocks so the
+        // 2-line clamp still reads as a brief teaser.
+        <div
+          className="mt-2 line-clamp-2 max-w-3xl text-sm leading-relaxed text-muted-foreground [&_p]:m-0 [&_p]:inline"
+          dangerouslySetInnerHTML={{ __html: renderPublicDescription(description).html }}
+        />
+      ) : null}
+
+      <div className="mt-3">
+        <ManuscriptTabs
+          manuscriptId={id}
+          imageId={imageId}
+          counts={{
+            annotations: image.number_of_annotations ?? 0,
+            texts: visibleTexts.length,
+            otherImages: otherImages.length,
+          }}
+        />
+      </div>
+    </header>
+  );
+}
+
+/** The header's shape while its manuscript, texts and other images load. */
+export function ImageHeaderSkeleton() {
+  return (
+    <header className="border-b border-border bg-card px-4 pt-4 sm:px-6">
+      <Skeleton className="h-3 w-72" />
+      <Skeleton className="mt-3 h-9 w-80" />
+      <Skeleton className="mt-2 h-4 w-full max-w-3xl" />
+      <div className="mt-4 flex gap-4 pb-3">
+        {[...Array(5)].map((_, i) => (
+          <Skeleton key={i} className="h-5 w-24" />
+        ))}
+      </div>
+    </header>
+  );
+}

@@ -1,3 +1,4 @@
+import { isRecord } from './is-record';
 import {
   getDefaultVisibleColumns,
   getFacetOrder,
@@ -111,24 +112,6 @@ export const ALL_SECTION_KEYS: SectionKey[] = [
 ];
 
 export const ALL_FEATURE_KEYS: FeatureKey[] = ['manuscriptDescriptions'];
-
-/**
- * English source of truth for the flag names. The
- * admin UI renders the localized `backoffice.siteFeatures.features.*` keys
- * (exactly as the section toggles render `…siteFeatures.sections.*`); these
- * constants keep a locale-independent name next to the key union, and
- * `site-features.test.ts` pins them to the English catalogue so the two copies
- * cannot drift.
- */
-export const FEATURE_LABELS: Record<FeatureKey, string> = {
-  manuscriptDescriptions: 'Manuscript descriptions (TEI msDesc)',
-};
-
-/** One-line "what does this flag actually hide" text, shown under each toggle. */
-export const FEATURE_DESCRIPTIONS: Record<FeatureKey, string> = {
-  manuscriptDescriptions:
-    'Structured TEI descriptions: the description section on public manuscript pages and the msDesc editor in the manuscript workspace. Nothing is deleted — turning this back on restores everything. Search facets are configured separately under Search Categories.',
-};
 
 /**
  * Fold an untrusted `features` object (parsed config file, or a PUT payload)
@@ -340,5 +323,49 @@ export function getDefaultConfig(): SiteFeaturesConfig {
     searchCategories,
     theme: getDefaultThemeColors(),
     branding: getDefaultBranding(),
+  };
+}
+
+/** Where Django keeps the settings: public GET, superuser PUT. */
+export const SITE_FEATURES_PATH = '/api/v1/app-settings/';
+
+/**
+ * The stored settings read over the defaults, or null when `raw` is not a
+ * settings object at all. Shared by the server reader and the backoffice
+ * editor, so both see one shape.
+ */
+export function parseSiteFeatures(raw: unknown): SiteFeaturesConfig | null {
+  // `null`, an array or a primitive would crash the `parsed.sections` read below.
+  if (!isRecord(raw)) return null;
+  const defaults = getDefaultConfig();
+  const parsed = raw as Partial<SiteFeaturesConfig>;
+  // Spreading a string or array into an object produces index-keyed entries
+  // (e.g. {"0": "l", "1": "o"}), so anything that is not a plain object is
+  // treated as missing and falls back to the defaults.
+  const parsedSections = isRecord(parsed.sections) ? parsed.sections : {};
+  const parsedCategories = isRecord(parsed.searchCategories) ? parsed.searchCategories : {};
+  return {
+    sections: { ...defaults.sections, ...parsedSections },
+    sectionOrder: normalizeSectionOrder(parsed.sectionOrder),
+    // An absent or unknown flag falls back to its default (enabled), so a
+    // feature already shipped survives the deploy that introduces its flag.
+    // Non-boolean values are dropped.
+    features: mergeFeatureFlags(defaults.features, parsed.features),
+    searchCategories: {
+      ...defaults.searchCategories,
+      ...Object.fromEntries(
+        Object.entries(parsedCategories).map(([k, v]) => [
+          k,
+          {
+            ...defaults.searchCategories[k as keyof typeof defaults.searchCategories],
+            ...(isRecord(v) ? v : {}),
+          },
+        ])
+      ),
+    },
+    // A config saved before the theme or the logo existed has no such key, so
+    // it falls back to this deployment's defaults rather than `undefined`.
+    theme: mergeThemeColors(defaults.theme, parsed.theme),
+    branding: mergeBranding(defaults.branding, parsed.branding),
   };
 }
