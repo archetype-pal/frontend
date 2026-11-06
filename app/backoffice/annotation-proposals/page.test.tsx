@@ -26,6 +26,13 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => urlParams.current,
 }));
 vi.mock('sonner', () => import('@/test/mocks/sonner'));
+vi.mock('@/services/manuscripts', () => ({
+  fetchAllographSummaries: () =>
+    Promise.resolve([
+      { id: 3, name: 'b', character_name: 'b' },
+      { id: 4, name: 'long s', character_name: 's' },
+    ]),
+}));
 vi.mock('@/services/backoffice/annotation-proposals', () => ({
   getAnnotationProposals,
   acceptAnnotationProposal,
@@ -43,6 +50,7 @@ function proposal(id: number, overrides: Partial<GraphProposalItem> = {}): Graph
     image_display: 'BL Cotton Ch. xviii.2 (locus: face)',
     image_iiif: 'http://iiif.test/page/info.json',
     historical_item: 697,
+    item_part: 81,
     annotation: {},
     allograph: 3,
     allograph_name: 'b',
@@ -59,6 +67,10 @@ function proposal(id: number, overrides: Partial<GraphProposalItem> = {}): Graph
     reason: '',
     accepted_graph: null,
     created: '2026-11-04T00:00:00Z',
+    proposed: null,
+    corrected_by: null,
+    corrected_by_username: '',
+    corrected: null,
     ...overrides,
   };
 }
@@ -98,6 +110,24 @@ describe('<AnnotationProposalsPage>', () => {
     expect(screen.getByText(/Proposed by google\/gemini-3-pro/)).not.toBeNull();
     const link = screen.getByRole('link', { name: /BL Cotton Ch\. xviii\.2/ });
     expect(link.getAttribute('href')).toBe('/manuscripts/697/images/45');
+  });
+
+  it('says who corrected a proposal and what the model had proposed', async () => {
+    getAnnotationProposals.mockResolvedValue(
+      page([
+        proposal(1, {
+          proposed: { annotation: { type: 'Feature' }, allograph: 4, hand: 9 },
+          corrected_by: 2,
+          corrected_by_username: 'ahmed',
+          corrected: '2026-11-05T00:00:00Z',
+        }),
+      ])
+    );
+    renderPage();
+
+    expect(
+      await screen.findByText(/Corrected by ahmed · the model proposed s, long s · box redrawn/)
+    ).not.toBeNull();
   });
 
   it("shows one request's proposals when the link names its job, and can show every request's", async () => {
