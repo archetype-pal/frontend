@@ -134,6 +134,10 @@ export const backofficeKeys = {
   reviewQueue: {
     all: () => [...backofficeKeys.all, 'review-queue'] as const,
   },
+  allographs: {
+    // The labels-only list every allograph picker shares.
+    summaries: () => [...backofficeKeys.all, 'allographs', 'summaries'] as const,
+  },
   annotationProposals: {
     all: () => [...backofficeKeys.all, 'annotation-proposals'] as const,
     list: (filters?: Record<string, unknown>) =>

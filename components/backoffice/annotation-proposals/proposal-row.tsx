@@ -5,13 +5,17 @@ import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { AlertTriangle, CheckCircle, ExternalLink, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ExternalLink, PencilLine, XCircle } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RelativeTime } from '@/components/backoffice/relative-time';
 import { ProposalCropView } from '@/components/backoffice/annotation-proposals/proposal-crop-view';
+import {
+  ProposalCorrectionDialog,
+  useAllographOptions,
+} from '@/components/backoffice/annotation-proposals/proposal-correction-dialog';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
 import { acceptBlocker } from '@/lib/backoffice/proposal-accept';
 import {
@@ -33,8 +37,20 @@ export function ProposalRow({
 }) {
   const t = useTranslations('backoffice');
   const [reason, setReason] = useState('');
+  const [correcting, setCorrecting] = useState(false);
   const pending = proposal.status === 'pending';
   const blocker = acceptBlocker(proposal);
+  const filed = proposal.proposed;
+  const letterChanged = filed != null && filed.allograph !== proposal.allograph;
+  const boxChanged =
+    filed != null && JSON.stringify(filed.annotation) !== JSON.stringify(proposal.annotation);
+  // The model's letter by name, from the list the correction picker loads anyway.
+  const allographs = useAllographOptions(letterChanged && filed?.allograph != null);
+  const filedLetter =
+    filed?.allograph == null
+      ? null
+      : (allographs.data?.find((option) => option.value === String(filed.allograph))?.label ??
+        `#${filed.allograph}`);
 
   const accept = useMutation({
     mutationFn: () => acceptAnnotationProposal(proposal.id),
@@ -123,6 +139,29 @@ export function ProposalRow({
           · <RelativeTime iso={proposal.created} />
         </p>
 
+        {filed && (
+          <p className="text-xs text-muted-foreground">
+            {t('annotationProposals.correctedBy', {
+              name: proposal.corrected_by_username || t('annotationProposals.someone'),
+            })}
+            {letterChanged && (
+              <>
+                {' · '}
+                {filedLetter
+                  ? t('annotationProposals.modelProposedLetter', { letter: filedLetter })
+                  : t('annotationProposals.modelProposedNoLetter')}
+              </>
+            )}
+            {boxChanged && <> · {t('annotationProposals.boxRedrawn')}</>}
+            {proposal.corrected && (
+              <>
+                {' '}
+                · <RelativeTime iso={proposal.corrected} />
+              </>
+            )}
+          </p>
+        )}
+
         {pending && blocker && (
           <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -163,6 +202,17 @@ export function ProposalRow({
               ? t('annotationProposals.accepting')
               : t('annotationProposals.accept')}
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1"
+            onClick={() => setCorrecting(true)}
+            disabled={deciding}
+            aria-label={t('annotationProposals.correctAria', { id: proposal.id })}
+          >
+            <PencilLine className="h-3.5 w-3.5" aria-hidden />
+            {t('annotationProposals.correct')}
+          </Button>
           <input
             type="text"
             value={reason}
@@ -191,6 +241,14 @@ export function ProposalRow({
             ? t('annotationProposals.badgeAccepted')
             : t('annotationProposals.badgeRejected')}
         </Badge>
+      )}
+      {correcting && (
+        <ProposalCorrectionDialog
+          proposal={proposal}
+          open={correcting}
+          onOpenChange={setCorrecting}
+          onCorrected={onDecided}
+        />
       )}
     </li>
   );

@@ -411,6 +411,8 @@ export interface GraphProposalItem {
   /** The page's IIIF info.json URL; null when the image server can't address it. */
   image_iiif: string | null;
   historical_item: number;
+  /** The page's part: a correction may name only one of its hands. */
+  item_part: number;
   /** GeoJSON Feature in the page's pixel space, Y-up, as on a graph. */
   annotation: Record<string, unknown>;
   allograph: number | null;
@@ -430,6 +432,18 @@ export interface GraphProposalItem {
   reason: string;
   accepted_graph: number | null;
   created: string;
+  /** What the model filed, kept when a reviewer first corrected it; null if nobody has. */
+  proposed: GraphProposalFiled | null;
+  corrected_by: number | null;
+  corrected_by_username: string;
+  corrected: string | null;
+}
+
+/** A proposal as its model filed it, before any correction. */
+export interface GraphProposalFiled {
+  annotation: Record<string, unknown>;
+  allograph: number | null;
+  hand: number | null;
 }
 
 /** The charter transcription a diplomatic proposal was read from. */

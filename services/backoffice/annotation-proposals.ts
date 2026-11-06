@@ -36,6 +36,23 @@ export function acceptAnnotationProposal(id: number) {
   );
 }
 
+/** What a correction may change. Only what is given changes; nothing can be cleared. */
+export interface ProposalCorrection {
+  allograph?: number;
+  /** One of the hands of the page's part. */
+  hand?: number;
+  /** The box as stored: a closed, Y-up GeoJSON ring in the page's pixels. */
+  annotation?: Record<string, unknown>;
+}
+
+/**
+ * Correct a pending proposal's letter, hand or box. It stays pending, and the
+ * reply is the corrected row. A 409 if someone decided it meanwhile.
+ */
+export function correctAnnotationProposal(id: number, changes: ProposalCorrection) {
+  return backofficePost<GraphProposalItem>(`${BASE}${id}/correct/`, changes);
+}
+
 export function rejectAnnotationProposal(id: number, reason = '') {
   return backofficePost<{ status: GraphProposalStatus }>(`${BASE}${id}/reject/`, { reason });
 }
