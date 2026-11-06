@@ -5,13 +5,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithQueryClient } from '@/test/render';
 
 const { getHand, updateHand } = vi.hoisted(() => ({ getHand: vi.fn(), updateHand: vi.fn() }));
+const { SCRIPTS, useScripts } = vi.hoisted(() => ({
+  SCRIPTS: [
+    { id: 1, name: 'Caroline minuscule' },
+    { id: 2, name: 'Square minuscule' },
+  ],
+  useScripts: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('@/services/backoffice/scribes', () => ({ getHand, updateHand, deleteHand: vi.fn() }));
-vi.mock('@/hooks/backoffice/use-lookups', () => ({ useDates: () => ({ data: [] }) }));
+vi.mock('@/hooks/backoffice/use-lookups', () => ({
+  useDates: () => ({ data: [] }),
+  useScripts,
+}));
 vi.mock('@/lib/backoffice/walk-paginated', () => ({ walkPaginated: async () => [] }));
 vi.mock('@/components/backoffice/common/place-combobox', () => ({ PlaceCombobox: () => null }));
 vi.mock('@/components/backoffice/scribes/hand-descriptions-section', () => ({
@@ -46,11 +56,22 @@ const renderPage = () => renderWithQueryClient(<HandDetailPage params={resolvedP
 
 describe('<HandDetailPage>', () => {
   beforeEach(() => {
+    useScripts.mockReset().mockReturnValue({ data: SCRIPTS });
     getHand.mockReset().mockResolvedValue(HAND);
     updateHand.mockReset().mockImplementation(async (_id: number, form: object) => ({
       ...HAND,
       ...form,
     }));
+  });
+
+  it("keeps showing the hand's script when the scripts fail to load", async () => {
+    useScripts.mockReturnValue({ isError: true, isFetching: false, refetch: vi.fn() });
+    getHand.mockResolvedValue({ ...HAND, script: 1, script_name: 'Caroline minuscule' });
+    renderPage();
+
+    const field = await screen.findByRole('combobox', { name: 'Script' });
+    expect(field.textContent).toBe('Caroline minuscule');
+    expect(screen.getByText('Could not load the scripts.')).toBeDefined();
   });
 
   it("shows the hand's display order and saves a new one", async () => {
@@ -75,5 +96,34 @@ describe('<HandDetailPage>', () => {
     expect(field.value).toBe('0');
     fireEvent.change(field, { target: { value: '3.7' } });
     expect(field.value).toBe('3');
+  });
+
+  it("shows the hand's script and saves a new one", async () => {
+    getHand.mockResolvedValue({ ...HAND, script: 1, script_name: 'Caroline minuscule' });
+    renderPage();
+
+    const field = await screen.findByRole('combobox', { name: 'Script' });
+    expect(field.textContent).toBe('Caroline minuscule');
+
+    fireEvent.keyDown(field, { key: 'Enter' });
+    fireEvent.click(await screen.findByRole('option', { name: 'Square minuscule' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(updateHand).toHaveBeenCalledWith(3, expect.objectContaining({ script: 2 }))
+    );
+  });
+
+  it('clears the script with None', async () => {
+    getHand.mockResolvedValue({ ...HAND, script: 1, script_name: 'Caroline minuscule' });
+    renderPage();
+
+    fireEvent.keyDown(await screen.findByRole('combobox', { name: 'Script' }), { key: 'Enter' });
+    fireEvent.click(await screen.findByRole('option', { name: 'None' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(updateHand).toHaveBeenCalledWith(3, expect.objectContaining({ script: null }))
+    );
   });
 });

@@ -7,6 +7,7 @@ import {
   getRepositories,
   getSources,
 } from '@/services/backoffice/manuscripts';
+import { getScripts } from '@/services/backoffice/scribes';
 import {
   getCharacters,
   getComponents,
@@ -26,6 +27,7 @@ export const useRepositories = () => useLookup(backofficeKeys.repositories.all()
 export const useDates = () => useLookup(backofficeKeys.dates.all(), getDates);
 export const useFormats = () => useLookup(backofficeKeys.formats.all(), getFormats);
 export const useSources = () => useLookup(backofficeKeys.sources.all(), getSources);
+export const useScripts = () => useLookup(backofficeKeys.scripts.all(), getScripts);
 export const useCharacters = () => useLookup(backofficeKeys.characters.all(), getCharacters);
 export const useComponents = () => useLookup(backofficeKeys.components.all(), getComponents);
 export const useFeatures = () => useLookup(backofficeKeys.features.all(), getFeatures);

@@ -32,7 +32,7 @@ import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useEntityEditor } from '@/hooks/backoffice/use-entity-editor';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import type { AdminItemImage } from '@/services/backoffice/manuscripts';
-import { useDates } from '@/hooks/backoffice/use-lookups';
+import { useDates, useScripts } from '@/hooks/backoffice/use-lookups';
 
 export default function HandDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslations('backoffice');
@@ -51,6 +51,7 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
       name: h.name,
       place: h.place,
       date: h.date,
+      script: h.script,
       display_order: h.display_order,
       item_part_images: h.item_part_images ?? [],
     }),
@@ -83,6 +84,12 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   const availableImages = useMemo(() => imagesData ?? [], [imagesData]);
 
   const { data: dates } = useDates();
+  const {
+    data: scripts,
+    isError: scriptsFailed,
+    isFetching: scriptsFetching,
+    refetch: refetchScripts,
+  } = useScripts();
 
   if (editor.isError) {
     return (
@@ -203,6 +210,37 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="hand-script">{t('handsDetail.labelScript')}</Label>
+          <Select
+            value={String(form.script ?? '__none')}
+            onValueChange={(val) => setForm({ script: val === '__none' ? null : Number(val) })}
+          >
+            <SelectTrigger id="hand-script">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">{t('handsDetail.selectNoScript')}</SelectItem>
+              {hand.script !== null &&
+                hand.script_name &&
+                !scripts?.some((s) => s.id === hand.script) && (
+                  <SelectItem value={String(hand.script)}>{hand.script_name}</SelectItem>
+                )}
+              {(scripts ?? []).map((s) => (
+                <SelectItem key={s.id} value={String(s.id)}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {scriptsFailed && (
+            <BackofficeInlineError
+              message={t('handsDetail.scriptsLoadFailed')}
+              retrying={scriptsFetching}
+              onRetry={() => refetchScripts()}
+            />
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="hand-display-order">{t('handsDetail.labelDisplayOrder')}</Label>

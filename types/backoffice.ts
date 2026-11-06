@@ -253,6 +253,11 @@ export interface HandDescription {
   content: string;
 }
 
+export interface Script {
+  id: number;
+  name: string;
+}
+
 // ── Publications ────────────────────────────────────────────────────────
 
 export interface PublicationListItem {
