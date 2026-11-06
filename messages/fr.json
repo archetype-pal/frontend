@@ -1292,6 +1292,7 @@
       "selectNoDate": "Aucune",
       "labelScript": "Écriture",
       "selectNoScript": "Aucune",
+      "scriptsLoadFailed": "Impossible de charger les écritures.",
       "labelDisplayOrder": "Ordre d'affichage",
       "displayOrderHint": "Les valeurs basses passent en premier parmi les mains de cette partie ; la première est la main proposée par défaut dans la visionneuse pour une nouvelle annotation.",
       "selectPlacePlaceholder": "Sélectionner un lieu...",
@@ -2435,7 +2436,7 @@
       "singularLabel": "Format",
       "pluralLabel": "Formats",
       "fieldName": "Nom",
-      "fieldNamePlaceholder": "ex. Codex, Rouleau",
+      "fieldNamePlaceholder": "p. ex. Codex, Rouleau",
       "deleteDescription": "Cela peut affecter les éléments qui utilisent ce format."
     },
     "scripts": {
@@ -2444,7 +2445,7 @@
       "singularLabel": "Écriture",
       "pluralLabel": "Écritures",
       "fieldName": "Nom",
-      "fieldNamePlaceholder": "p. ex. Caroline minuscule",
+      "fieldNamePlaceholder": "p. ex. minuscule caroline",
       "deleteDescription": "Une écriture utilisée par une main ne peut pas être supprimée."
     },
     "sources": {

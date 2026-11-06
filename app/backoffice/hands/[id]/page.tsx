@@ -84,7 +84,12 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
   const availableImages = useMemo(() => imagesData ?? [], [imagesData]);
 
   const { data: dates } = useDates();
-  const { data: scripts } = useScripts();
+  const {
+    data: scripts,
+    isError: scriptsFailed,
+    isFetching: scriptsFetching,
+    refetch: refetchScripts,
+  } = useScripts();
 
   if (editor.isError) {
     return (
@@ -217,6 +222,11 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none">{t('handsDetail.selectNoScript')}</SelectItem>
+              {hand.script !== null &&
+                hand.script_name &&
+                !scripts?.some((s) => s.id === hand.script) && (
+                  <SelectItem value={String(hand.script)}>{hand.script_name}</SelectItem>
+                )}
               {(scripts ?? []).map((s) => (
                 <SelectItem key={s.id} value={String(s.id)}>
                   {s.name}
@@ -224,6 +234,13 @@ export default function HandDetailPage({ params }: { params: Promise<{ id: strin
               ))}
             </SelectContent>
           </Select>
+          {scriptsFailed && (
+            <BackofficeInlineError
+              message={t('handsDetail.scriptsLoadFailed')}
+              retrying={scriptsFetching}
+              onRetry={() => refetchScripts()}
+            />
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="hand-display-order">{t('handsDetail.labelDisplayOrder')}</Label>

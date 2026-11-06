@@ -1292,6 +1292,7 @@
       "selectNoDate": "None",
       "labelScript": "Script",
       "selectNoScript": "None",
+      "scriptsLoadFailed": "Could not load the scripts.",
       "labelDisplayOrder": "Display order",
       "displayOrderHint": "Lower comes first among this part's hands; the first is the viewer's default for a new annotation.",
       "selectPlacePlaceholder": "Select place...",

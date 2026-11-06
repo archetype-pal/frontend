@@ -2,7 +2,11 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { toast } from 'sonner';
+
 import ScriptsPage from './page';
+import { BackofficeApiError } from '@/services/backoffice/api-client';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { renderWithQueryClient } from '@/test/render';
 
 const createScriptMock = vi.fn();
@@ -42,6 +46,21 @@ describe('<ScriptsPage>', () => {
     );
   });
 
+  it('refetches hands and scribes after a rename, so they show the new name', async () => {
+    const { client } = renderWithQueryClient(<ScriptsPage />, { tooltip: true });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Caroline miniscule' }));
+    const input = screen.getByDisplayValue('Caroline miniscule');
+    fireEvent.change(input, { target: { value: 'Caroline minuscule' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: backofficeKeys.hands.all() })
+    );
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: backofficeKeys.scribes.all() });
+  });
+
   it('adds a script', async () => {
     renderWithQueryClient(<ScriptsPage />, { tooltip: true });
 
@@ -66,5 +85,22 @@ describe('<ScriptsPage>', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => expect(deleteScriptMock).toHaveBeenCalledWith(2));
+  });
+
+  it("shows the API's reason when a script in use cannot be deleted", async () => {
+    deleteScriptMock.mockRejectedValue(
+      new BackofficeApiError(409, { detail: 'Cannot delete: still referenced by 1 hand.' })
+    );
+    renderWithQueryClient(<ScriptsPage />, { tooltip: true });
+
+    await screen.findByRole('button', { name: 'Square minuscule' });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete script' })[1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(expect.any(String), {
+        description: 'Cannot delete: still referenced by 1 hand.',
+      })
+    );
   });
 });

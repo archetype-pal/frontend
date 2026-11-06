@@ -18,6 +18,7 @@ export default function ScriptsPage() {
     <SimpleCrudPage<Script>
       queryKey={backofficeKeys.scripts.all()}
       queryFn={() => getScripts()}
+      invalidateKeys={[backofficeKeys.hands.all(), backofficeKeys.scribes.all()]}
       createFn={(payload) => createScript(payload as Partial<Script>)}
       updateFn={(id, payload) => updateScript(id, payload as Partial<Script>)}
       deleteFn={(id) => deleteScript(id)}

@@ -5,11 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithQueryClient } from '@/test/render';
 
 const { getHand, updateHand } = vi.hoisted(() => ({ getHand: vi.fn(), updateHand: vi.fn() }));
-const { SCRIPTS } = vi.hoisted(() => ({
+const { SCRIPTS, useScripts } = vi.hoisted(() => ({
   SCRIPTS: [
     { id: 1, name: 'Caroline minuscule' },
     { id: 2, name: 'Square minuscule' },
   ],
+  useScripts: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -19,7 +20,7 @@ vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('@/services/backoffice/scribes', () => ({ getHand, updateHand, deleteHand: vi.fn() }));
 vi.mock('@/hooks/backoffice/use-lookups', () => ({
   useDates: () => ({ data: [] }),
-  useScripts: () => ({ data: SCRIPTS }),
+  useScripts,
 }));
 vi.mock('@/lib/backoffice/walk-paginated', () => ({ walkPaginated: async () => [] }));
 vi.mock('@/components/backoffice/common/place-combobox', () => ({ PlaceCombobox: () => null }));
@@ -55,11 +56,22 @@ const renderPage = () => renderWithQueryClient(<HandDetailPage params={resolvedP
 
 describe('<HandDetailPage>', () => {
   beforeEach(() => {
+    useScripts.mockReset().mockReturnValue({ data: SCRIPTS });
     getHand.mockReset().mockResolvedValue(HAND);
     updateHand.mockReset().mockImplementation(async (_id: number, form: object) => ({
       ...HAND,
       ...form,
     }));
+  });
+
+  it("keeps showing the hand's script when the scripts fail to load", async () => {
+    useScripts.mockReturnValue({ isError: true, isFetching: false, refetch: vi.fn() });
+    getHand.mockResolvedValue({ ...HAND, script: 1, script_name: 'Caroline minuscule' });
+    renderPage();
+
+    const field = await screen.findByRole('combobox', { name: 'Script' });
+    expect(field.textContent).toBe('Caroline minuscule');
+    expect(screen.getByText('Could not load the scripts.')).toBeDefined();
   });
 
   it("shows the hand's display order and saves a new one", async () => {

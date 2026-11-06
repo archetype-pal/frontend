@@ -1292,6 +1292,7 @@
       "selectNoDate": "Keines",
       "labelScript": "Schrift",
       "selectNoScript": "Keine",
+      "scriptsLoadFailed": "Die Schriften konnten nicht geladen werden.",
       "labelDisplayOrder": "Anzeigereihenfolge",
       "displayOrderHint": "Niedrigere Werte stehen unter den Händen dieses Teils weiter vorn; die erste ist im Viewer die Vorgabe für eine neue Annotation.",
       "selectPlacePlaceholder": "Ort auswählen...",
