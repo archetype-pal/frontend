@@ -2194,6 +2194,7 @@
       "handPlaceholder": "Hand wählen",
       "handSearch": "Hände suchen…",
       "noHandsForPart": "Für diesen Teil ist keine Hand erfasst",
+      "optionsFailed": "Konnte nicht geladen werden. Schließen und erneut öffnen.",
       "noMatches": "Keine Treffer.",
       "loadingOptions": "Wird geladen…",
       "correctCancel": "Abbrechen",

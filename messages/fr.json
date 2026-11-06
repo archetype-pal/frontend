@@ -2194,6 +2194,7 @@
       "handPlaceholder": "Choisir une main",
       "handSearch": "Rechercher une main…",
       "noHandsForPart": "Aucune main n’est enregistrée pour cette partie",
+      "optionsFailed": "Chargement impossible. Fermez puis rouvrez cette fenêtre.",
       "noMatches": "Aucun résultat.",
       "loadingOptions": "Chargement…",
       "correctCancel": "Annuler",

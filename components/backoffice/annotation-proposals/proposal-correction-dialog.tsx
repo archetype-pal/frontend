@@ -203,7 +203,13 @@ export function ProposalCorrectionDialog({
                 options={allographs.data ?? []}
                 value={allograph}
                 onValueChange={(value) => value != null && setAllograph(value)}
-                placeholder={allographs.isPending ? t('loadingOptions') : t('allographPlaceholder')}
+                placeholder={
+                  allographs.isPending
+                    ? t('loadingOptions')
+                    : allographs.isError
+                      ? t('optionsFailed')
+                      : t('allographPlaceholder')
+                }
                 searchPlaceholder={t('allographSearch')}
                 emptyText={t('noMatches')}
                 disabled={allographs.isPending}
@@ -219,9 +225,11 @@ export function ProposalCorrectionDialog({
                 placeholder={
                   hands.isPending
                     ? t('loadingOptions')
-                    : hands.data?.length
-                      ? t('handPlaceholder')
-                      : t('noHandsForPart')
+                    : hands.isError
+                      ? t('optionsFailed')
+                      : hands.data?.length
+                        ? t('handPlaceholder')
+                        : t('noHandsForPart')
                 }
                 searchPlaceholder={t('handSearch')}
                 emptyText={t('noMatches')}

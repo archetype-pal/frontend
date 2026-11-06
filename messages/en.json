@@ -2194,6 +2194,7 @@
       "handPlaceholder": "Choose a hand",
       "handSearch": "Search hands…",
       "noHandsForPart": "No hand is recorded for this part",
+      "optionsFailed": "Could not load these. Close and open this again.",
       "noMatches": "Nothing matches.",
       "loadingOptions": "Loading…",
       "correctCancel": "Cancel",
