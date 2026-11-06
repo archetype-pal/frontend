@@ -293,6 +293,7 @@
     "keyword": "Mot-clé"
   },
   "manuscript": {
+    "origin": "Origine",
     "tabs": {
       "selectedImage": "Image sélectionnée",
       "annotations": "Annotations",
@@ -1070,6 +1071,7 @@
         "backoffice": "Administration",
         "symbols": "Paléographie",
         "repositories": "Dépôts",
+        "places": "Lieux",
         "publications": "Articles",
         "events": "Événements",
         "comments": "Commentaires",
@@ -1107,6 +1109,7 @@
       "supportingData": "Données de support",
       "physicalVolumes": "Éléments",
       "repositories": "Dépôts",
+      "places": "Lieux",
       "scripts": "Écritures",
       "formats": "Formats",
       "sources": "Références bibliographiques",
@@ -1179,6 +1182,7 @@
       "annotations": "Annotations",
       "characters": "Caractères",
       "repositories": "Dépôts",
+      "places": "Lieux",
       "scripts": "Écritures",
       "formats": "Formats",
       "sources": "Références bibliographiques",
@@ -2477,7 +2481,7 @@
       "fieldLabel": "Libellé",
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Lieu",
-      "fieldPlacePlaceholder": "Londres",
+      "placeOf": "Lieu de {name}",
       "deleteDescription": "Ce dépôt ne contient aucun élément.",
       "deleteBlocked": "Suppression impossible : ce dépôt a {count, plural, one {# élément lié} other {# éléments liés}}. Déplacez-les ou supprimez-les d'abord."
     },
@@ -2692,6 +2696,18 @@
       "labelRemoveFailed": "Échec de la suppression de {label}",
       "noLabel": "Aucun(e) {label}",
       "deleteCatalogueNumberAria": "Supprimer le numéro de catalogue",
+      "origins": "Origines",
+      "origin": "Origine",
+      "originPlaceAria": "Lieu d'origine {n}",
+      "originDoubtful": "Douteuse",
+      "originDoubtfulAria": "L'origine {n} est douteuse",
+      "removeOriginAria": "Supprimer l'origine {n}",
+      "removeOriginTitle": "Retirer cette origine ?",
+      "removeOriginDescription": "Retirer {place} comme origine de ce manuscrit ? Sa justification sera aussi supprimée.",
+      "originEvidenceAria": "Preuve de l'origine {n}",
+      "newOriginPlaceAria": "Lieu de la nouvelle origine",
+      "addEvidencePlaceholder": "Ajouter une preuve...",
+      "evidenceOptionalPlaceholder": "Preuve (facultative)",
       "addUrlPlaceholder": "Ajouter une URL...",
       "sourcePlaceholder": "Référence bibliographique",
       "numberPlaceholder": "Numéro",
@@ -2814,6 +2830,14 @@
       "fieldDateString": "Chaîne de {dateLabel}",
       "fieldDatePlaceholder": "p. ex. s.xii",
       "deleteDescription": "Cela peut affecter les {historicalItemPlural} faisant référence à cette {dateLabel}."
+    },
+    "places": {
+      "title": "Lieux",
+      "singular": "Lieu",
+      "description": "Gérer la liste commune des lieux",
+      "fieldName": "Nom",
+      "fieldNamePlaceholder": "p. ex. Worcester",
+      "deleteDescription": "Les mains, dépôts et scribes liés à ce lieu ne l'auront plus. Un lieu qui est l'origine d'un manuscrit ne peut pas être supprimé."
     },
     "importTei": {
       "validatorUnreachable": "Impossible de joindre le validateur",

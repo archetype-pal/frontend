@@ -141,3 +141,25 @@ describe('ManuscriptViewer — manuscriptDescriptions feature gate', () => {
     expect(container.textContent).toContain('NRS GD 55/1');
   });
 });
+
+describe('ManuscriptViewer — origins', () => {
+  it('lists the origins and marks the doubtful ones', () => {
+    const manuscript = {
+      ...MANUSCRIPT,
+      historical_item: {
+        ...MANUSCRIPT.historical_item,
+        origins: [
+          { place: 'Exeter', dubitable: false },
+          { place: 'Canterbury', dubitable: true },
+        ],
+      },
+    } as Manuscript;
+
+    const { container } = renderViewer(false, [], manuscript);
+    const term = Array.from(container.querySelectorAll('dt')).find(
+      (dt) => dt.textContent === 'Origin'
+    );
+
+    expect(term?.nextElementSibling?.textContent).toBe('Exeter, Canterbury (?)');
+  });
+});

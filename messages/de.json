@@ -293,6 +293,7 @@
     "keyword": "Stichwort"
   },
   "manuscript": {
+    "origin": "Herkunft",
     "tabs": {
       "selectedImage": "Ausgewähltes Bild",
       "annotations": "Annotationen",
@@ -1070,6 +1071,7 @@
         "backoffice": "Backoffice",
         "symbols": "Paläographie",
         "repositories": "Bibliotheken",
+        "places": "Orte",
         "publications": "Beiträge",
         "events": "Veranstaltungen",
         "comments": "Kommentare",
@@ -1107,6 +1109,7 @@
       "supportingData": "Zusatzdaten",
       "physicalVolumes": "Elemente",
       "repositories": "Bibliotheken",
+      "places": "Orte",
       "scripts": "Schriften",
       "formats": "Formate",
       "sources": "Bibliografische Referenzen",
@@ -1179,6 +1182,7 @@
       "annotations": "Annotationen",
       "characters": "Zeichen",
       "repositories": "Bibliotheken",
+      "places": "Orte",
       "scripts": "Schriften",
       "formats": "Formate",
       "sources": "Bibliografische Referenzen",
@@ -2477,7 +2481,7 @@
       "fieldLabel": "Bezeichnung",
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Ort",
-      "fieldPlacePlaceholder": "London",
+      "placeOf": "Ort von {name}",
       "deleteDescription": "Dieser Verwahrort enthält keine Elemente.",
       "deleteBlocked": "Löschen nicht möglich: Dieser Verwahrort hat {count, plural, one {# verknüpftes Element} other {# verknüpfte Elemente}}. Verschieben oder löschen Sie diese zuerst."
     },
@@ -2692,6 +2696,18 @@
       "labelRemoveFailed": "{label} konnte nicht entfernt werden",
       "noLabel": "Kein {label}",
       "deleteCatalogueNumberAria": "Katalognummer löschen",
+      "origins": "Herkunft",
+      "origin": "Herkunftsort",
+      "originPlaceAria": "Herkunftsort {n}",
+      "originDoubtful": "Unsicher",
+      "originDoubtfulAria": "Herkunftsort {n} ist unsicher",
+      "removeOriginAria": "Herkunftsort {n} entfernen",
+      "removeOriginTitle": "Diese Herkunft entfernen?",
+      "removeOriginDescription": "{place} als Herkunft dieser Handschrift entfernen? Der Nachweis wird ebenfalls entfernt.",
+      "originEvidenceAria": "Beleg für Herkunftsort {n}",
+      "newOriginPlaceAria": "Ort des neuen Herkunftsorts",
+      "addEvidencePlaceholder": "Beleg hinzufügen...",
+      "evidenceOptionalPlaceholder": "Beleg (optional)",
       "addUrlPlaceholder": "URL hinzufügen...",
       "sourcePlaceholder": "Bibliografische Referenz",
       "numberPlaceholder": "Nummer",
@@ -2814,6 +2830,14 @@
       "fieldDateString": "{dateLabel}-Zeichenfolge",
       "fieldDatePlaceholder": "z. B. s.xii",
       "deleteDescription": "Dies kann sich auf {historicalItemPlural} auswirken, die auf {dateLabel} verweisen."
+    },
+    "places": {
+      "title": "Orte",
+      "singular": "Ort",
+      "description": "Verwalten Sie die gemeinsame Liste der Orte",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "z. B. Worcester",
+      "deleteDescription": "Mit diesem Ort verknüpfte Hände, Bibliotheken und Schreiber haben ihn danach nicht mehr. Ein Ort, der Herkunftsort einer Handschrift ist, kann nicht gelöscht werden."
     },
     "importTei": {
       "validatorUnreachable": "Der Validator konnte nicht erreicht werden",

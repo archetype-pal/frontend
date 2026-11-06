@@ -38,6 +38,7 @@ const ITEM = {
   catalogue_numbers: [],
   descriptions: [],
   item_parts: [],
+  origins: [],
 };
 
 beforeEach(() => {

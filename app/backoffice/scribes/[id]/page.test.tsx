@@ -1,48 +1,74 @@
 /** @vitest-environment jsdom */
-import { screen } from '@testing-library/react';
+import { act, Suspense } from 'react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import ScribeDetailPage from './page';
 import { renderWithQueryClient } from '@/test/render';
 
-const getScribe = vi.hoisted(() =>
-  vi.fn(async (id: number) => ({ id, name: 'A scribe', scriptorium: '', period: null }))
-);
+const updateScribeMock = vi.fn();
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
-}));
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
+vi.mock('sonner', () => import('@/test/mocks/sonner'));
+vi.mock('next/navigation', () => import('@/test/mocks/next-navigation'));
+vi.mock('@/lib/backoffice/walk-paginated', () => ({ walkPaginated: async () => [] }));
 vi.mock('@/services/backoffice/scribes', () => ({
-  getScribe,
-  updateScribe: vi.fn(),
+  getScribe: async (id: number) => ({
+    id,
+    name: 'Scribe A',
+    period: null,
+    period_display: null,
+    scriptorium: 10,
+    scriptorium_display: 'Worcester',
+    hand_count: 0,
+  }),
+  updateScribe: (...args: unknown[]) => updateScribeMock(...args),
   deleteScribe: vi.fn(),
 }));
-vi.mock('@/hooks/backoffice/use-lookups', () => ({ useDates: () => ({ data: [] }) }));
-vi.mock('@/lib/backoffice/walk-paginated', () => ({ walkPaginated: async () => [] }));
-
-import ScribeDetailPage from './page';
-
-// A promise React already knows is fulfilled, so `use(params)` reads it without suspending.
-const resolvedParams = (id: string) =>
-  Object.assign(Promise.resolve({ id }), { status: 'fulfilled', value: { id } });
-
-async function renderPage(id: string) {
-  renderWithQueryClient(<ScribeDetailPage params={resolvedParams(id)} />);
-  await screen.findByDisplayValue('A scribe');
-}
+vi.mock('@/services/backoffice/manuscripts', () => ({
+  getDates: async () => [],
+  getPlaces: async () => [
+    { id: 10, name: 'Worcester' },
+    { id: 11, name: 'Canterbury' },
+  ],
+  createPlace: vi.fn(),
+}));
 
 describe('<ScribeDetailPage>', () => {
-  it('links a scribe to their public profile', async () => {
-    await renderPage('5');
+  it("picks the scribe's scriptorium from the place list", async () => {
+    updateScribeMock.mockResolvedValue({});
+    await act(async () => {
+      renderWithQueryClient(
+        <Suspense fallback={null}>
+          <ScribeDetailPage params={Promise.resolve({ id: '4' })} />
+        </Suspense>
+      );
+    });
 
-    expect(screen.getByRole('link', { name: /public profile/i }).getAttribute('href')).toBe(
-      '/scribes/5'
+    const picker = await screen.findByRole('combobox', { name: 'Scriptorium' });
+    expect(picker.textContent).toContain('Worcester');
+    fireEvent.click(picker);
+    fireEvent.click(await screen.findByRole('option', { name: 'Canterbury' }));
+    fireEvent.click(screen.getByRole('button', { name: /Save/ }));
+
+    await waitFor(() =>
+      expect(updateScribeMock).toHaveBeenCalledWith(4, expect.objectContaining({ scriptorium: 11 }))
     );
   });
 
-  it('has no profile link for the placeholder scribe, which has no public page', async () => {
-    await renderPage('-1');
+  it.each([
+    ['links a scribe to their public profile', '5', true],
+    ['has no profile link for the placeholder scribe, which has no public page', '-1', false],
+  ])('%s', async (_name, id, linked) => {
+    await act(async () => {
+      renderWithQueryClient(
+        <Suspense fallback={null}>
+          <ScribeDetailPage params={Promise.resolve({ id })} />
+        </Suspense>
+      );
+    });
 
-    expect(screen.queryByRole('link', { name: /public profile/i })).toBeNull();
+    await screen.findByRole('combobox', { name: 'Scriptorium' });
+    expect(screen.queryByRole('link', { name: /public profile/i }) !== null).toBe(linked);
   });
 });

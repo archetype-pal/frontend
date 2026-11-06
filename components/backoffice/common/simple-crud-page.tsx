@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import type { LucideIcon } from 'lucide-react';
@@ -29,6 +29,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+type CrudFieldEditorProps<T> = {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  row?: T;
+};
+
 type CrudFieldConfig<T> = {
   key: keyof T;
   label: string;
@@ -37,6 +44,8 @@ type CrudFieldConfig<T> = {
   required?: boolean;
   tableSize?: number;
   parse?: (value: string) => unknown;
+  editor?: (props: CrudFieldEditorProps<T>) => ReactNode;
+  sortValue?: (row: T) => string;
 };
 
 type SimpleCrudPageProps<T extends { id: number }> = {
@@ -133,7 +142,7 @@ export function SimpleCrudPage<T extends { id: number }>({
     },
   });
 
-  const updateMut = useMutation({
+  const { mutateAsync: updateField } = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
       updateFn(id, payload),
     onSuccess: invalidate,
@@ -169,22 +178,33 @@ export function SimpleCrudPage<T extends { id: number }>({
     }
 
     for (const field of fields) {
+      const save = (id: number, nextValue: string) =>
+        updateField({
+          id,
+          payload: {
+            [field.key as string]: field.parse ? field.parse(nextValue) : nextValue,
+          },
+        });
       generated.push({
-        accessorKey: String(field.key),
+        id: String(field.key),
+        accessorFn: (row) => (field.sortValue ? field.sortValue(row) : row[field.key]),
         header: sortableHeader(field.label),
-        cell: ({ row }) => (
-          <InlineEdit
-            value={toEditableString(row.original[field.key])}
-            onSave={(nextValue) =>
-              updateMut.mutate({
-                id: row.original.id,
-                payload: {
-                  [field.key as string]: field.parse ? field.parse(nextValue) : nextValue,
-                },
-              })
-            }
-          />
-        ),
+        cell: ({ row }) =>
+          field.editor ? (
+            field.editor({
+              value: toEditableString(row.original[field.key]),
+              // The mutation's onError already reports a failure.
+              onChange: (nextValue) => void save(row.original.id, nextValue).catch(() => {}),
+              row: row.original,
+            })
+          ) : (
+            <InlineEdit
+              value={toEditableString(row.original[field.key])}
+              onSave={async (nextValue) => {
+                await save(row.original.id, nextValue);
+              }}
+            />
+          ),
         size: field.tableSize,
       });
     }
@@ -198,7 +218,7 @@ export function SimpleCrudPage<T extends { id: number }>({
             <Tooltip>
               <TooltipTrigger asChild>
                 {/* A disabled button fires no pointer events, so the span carries the tooltip. */}
-                <span tabIndex={0} className="inline-flex">
+                <span tabIndex={0} className="ml-auto flex w-fit">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -218,7 +238,7 @@ export function SimpleCrudPage<T extends { id: number }>({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            className="ml-auto flex h-7 w-7 text-muted-foreground hover:text-destructive"
             onClick={() => setDeleteTarget(row.original)}
             aria-label={t('simpleCrud.deleteLabel', { label: singularLabel.toLowerCase() })}
           >
@@ -230,7 +250,7 @@ export function SimpleCrudPage<T extends { id: number }>({
     });
 
     return generated;
-  }, [fields, showIdColumn, updateMut, singularLabel, t, deleteBlockedReason]);
+  }, [fields, showIdColumn, updateField, singularLabel, t, deleteBlockedReason]);
 
   if (isError) {
     return (
@@ -280,21 +300,23 @@ export function SimpleCrudPage<T extends { id: number }>({
           <DialogBody className="space-y-3">
             {fields.map((field) => {
               const key = String(field.key);
+              const id = `new-${key}`;
+              const setValue = (value: string) => setDraft((prev) => ({ ...prev, [key]: value }));
               return (
                 <div key={key} className="space-y-1.5">
-                  <Label>{field.label}</Label>
-                  <Input
-                    type={field.inputType ?? 'text'}
-                    value={draft[key] ?? ''}
-                    onChange={(e) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        [key]: e.target.value,
-                      }))
-                    }
-                    placeholder={field.placeholder}
-                    autoFocus={key === String(fields[0]?.key)}
-                  />
+                  <Label htmlFor={id}>{field.label}</Label>
+                  {field.editor ? (
+                    field.editor({ id, value: draft[key] ?? '', onChange: setValue })
+                  ) : (
+                    <Input
+                      id={id}
+                      type={field.inputType ?? 'text'}
+                      value={draft[key] ?? ''}
+                      onChange={(e) => setValue(e.target.value)}
+                      placeholder={field.placeholder}
+                      autoFocus={key === String(fields[0]?.key)}
+                    />
+                  )}
                 </div>
               );
             })}

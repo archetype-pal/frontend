@@ -9,6 +9,7 @@ import type {
   BibliographicSource,
   ItemFormat,
   CatalogueNumber,
+  HistoricalItemOrigin,
   HistoricalItemDescription,
   MsDescArea,
   BackofficeDate,
@@ -127,6 +128,14 @@ export const createCatalogueNumber = catalogueNumbersCrud.create;
 export const updateCatalogueNumber = catalogueNumbersCrud.update;
 export const deleteCatalogueNumber = catalogueNumbersCrud.remove;
 
+const originsCrud = createCrudService<HistoricalItemOrigin>(
+  '/api/v1/manuscripts/management/origins/'
+);
+
+export const createOrigin = originsCrud.create;
+export const updateOrigin = originsCrud.update;
+export const deleteOrigin = originsCrud.remove;
+
 // ── Descriptions ────────────────────────────────────────────────────────
 
 const descriptionsCrud = createCrudService<HistoricalItemDescription>(
@@ -208,3 +217,5 @@ const placesCrud = createCrudService<BackofficePlace[], BackofficePlace>(
 export const getPlaces = () => placesCrud.list();
 
 export const createPlace = placesCrud.create;
+export const updatePlace = placesCrud.update;
+export const deletePlace = placesCrud.remove;

@@ -107,7 +107,8 @@ export interface Repository {
   id: number;
   name: string;
   label: string;
-  place: string;
+  place: number | null;
+  place_display: string | null;
   url: string | null;
   type: string | null;
   current_item_count?: number;
@@ -131,6 +132,15 @@ export interface CatalogueNumber {
   catalogue: number;
   catalogue_label: string;
   url: string | null;
+}
+
+export interface HistoricalItemOrigin {
+  id: number;
+  historical_item: number;
+  place: number;
+  place_display: string;
+  evidence: string;
+  dubitable: boolean;
 }
 
 export interface HistoricalItemDescription {
@@ -213,6 +223,7 @@ export interface HistoricalItemDetail {
   dating_notes: string;
   catalogue_numbers: CatalogueNumber[];
   descriptions: HistoricalItemDescription[];
+  origins: HistoricalItemOrigin[];
   item_parts: ItemPartNested[];
 }
 
@@ -223,7 +234,8 @@ export interface AdminScribeListItem {
   name: string;
   period: number | null;
   period_display: string | null;
-  scriptorium: string;
+  scriptorium: number | null;
+  scriptorium_display: string | null;
   hand_count: number;
 }
 

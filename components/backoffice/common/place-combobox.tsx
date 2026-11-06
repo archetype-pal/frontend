@@ -31,6 +31,9 @@ interface PlaceComboboxProps {
   selectedLabel?: string | null;
   /** Id for the trigger button, so a `<Label htmlFor>` names the control. */
   id?: string;
+  'aria-label'?: string;
+  /** Offers clearing the place; off where a place is required. */
+  allowNone?: boolean;
   className?: string;
 }
 
@@ -44,6 +47,8 @@ export function PlaceCombobox({
   onChange,
   selectedLabel,
   id,
+  'aria-label': ariaLabel,
+  allowNone = true,
   className,
 }: PlaceComboboxProps) {
   const { isAuthenticated } = useAuth();
@@ -95,10 +100,12 @@ export function PlaceCombobox({
   });
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    // Modal: inside a Dialog, the Dialog's scroll lock would otherwise block scrolling the list.
+    <Popover modal open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           id={id}
+          aria-label={ariaLabel && displayValue ? `${ariaLabel}: ${displayValue}` : ariaLabel}
           type="button"
           variant="outline"
           // Radix's PopoverTrigger sets aria-controls while the list is open.
@@ -158,18 +165,20 @@ export function PlaceCombobox({
             <CommandList>
               <CommandEmpty>{t('handsDetail.noPlacesFound')}</CommandEmpty>
               <CommandGroup>
-                <CommandItem
-                  value="__none__"
-                  onSelect={() => {
-                    onChange(null);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn('mr-2 h-4 w-4', value == null ? 'opacity-100' : 'opacity-0')}
-                  />
-                  <span className="text-muted-foreground">{t('handsDetail.selectNoPlace')}</span>
-                </CommandItem>
+                {allowNone && (
+                  <CommandItem
+                    value="__none__"
+                    onSelect={() => {
+                      onChange(null);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn('mr-2 h-4 w-4', value == null ? 'opacity-100' : 'opacity-0')}
+                    />
+                    <span className="text-muted-foreground">{t('handsDetail.selectNoPlace')}</span>
+                  </CommandItem>
+                )}
                 {places.map((p) => (
                   <CommandItem
                     key={p.id}

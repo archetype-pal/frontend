@@ -29,9 +29,11 @@ import type { AdminHandListItem, AdminScribeListItem } from '@/types/backoffice'
 export function formatScribeOptionLabel(scribe: {
   name: string;
   period_display?: string | null;
-  scriptorium?: string | null;
+  scriptorium_display?: string | null;
 }): string {
-  const details = [scribe.period_display, scribe.scriptorium?.trim()].filter(Boolean).join(' · ');
+  const details = [scribe.period_display, scribe.scriptorium_display?.trim()]
+    .filter(Boolean)
+    .join(' · ');
   return details ? `${scribe.name} (${details})` : scribe.name;
 }
 

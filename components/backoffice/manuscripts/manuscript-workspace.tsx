@@ -25,6 +25,7 @@ import { CompletenessChecklist } from '@/components/backoffice/common/completene
 import { UnsavedChangesBar } from '@/components/backoffice/common/unsaved-changes-bar';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
 import { CatalogueNumbersSection } from './catalogue-numbers-section';
+import { OriginsSection } from './origins-section';
 import { DescriptionsSection } from './descriptions-section';
 import { MsDescSection } from './msdesc-section';
 import { CurrentLocationSection } from './current-location-section';
@@ -474,6 +475,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
             historicalItemId={itemId}
             catalogueNumbers={item.catalogue_numbers}
           />
+
+          <OriginsSection historicalItemId={itemId} origins={item.origins} />
 
           {/* Structured TEI description (msDesc) */}
           <MsDescSection historicalItemId={itemId} itemParts={item.item_parts} />

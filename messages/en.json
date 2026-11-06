@@ -293,6 +293,7 @@
     "keyword": "Keyword"
   },
   "manuscript": {
+    "origin": "Origin",
     "tabs": {
       "selectedImage": "Selected Image",
       "annotations": "Annotations",
@@ -1070,6 +1071,7 @@
         "backoffice": "Backoffice",
         "symbols": "Palaeography",
         "repositories": "Repositories",
+        "places": "Places",
         "publications": "Posts",
         "events": "Events",
         "comments": "Comments",
@@ -1107,6 +1109,7 @@
       "supportingData": "Supporting Data",
       "physicalVolumes": "Items",
       "repositories": "Repositories",
+      "places": "Places",
       "scripts": "Scripts",
       "formats": "Formats",
       "sources": "Bibliographic References",
@@ -1179,6 +1182,7 @@
       "annotations": "Annotations",
       "characters": "Characters",
       "repositories": "Repositories",
+      "places": "Places",
       "scripts": "Scripts",
       "formats": "Formats",
       "sources": "Bibliographic References",
@@ -2477,7 +2481,7 @@
       "fieldLabel": "Label",
       "fieldLabelPlaceholder": "BL",
       "fieldPlace": "Place",
-      "fieldPlacePlaceholder": "London",
+      "placeOf": "Place of {name}",
       "deleteDescription": "This repository holds no items.",
       "deleteBlocked": "Can't delete: this repository has {count, plural, one {# linked item} other {# linked items}}. Move or delete them first."
     },
@@ -2692,6 +2696,18 @@
       "labelRemoveFailed": "Failed to remove {label}",
       "noLabel": "No {label}",
       "deleteCatalogueNumberAria": "Delete catalogue number",
+      "origins": "Origins",
+      "origin": "Origin",
+      "originPlaceAria": "Place of origin {n}",
+      "originDoubtful": "Doubtful",
+      "originDoubtfulAria": "Origin {n} is doubtful",
+      "removeOriginAria": "Remove origin {n}",
+      "removeOriginTitle": "Remove this origin?",
+      "removeOriginDescription": "Remove {place} as an origin of this manuscript? Its evidence is removed too.",
+      "originEvidenceAria": "Evidence for origin {n}",
+      "newOriginPlaceAria": "Place of the new origin",
+      "addEvidencePlaceholder": "Add evidence...",
+      "evidenceOptionalPlaceholder": "Evidence (optional)",
       "addUrlPlaceholder": "Add URL...",
       "sourcePlaceholder": "Bibliographic Reference",
       "numberPlaceholder": "Number",
@@ -2814,6 +2830,14 @@
       "fieldDateString": "{dateLabel} string",
       "fieldDatePlaceholder": "e.g. s.xii",
       "deleteDescription": "This may affect {historicalItemPlural} that reference this {dateLabel}."
+    },
+    "places": {
+      "title": "Places",
+      "singular": "Place",
+      "description": "Manage the shared list of places",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "e.g. Worcester",
+      "deleteDescription": "Hands, repositories and scribes linked to this place will no longer have it. A place that is a manuscript's origin cannot be deleted."
     },
     "importTei": {
       "validatorUnreachable": "Could not reach the validator",
