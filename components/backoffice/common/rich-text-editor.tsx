@@ -31,6 +31,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { DeleteDropsMarks } from '@/lib/tiptap-delete-drops-marks';
 import { cn } from '@/lib/utils';
 
 interface RichTextEditorProps {
@@ -64,6 +65,7 @@ export function RichTextEditor({
       Link.configure({
         openOnClick: false,
       }),
+      DeleteDropsMarks,
       Image,
       Placeholder.configure({ placeholder: resolvedPlaceholder }),
     ],
