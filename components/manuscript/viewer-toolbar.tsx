@@ -32,6 +32,7 @@ interface ViewerToolbarProps {
   unsavedChanges: number;
   canDeleteAnnotations: boolean;
   canCreatePublicAnnotations: boolean;
+  canModify: boolean;
   /**
    * Pure Text view: a drawn region links to a phrase, so the glyph-only tools
    * (editorial create, draft Save) are hidden — Draw/Modify/Delete remain for
@@ -103,6 +104,7 @@ export function ViewerToolbar({
   unsavedChanges,
   canDeleteAnnotations,
   canCreatePublicAnnotations,
+  canModify,
   textOnlyMode,
   onToggleFullScreen,
   onMoveTool,
@@ -195,14 +197,16 @@ export function ViewerToolbar({
           />
         )}
 
-        <ToolbarButton
-          icon={Expand}
-          label={textOnlyMode ? t('toolbar.modifyRegion') : t('toolbar.modify')}
-          tooltip={textOnlyMode ? t('toolbar.modifyRegionTooltip') : undefined}
-          keyshortcuts="M Shift+M"
-          active={activeTool === 'modify'}
-          onClick={onModifyTool}
-        />
+        {canModify && (
+          <ToolbarButton
+            icon={Expand}
+            label={textOnlyMode ? t('toolbar.modifyRegion') : t('toolbar.modify')}
+            tooltip={textOnlyMode ? t('toolbar.modifyRegionTooltip') : undefined}
+            keyshortcuts="M Shift+M"
+            active={activeTool === 'modify'}
+            onClick={onModifyTool}
+          />
+        )}
 
         {canCreatePublicAnnotations && (
           <ToolbarButton
