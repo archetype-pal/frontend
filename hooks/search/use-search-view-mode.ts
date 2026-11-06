@@ -17,11 +17,13 @@ export function isTableOnlyType(type: ResultType): boolean {
 
 export function parseViewModeParam(raw: string | null, resultType: ResultType): ViewMode | null {
   if (!raw) return null;
+  // The map view is gone: old links and saved choices open the table.
+  if (raw === 'map') return 'table';
   const v = raw as ViewMode;
   const allowed: ViewMode[] = ['table', 'grid', 'timeline', 'distribution'];
   if (!allowed.includes(v)) return null;
   if (v === 'distribution' && resultType !== 'graphs') return null;
-  if (v === 'grid' && isTableOnlyType(resultType)) return null;
+  if (v !== 'table' && isTableOnlyType(resultType)) return null;
   return v;
 }
 

@@ -21,7 +21,7 @@ type ViewSwitcherProps = {
 
 /**
  * The visible segmented view-switcher in the search sub-header. Surfaces the
- * Table / Grid / Timeline / Map / Charts lenses that previously hid inside the
+ * Table / Grid / Timeline / Charts lenses that previously hid inside the
  * Actions menu, so users actually discover the grid. Availability mirrors the
  * `show*Toggle` flags from `useSearchViewMode`; a view that exists for the type
  * but has no data (e.g. timeline with no date distribution) is shown disabled.
