@@ -124,6 +124,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
                   <TableRow>
                     <TableHead>{t('fields.itemPart')}</TableHead>
                     <TableHead>{t('fields.hand')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('fields.script')}</TableHead>
                     <TableHead className="hidden sm:table-cell">{t('fields.date')}</TableHead>
                     <TableHead className="hidden md:table-cell">{t('fields.place')}</TableHead>
                   </TableRow>
@@ -151,6 +152,9 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
                         >
                           {hand.name}
                         </Link>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {hand.script ?? '—'}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">
                         {hand.date ?? '—'}

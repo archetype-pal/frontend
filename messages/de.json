@@ -1080,6 +1080,7 @@
         "partners": "Partner",
         "scribes": "Schreiber",
         "hands": "Hände",
+        "scripts": "Schriften",
         "formats": "Formate",
         "sources": "Bibliografische Referenzen",
         "annotations": "Annotationen",
@@ -1109,6 +1110,7 @@
       "physicalVolumes": "Elemente",
       "repositories": "Bibliotheken",
       "places": "Orte",
+      "scripts": "Schriften",
       "formats": "Formate",
       "sources": "Bibliografische Referenzen",
       "groupSiteContent": "Website & Inhalte",
@@ -1181,6 +1183,7 @@
       "characters": "Zeichen",
       "repositories": "Bibliotheken",
       "places": "Orte",
+      "scripts": "Schriften",
       "formats": "Formate",
       "sources": "Bibliografische Referenzen",
       "publications": "Beiträge",
@@ -1289,6 +1292,9 @@
       "labelName": "Name",
       "labelPlace": "Ort",
       "selectNoDate": "Keines",
+      "labelScript": "Schrift",
+      "selectNoScript": "Keine",
+      "scriptsLoadFailed": "Die Schriften konnten nicht geladen werden.",
       "labelDisplayOrder": "Anzeigereihenfolge",
       "displayOrderHint": "Niedrigere Werte stehen unter den Händen dieses Teils weiter vorn; die erste ist im Viewer die Vorgabe für eine neue Annotation.",
       "selectPlacePlaceholder": "Ort auswählen...",
@@ -2444,6 +2450,15 @@
       "fieldNamePlaceholder": "z. B. Kodex, Rolle",
       "deleteDescription": "Dies kann sich auf Objekte auswirken, die dieses Format verwenden."
     },
+    "scripts": {
+      "title": "Schriften",
+      "description": "Die von Händen verwendeten Schriften verwalten",
+      "singularLabel": "Schrift",
+      "pluralLabel": "Schriften",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "z. B. Karolingische Minuskel",
+      "deleteDescription": "Eine Schrift, die von einer Hand verwendet wird, kann nicht gelöscht werden."
+    },
     "sources": {
       "title": "Bibliografische Referenzen",
       "description": "Bibliografische Referenzdatensätze verwalten",
@@ -3162,6 +3177,7 @@
       "description": "Beschreibung",
       "itemPart": "Objektteil",
       "hand": "Hand",
+      "script": "Schrift",
       "place": "Ort"
     },
     "manuscriptFallback": "Manuskript Nr. {id}",

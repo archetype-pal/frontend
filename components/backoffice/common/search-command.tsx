@@ -9,6 +9,7 @@ import {
   Landmark,
   Newspaper,
   PenTool,
+  Feather,
   MessageSquare,
   Image,
   Hash,
@@ -102,6 +103,12 @@ function getEntries(
       label: t('search.places'),
       href: '/backoffice/places',
       icon: MapPin,
+      group: t('search.groupManuscripts'),
+    },
+    {
+      label: t('search.scripts'),
+      href: '/backoffice/scripts',
+      icon: Feather,
       group: t('search.groupManuscripts'),
     },
     {

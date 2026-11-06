@@ -470,3 +470,42 @@ describe('HandViewer Graphs tab', () => {
     expect(toastMock.info).toHaveBeenCalledWith('That graph is already in your collection.');
   });
 });
+
+describe('HandViewer Information tab', () => {
+  beforeEach(() => {
+    nav.search = '';
+    apiFetch.mockReset();
+    apiFetch.mockImplementation(async (url: string) => respond(url));
+  });
+
+  it("shows the hand's script", () => {
+    render(
+      <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
+        <HandViewer
+          hand={{ ...HAND, script: 'Caroline minuscule' }}
+          images={IMAGES}
+          scribe={null}
+          manuscript={MANUSCRIPT}
+        />
+      </SiteFeaturesProvider>
+    );
+
+    expect(screen.getByText('Script').nextElementSibling?.textContent).toBe('Caroline minuscule');
+  });
+
+  it('shows no Script row for a hand without a script', () => {
+    render(
+      <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
+        <HandViewer
+          hand={{ ...HAND, script: null }}
+          images={IMAGES}
+          scribe={null}
+          manuscript={MANUSCRIPT}
+        />
+      </SiteFeaturesProvider>
+    );
+
+    expect(screen.getByText('Manuscript')).toBeDefined();
+    expect(screen.queryByText('Script')).toBeNull();
+  });
+});

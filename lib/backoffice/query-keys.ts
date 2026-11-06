@@ -100,6 +100,9 @@ export const backofficeKeys = {
       [...backofficeKeys.hands.all(), 'list', filters] as const,
     detail: (id: number) => [...backofficeKeys.hands.all(), 'detail', id] as const,
   },
+  scripts: {
+    all: () => [...backofficeKeys.all, 'scripts'] as const,
+  },
 
   // ── Image texts ──────────────────────────────────────────
   imageTexts: {

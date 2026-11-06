@@ -4,6 +4,7 @@ import type {
   AdminScribeListItem,
   AdminHandListItem,
   HandDescription,
+  Script,
 } from '@/types/backoffice';
 
 // ── Scribes ─────────────────────────────────────────────────────────────
@@ -58,3 +59,10 @@ const handDescriptionsCrud = createCrudService<HandDescription>(
 export const createHandDescription = handDescriptionsCrud.create;
 export const updateHandDescription = handDescriptionsCrud.update;
 export const deleteHandDescription = handDescriptionsCrud.remove;
+
+const scriptsCrud = createCrudService<Script[], Script>('/api/v1/management/scribes/scripts/');
+
+export const getScripts = () => scriptsCrud.list();
+export const createScript = scriptsCrud.create;
+export const updateScript = scriptsCrud.update;
+export const deleteScript = scriptsCrud.remove;

@@ -1080,6 +1080,7 @@
         "partners": "Partners",
         "scribes": "Scribes",
         "hands": "Hands",
+        "scripts": "Scripts",
         "formats": "Formats",
         "sources": "Bibliographic References",
         "annotations": "Annotations",
@@ -1109,6 +1110,7 @@
       "physicalVolumes": "Items",
       "repositories": "Repositories",
       "places": "Places",
+      "scripts": "Scripts",
       "formats": "Formats",
       "sources": "Bibliographic References",
       "groupSiteContent": "Site & Content",
@@ -1181,6 +1183,7 @@
       "characters": "Characters",
       "repositories": "Repositories",
       "places": "Places",
+      "scripts": "Scripts",
       "formats": "Formats",
       "sources": "Bibliographic References",
       "publications": "Posts",
@@ -1289,6 +1292,9 @@
       "labelName": "Name",
       "labelPlace": "Place",
       "selectNoDate": "None",
+      "labelScript": "Script",
+      "selectNoScript": "None",
+      "scriptsLoadFailed": "Could not load the scripts.",
       "labelDisplayOrder": "Display order",
       "displayOrderHint": "Lower comes first among this part's hands; the first is the viewer's default for a new annotation.",
       "selectPlacePlaceholder": "Select place...",
@@ -2444,6 +2450,15 @@
       "fieldNamePlaceholder": "e.g. Codex, Roll",
       "deleteDescription": "This may affect items that use this format."
     },
+    "scripts": {
+      "title": "Scripts",
+      "description": "Manage script records used across hands",
+      "singularLabel": "Script",
+      "pluralLabel": "Scripts",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "e.g. Caroline minuscule",
+      "deleteDescription": "A script that is used by a hand cannot be deleted."
+    },
     "sources": {
       "title": "Bibliographic References",
       "description": "Manage bibliographic reference records",
@@ -3162,6 +3177,7 @@
       "description": "Description",
       "itemPart": "Item Part",
       "hand": "Hand",
+      "script": "Script",
       "place": "Place"
     },
     "manuscriptFallback": "Manuscript #{id}",
