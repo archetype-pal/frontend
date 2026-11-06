@@ -22,14 +22,12 @@ import { DataPagination } from '@/components/ui/data-pagination';
 import { Segmented } from '@/components/ui/segmented';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { BackofficeErrorState } from '@/components/backoffice/common/query-state';
-import {
-  ProposalRow,
-  acceptBlocker,
-} from '@/components/backoffice/annotation-proposals/proposal-row';
+import { ProposalRow } from '@/components/backoffice/annotation-proposals/proposal-row';
 import { useAuth } from '@/contexts/auth-context';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
+import { acceptBlocker } from '@/lib/backoffice/proposal-accept';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { cn } from '@/lib/utils';
 import {
