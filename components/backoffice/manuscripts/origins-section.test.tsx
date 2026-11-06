@@ -81,13 +81,48 @@ describe('<OriginsSection>', () => {
   it('marks an origin doubtful and removes it', async () => {
     renderWithQueryClient(<OriginsSection historicalItemId={3} origins={[ORIGIN]} />);
 
-    expect(screen.getByRole('combobox', { name: 'Place of origin 1' }).textContent).toContain(
-      'Worcester'
-    );
+    expect(
+      screen.getByRole('combobox', { name: 'Place of origin 1: Worcester' }).textContent
+    ).toContain('Worcester');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Origin 1 is doubtful' }));
     await waitFor(() => expect(updateOriginMock).toHaveBeenCalledWith(5, { dubitable: true }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove origin 1' }));
+    expect(deleteOriginMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(deleteOriginMock).toHaveBeenCalledWith(5));
+  });
+
+  it('offers no empty place on an origin, which requires one', async () => {
+    renderWithQueryClient(<OriginsSection historicalItemId={3} origins={[ORIGIN]} />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Place of origin 1: Worcester' }));
+
+    await screen.findByRole('option', { name: 'Exeter' });
+    expect(screen.queryByRole('option', { name: 'None' })).toBeNull();
+  });
+
+  it('keeps the evidence editor open when saving fails', async () => {
+    updateOriginMock.mockRejectedValue(new Error('offline'));
+    renderWithQueryClient(<OriginsSection historicalItemId={3} origins={[ORIGIN]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Evidence for origin 1' }));
+    const field = screen.getByRole('textbox', { name: 'Evidence for origin 1' });
+    fireEvent.change(field, { target: { value: 'Ker 1957' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    await waitFor(() => expect(updateOriginMock).toHaveBeenCalled());
+    await waitFor(() => expect((field as HTMLInputElement).disabled).toBe(false));
+    expect((field as HTMLInputElement).value).toBe('Ker 1957');
+  });
+
+  it('cannot change a doubt flag while another change is saving', async () => {
+    updateOriginMock.mockReturnValue(new Promise(() => {}));
+    renderWithQueryClient(<OriginsSection historicalItemId={3} origins={[ORIGIN]} />);
+
+    const box = screen.getByRole('checkbox', { name: 'Origin 1 is doubtful' });
+    fireEvent.click(box);
+
+    await waitFor(() => expect(box.hasAttribute('disabled')).toBe(true));
   });
 });

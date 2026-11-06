@@ -591,7 +591,7 @@ export function ManuscriptViewer({
               <DetailRow term="Dating notes">{historical.dating_notes}</DetailRow>
             ) : null}
             {origins.length > 0 ? (
-              <DetailRow term="Origin">
+              <DetailRow term={t('origin')}>
                 {origins
                   .map((origin) => (origin.dubitable ? `${origin.place} (?)` : origin.place))
                   .join(', ')}

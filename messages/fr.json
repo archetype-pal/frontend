@@ -293,6 +293,7 @@
     "keyword": "Mot-clé"
   },
   "manuscript": {
+    "origin": "Origine",
     "tabs": {
       "selectedImage": "Image sélectionnée",
       "annotations": "Annotations",
@@ -2686,6 +2687,8 @@
       "originDoubtful": "Douteuse",
       "originDoubtfulAria": "L'origine {n} est douteuse",
       "removeOriginAria": "Supprimer l'origine {n}",
+      "removeOriginTitle": "Retirer cette origine ?",
+      "removeOriginDescription": "Retirer {place} comme origine de ce manuscrit ? Sa justification sera aussi supprimée.",
       "originEvidenceAria": "Preuve de l'origine {n}",
       "newOriginPlaceAria": "Lieu de la nouvelle origine",
       "addEvidencePlaceholder": "Ajouter une preuve...",

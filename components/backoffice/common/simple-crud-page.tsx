@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import type { LucideIcon } from 'lucide-react';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -51,6 +51,8 @@ type CrudFieldConfig<T> = {
 type SimpleCrudPageProps<T extends { id: number }> = {
   queryKey: readonly unknown[];
   queryFn: () => Promise<T[]>;
+  /** Other queries that show these rows, refetched after a change. */
+  invalidateKeys?: readonly QueryKey[];
   createFn: (payload: Record<string, unknown>) => Promise<unknown>;
   updateFn: (id: number, payload: Record<string, unknown>) => Promise<unknown>;
   deleteFn: (id: number) => Promise<unknown>;
@@ -75,6 +77,7 @@ function toEditableString(value: unknown): string {
 export function SimpleCrudPage<T extends { id: number }>({
   queryKey,
   queryFn,
+  invalidateKeys,
   createFn,
   updateFn,
   deleteFn,
@@ -112,7 +115,11 @@ export function SimpleCrudPage<T extends { id: number }>({
     setDraft(next);
   };
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey });
+  const invalidate = () => {
+    for (const key of [queryKey, ...(invalidateKeys ?? [])]) {
+      queryClient.invalidateQueries({ queryKey: key });
+    }
+  };
 
   const createMut = useMutation({
     mutationFn: () => {
@@ -135,7 +142,7 @@ export function SimpleCrudPage<T extends { id: number }>({
     },
   });
 
-  const { mutate: updateField } = useMutation({
+  const { mutateAsync: updateField } = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
       updateFn(id, payload),
     onSuccess: invalidate,
@@ -186,13 +193,16 @@ export function SimpleCrudPage<T extends { id: number }>({
           field.editor ? (
             field.editor({
               value: toEditableString(row.original[field.key]),
-              onChange: (nextValue) => save(row.original.id, nextValue),
+              // The mutation's onError already reports a failure.
+              onChange: (nextValue) => void save(row.original.id, nextValue).catch(() => {}),
               row: row.original,
             })
           ) : (
             <InlineEdit
               value={toEditableString(row.original[field.key])}
-              onSave={(nextValue) => save(row.original.id, nextValue)}
+              onSave={async (nextValue) => {
+                await save(row.original.id, nextValue);
+              }}
             />
           ),
         size: field.tableSize,

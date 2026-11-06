@@ -293,6 +293,7 @@
     "keyword": "Stichwort"
   },
   "manuscript": {
+    "origin": "Herkunft",
     "tabs": {
       "selectedImage": "Ausgewähltes Bild",
       "annotations": "Annotationen",
@@ -2686,6 +2687,8 @@
       "originDoubtful": "Unsicher",
       "originDoubtfulAria": "Herkunftsort {n} ist unsicher",
       "removeOriginAria": "Herkunftsort {n} entfernen",
+      "removeOriginTitle": "Diese Herkunft entfernen?",
+      "removeOriginDescription": "{place} als Herkunft dieser Handschrift entfernen? Der Nachweis wird ebenfalls entfernt.",
       "originEvidenceAria": "Beleg für Herkunftsort {n}",
       "newOriginPlaceAria": "Ort des neuen Herkunftsorts",
       "addEvidencePlaceholder": "Beleg hinzufügen...",

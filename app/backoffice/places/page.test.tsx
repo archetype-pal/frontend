@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PlacesPage from './page';
+import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { renderWithQueryClient } from '@/test/render';
 
 const createPlaceMock = vi.fn();
@@ -38,6 +39,37 @@ describe('<PlacesPage>', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     await waitFor(() => expect(updatePlaceMock).toHaveBeenCalledWith(2, { name: 'York' }));
+  });
+
+  it('refetches everything that shows a place after a rename', async () => {
+    const { client } = renderWithQueryClient(<PlacesPage />, { tooltip: true });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'york' }));
+    const input = screen.getByDisplayValue('york');
+    fireEvent.change(input, { target: { value: 'York' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: backofficeKeys.repositories.all() })
+    );
+    for (const key of [backofficeKeys.scribes, backofficeKeys.hands, backofficeKeys.manuscripts]) {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: key.all() });
+    }
+  });
+
+  it('keeps the rejected name in the editor when a rename fails', async () => {
+    updatePlaceMock.mockRejectedValue(new Error('duplicate'));
+    renderWithQueryClient(<PlacesPage />, { tooltip: true });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'york' }));
+    const input = screen.getByDisplayValue('york') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Worcester' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(updatePlaceMock).toHaveBeenCalled());
+    await waitFor(() => expect(input.disabled).toBe(false));
+    expect(screen.getByDisplayValue('Worcester')).toBe(input);
   });
 
   it('adds a place', async () => {

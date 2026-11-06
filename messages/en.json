@@ -293,6 +293,7 @@
     "keyword": "Keyword"
   },
   "manuscript": {
+    "origin": "Origin",
     "tabs": {
       "selectedImage": "Selected Image",
       "annotations": "Annotations",
@@ -2686,6 +2687,8 @@
       "originDoubtful": "Doubtful",
       "originDoubtfulAria": "Origin {n} is doubtful",
       "removeOriginAria": "Remove origin {n}",
+      "removeOriginTitle": "Remove this origin?",
+      "removeOriginDescription": "Remove {place} as an origin of this manuscript? Its evidence is removed too.",
       "originEvidenceAria": "Evidence for origin {n}",
       "newOriginPlaceAria": "Place of the new origin",
       "addEvidencePlaceholder": "Add evidence...",

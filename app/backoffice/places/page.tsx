@@ -19,6 +19,12 @@ export default function PlacesPage() {
     <SimpleCrudPage<BackofficePlace>
       queryKey={backofficeKeys.places.all()}
       queryFn={() => getPlaces()}
+      invalidateKeys={[
+        backofficeKeys.repositories.all(),
+        backofficeKeys.scribes.all(),
+        backofficeKeys.hands.all(),
+        backofficeKeys.manuscripts.all(),
+      ]}
       createFn={(payload) => createPlace(payload as Partial<BackofficePlace>)}
       updateFn={(id, payload) => updatePlace(id, payload as Partial<BackofficePlace>)}
       deleteFn={(id) => deletePlace(id)}

@@ -8,6 +8,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { InlineEdit } from '@/components/backoffice/common/inline-edit';
 import { PlaceCombobox } from '@/components/backoffice/common/place-combobox';
 import { createOrigin, updateOrigin, deleteOrigin } from '@/services/backoffice/manuscripts';
@@ -29,6 +30,7 @@ export function OriginsSection({ historicalItemId, origins }: OriginsSectionProp
   const [newPlace, setNewPlace] = useState<number | null>(null);
   const [newDubitable, setNewDubitable] = useState(false);
   const [newEvidence, setNewEvidence] = useState('');
+  const [removeTarget, setRemoveTarget] = useState<HistoricalItemOrigin | null>(null);
 
   const invalidate = () =>
     queryClient.invalidateQueries({
@@ -77,6 +79,7 @@ export function OriginsSection({ historicalItemId, origins }: OriginsSectionProp
     onSuccess: () => {
       toast.success(t('manuscriptsDetail.labelRemoved', { label }));
       invalidate();
+      setRemoveTarget(null);
     },
     onError: (err) => {
       toastApiError(t('manuscriptsDetail.labelRemoveFailed', { label: label.toLowerCase() }), err);
@@ -111,6 +114,7 @@ export function OriginsSection({ historicalItemId, origins }: OriginsSectionProp
                   aria-label={t('manuscriptsDetail.originPlaceAria', { n: index + 1 })}
                   value={origin.place}
                   selectedLabel={origin.place_display}
+                  allowNone={false}
                   onChange={(placeId) => {
                     if (placeId !== null)
                       updateMut.mutate({ id: origin.id, data: { place: placeId } });
@@ -122,6 +126,7 @@ export function OriginsSection({ historicalItemId, origins }: OriginsSectionProp
                 <Checkbox
                   checked={origin.dubitable}
                   aria-label={t('manuscriptsDetail.originDoubtfulAria', { n: index + 1 })}
+                  disabled={updateMut.isPending}
                   onCheckedChange={(checked) =>
                     updateMut.mutate({ id: origin.id, data: { dubitable: checked === true } })
                   }
@@ -142,7 +147,7 @@ export function OriginsSection({ historicalItemId, origins }: OriginsSectionProp
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={() => deleteMut.mutate(origin.id)}
+                onClick={() => setRemoveTarget(origin)}
                 aria-label={t('manuscriptsDetail.removeOriginAria', { n: index + 1 })}
               >
                 <Trash2 className="h-3 w-3" />
@@ -157,6 +162,7 @@ export function OriginsSection({ historicalItemId, origins }: OriginsSectionProp
                   aria-label={t('manuscriptsDetail.newOriginPlaceAria')}
                   value={newPlace}
                   onChange={setNewPlace}
+                  allowNone={false}
                   className="h-8 text-sm"
                 />
               </div>
@@ -188,6 +194,18 @@ export function OriginsSection({ historicalItemId, origins }: OriginsSectionProp
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!removeTarget}
+        onOpenChange={(open) => !open && setRemoveTarget(null)}
+        title={t('manuscriptsDetail.removeOriginTitle')}
+        description={t('manuscriptsDetail.removeOriginDescription', {
+          place: removeTarget?.place_display ?? '',
+        })}
+        confirmLabel={tCommon('remove')}
+        loading={deleteMut.isPending}
+        onConfirm={() => removeTarget && deleteMut.mutate(removeTarget.id)}
+      />
     </div>
   );
 }
