@@ -75,7 +75,6 @@ function run(overrides: Partial<AgentRun> = {}): AgentRun {
     citations: [CITED],
     turns: 3,
     status: 'answered',
-    error: '',
     created: '2026-11-04T00:00:00Z',
     ...overrides,
   };
@@ -250,25 +249,21 @@ describe('<AskArchetype>', () => {
   });
 
   it('keeps the sources found before a run ran out of time', async () => {
-    services.askArchetype.mockResolvedValue(
-      run({ status: 'exhausted', answer: '', error: 'Stopped after 4 turns: out of time.' })
-    );
+    services.askArchetype.mockResolvedValue(run({ status: 'exhausted', answer: '' }));
     renderWithQueryClient(<AskArchetype />);
 
     await ask();
 
     expect(await screen.findByText('It stopped before writing an answer.')).not.toBeNull();
     expect(screen.getByRole('heading', { name: 'Sources (1)' })).not.toBeNull();
-    expect(screen.queryByText(/out of time/)).toBeNull();
   });
 
-  it("says a refused run could not run, without the backend's wording", async () => {
+  it('says a refused run could not run', async () => {
     services.askArchetype.mockResolvedValue(
       run({
         status: 'refused',
         answer: '',
         citations: [],
-        error: 'Daily spend cap reached (50000 micros over 24h).',
       })
     );
     renderWithQueryClient(<AskArchetype />);

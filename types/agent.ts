@@ -36,7 +36,6 @@ export interface AgentRun {
   citations: AgentCitation[];
   turns: number;
   status: AgentRunStatus;
-  error: string;
   created: string;
 }
 
