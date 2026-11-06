@@ -36,6 +36,11 @@ interface BackofficeHeaderProps {
   onOpenKeyboardShortcuts: () => void;
 }
 
+const LINKS_FOR_PAGELESS_SEGMENTS: Record<string, string | null> = {
+  'image-texts': '/backoffice/texts',
+  'item-parts': null,
+};
+
 function useBreadcrumbs(segmentLabels: Record<string, string>) {
   const pathname = usePathname();
   const { entities: recentEntities } = useRecentEntities();
@@ -68,7 +73,10 @@ function useBreadcrumbs(segmentLabels: Record<string, string>) {
     }
 
     const isLast = index === segments.length - 1;
-    return { href, label, isLast };
+    const linkTo = Object.hasOwn(LINKS_FOR_PAGELESS_SEGMENTS, segment)
+      ? LINKS_FOR_PAGELESS_SEGMENTS[segment]
+      : href;
+    return { href, linkTo, label, isLast };
   });
 }
 
@@ -128,6 +136,7 @@ export function BackofficeHeader({
       formats: t('header.breadcrumbs.formats'),
       sources: t('header.breadcrumbs.sources'),
       annotations: t('header.breadcrumbs.annotations'),
+      'image-texts': t('sidebar.texts'),
       'physical-volumes': t('header.breadcrumbs.physicalVolumes'),
       users: t('header.breadcrumbs.users'),
       'search-engine': t('header.breadcrumbs.searchEngine'),
@@ -154,10 +163,12 @@ export function BackofficeHeader({
               <BreadcrumbItem>
                 {crumb.isLast ? (
                   <BreadcrumbPage className="max-w-[200px] truncate">{crumb.label}</BreadcrumbPage>
-                ) : (
+                ) : crumb.linkTo ? (
                   <BreadcrumbLink asChild>
-                    <Link href={crumb.href}>{crumb.label}</Link>
+                    <Link href={crumb.linkTo}>{crumb.label}</Link>
                   </BreadcrumbLink>
+                ) : (
+                  <span>{crumb.label}</span>
                 )}
               </BreadcrumbItem>
             </React.Fragment>

@@ -13,6 +13,7 @@ const cancelAll = vi.fn(async () => {
   order.push('cancelAll:done');
 });
 let activeCount = 0;
+let pathname = '/backoffice/manuscripts';
 
 vi.mock('@/contexts/auth-context', () => ({
   useAuth: () => ({
@@ -26,9 +27,14 @@ vi.mock('@/contexts/upload-manager-context', () => ({
 }));
 vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
 vi.mock('@/hooks/backoffice/use-recent-entities', () => ({
-  useRecentEntities: () => ({ recent: [], addRecent: vi.fn(), clearRecent: vi.fn() }),
+  useRecentEntities: () => ({
+    entities: [],
+    recent: [],
+    addRecent: vi.fn(),
+    clearRecent: vi.fn(),
+  }),
 }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/backoffice/manuscripts' }));
+vi.mock('next/navigation', () => ({ usePathname: () => pathname }));
 vi.mock('./api-version', () => ({ ApiVersion: () => null }));
 vi.mock('next-intl', () => ({
   // Render keys so assertions do not depend on the copy.
@@ -65,6 +71,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   order.length = 0;
   activeCount = 0;
+  pathname = '/backoffice/manuscripts';
 });
 
 // The header's controls are tooltip-wrapped, so it needs the TooltipProvider
@@ -131,5 +138,28 @@ describe('signing out with uploads in flight', () => {
 
     fireEvent.click(screen.getByText('uploads.signOutConfirm'));
     await waitFor(() => expect(logout).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe('header breadcrumbs', () => {
+  it('sends the text editor crumb to the texts list, labelled Texts', () => {
+    pathname = '/backoffice/image-texts/15';
+    renderHeader();
+
+    expect(screen.getByRole('link', { name: 'sidebar.texts' }).getAttribute('href')).toBe(
+      '/backoffice/texts'
+    );
+    expect(document.querySelector('a[href="/backoffice/image-texts"]')).toBeNull();
+  });
+
+  it('shows the item-parts crumb as text, not a link', () => {
+    pathname = '/backoffice/item-parts/5';
+    renderHeader();
+
+    expect(screen.getByText('item-parts')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'item-parts' })).toBeNull();
+    expect(
+      screen.getByRole('link', { name: 'header.breadcrumbs.backoffice' }).getAttribute('href')
+    ).toBe('/backoffice');
   });
 });
