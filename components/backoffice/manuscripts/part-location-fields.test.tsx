@@ -29,7 +29,7 @@ function Form() {
   });
   return (
     <>
-      <PartLocationFields location={location} onChange={change} selectedLabel={null} />
+      <PartLocationFields location={location} onChange={change} part={PART} />
       <button disabled={!dirty} onClick={() => save.mutate()}>
         Save
       </button>

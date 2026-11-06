@@ -149,11 +149,7 @@ function ItemPartCard({
 
       <CollapsibleContent>
         <div className="border-t px-4 py-4 space-y-4">
-          <PartLocationFields
-            location={location}
-            onChange={change}
-            selectedLabel={part.current_item_display}
-          />
+          <PartLocationFields location={location} onChange={change} part={part} />
 
           <ItemPartHandsSection itemPartId={part.id} />
 

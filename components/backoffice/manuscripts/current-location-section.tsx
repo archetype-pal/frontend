@@ -197,8 +197,8 @@ function SinglePartLocation({
 }) {
   const t = useTranslations('backoffice');
   const { location, change, dirty, save } = usePartLocation(part, historicalItemId, {
-    saved: t('manuscriptsDetail.locationUpdated'),
-    failed: t('manuscriptsDetail.locationUpdateFailed'),
+    saved: t('manuscriptsDetail.itemAndLocusUpdated'),
+    failed: t('manuscriptsDetail.itemAndLocusUpdateFailed'),
   });
 
   return (
@@ -206,7 +206,7 @@ function SinglePartLocation({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium flex items-center gap-2">
           <MapPin className="h-4 w-4" />
-          {t('manuscriptsDetail.currentLocation')}
+          {t('manuscriptsDetail.currentItemAndLocus')}
         </h3>
         {dirty && (
           <Button
@@ -216,16 +216,12 @@ function SinglePartLocation({
             disabled={save.isPending}
           >
             {save.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            {t('manuscriptsDetail.saveLocation')}
+            {t('manuscriptsDetail.saveItemAndLocus')}
           </Button>
         )}
       </div>
       <div className="rounded-md border p-4 space-y-3">
-        <PartLocationFields
-          location={location}
-          onChange={change}
-          selectedLabel={part.current_item_display}
-        />
+        <PartLocationFields location={location} onChange={change} part={part} />
       </div>
     </div>
   );
@@ -253,7 +249,7 @@ function MultiPartSummary({
     <div className="space-y-3">
       <h3 className="text-sm font-medium flex items-center gap-2">
         <MapPin className="h-4 w-4" />
-        {t('manuscriptsDetail.currentLocation')}
+        {t('manuscriptsDetail.currentItem')}
       </h3>
       <div className="rounded-md border p-4 space-y-2">
         <p className="text-sm text-muted-foreground">

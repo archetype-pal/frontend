@@ -41,6 +41,7 @@ export const backofficeKeys = {
     all: () => [...backofficeKeys.all, 'currentItems'] as const,
     list: (filters?: Record<string, unknown>) =>
       [...backofficeKeys.all, 'currentItems', 'list', filters] as const,
+    detail: (id: number) => [...backofficeKeys.all, 'currentItems', 'detail', id] as const,
   },
   repositories: {
     all: () => [...backofficeKeys.all, 'repositories'] as const,

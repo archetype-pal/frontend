@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { FieldLabel } from '@/components/backoffice/common/help-tooltip';
-import { CurrentItemCombobox } from './current-item-combobox';
+import { CurrentItemPicker } from './current-item-edit-dialog';
 import { updateItemPart } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
@@ -55,12 +55,12 @@ export function usePartLocation(
 export function PartLocationFields({
   location,
   onChange,
-  selectedLabel,
+  part,
 }: {
   location: PartLocation;
   onChange: (patch: Partial<PartLocation>) => void;
-  /** The current volume's name, shown before its options load. */
-  selectedLabel: string | null;
+  /** The saved part: names the current volume, and the pencil edits that volume. */
+  part: ItemPartNested;
 }) {
   const t = useTranslations('backoffice');
   return (
@@ -70,11 +70,10 @@ export function PartLocationFields({
           <FieldLabel helpField="itemPart.currentItem">
             {t('manuscriptsDetail.physicalVolume')}
           </FieldLabel>
-          <CurrentItemCombobox
+          <CurrentItemPicker
+            part={part}
             value={location.current_item}
             onChange={(id) => onChange({ current_item: id })}
-            selectedLabel={selectedLabel}
-            className="w-full"
           />
         </div>
         <div className="space-y-1.5">
