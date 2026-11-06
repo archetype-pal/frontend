@@ -38,6 +38,7 @@ import {
   type SectionKey,
 } from '@/lib/site-features';
 import {
+  listedHeading,
   pageHref,
   resolvePageText,
   type MenuHeading,
@@ -197,11 +198,9 @@ export default function Header({
 
   // Pages grouped by menu heading; a page whose heading is unknown (e.g. it
   // was deleted since this list was fetched) falls back under About.
-  const headingSlugs = new Set(menuHeadings.map((heading) => heading.slug));
   const pageLinksByHeading = new Map<string | null, { href: string; label: string }[]>();
   for (const page of pages) {
-    const heading =
-      page.menu_heading && headingSlugs.has(page.menu_heading) ? page.menu_heading : null;
+    const heading = listedHeading(page.menu_heading, menuHeadings);
     const links = pageLinksByHeading.get(heading) ?? [];
     links.push({
       href: pageHref(page.slug),
@@ -491,7 +490,7 @@ export default function Header({
                 <LanguageSwitcher />
                 {isAuthenticated ? (
                   <>
-                    {user?.is_superuser && (
+                    {user?.capabilities?.manage && (
                       <Button
                         asChild
                         variant="ghost"

@@ -1,11 +1,11 @@
 /** @vitest-environment jsdom */
-import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Manuscript } from '@/types/manuscript';
 import type { HandType } from '@/types/hands';
 import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { getDefaultConfig } from '@/lib/site-features';
+import { renderWithQueryClient } from '@/test/render';
 import { ManuscriptViewer } from './manuscript-viewer';
 
 // The viewer only needs these for chrome around the section under test.
@@ -48,7 +48,7 @@ function renderViewer(
   hands: HandType[] = [],
   manuscript: Manuscript = MANUSCRIPT
 ) {
-  return render(
+  return renderWithQueryClient(
     <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
       <ManuscriptViewer
         manuscript={manuscript}

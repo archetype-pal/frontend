@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
-import type { SortingState } from '@tanstack/react-table';
 import { Users, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,13 +23,10 @@ import {
   sortableHeader,
   type DataTableColumn,
 } from '@/components/backoffice/common/data-table';
-import { DataPagination } from '@/components/ui/data-pagination';
 import { getScribes, createScribe } from '@/services/backoffice/scribes';
-import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { toOrdering } from '@/lib/backoffice/ordering';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
-import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+import { useServerList } from '@/hooks/backoffice/use-server-list';
 import { toast } from 'sonner';
 import type { AdminScribeListItem } from '@/types/backoffice';
 
@@ -97,18 +93,9 @@ export default function ScribesPage() {
     },
   ];
 
-  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = usePageSize('scribes', 20);
-  const tableRef = useRef<HTMLDivElement>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const ordering = toOrdering(sorting, ORDERING_FIELDS);
+  const list = useServerList('scribes', 20, ORDERING_FIELDS);
 
-  const queryParams = {
-    limit: pageSize,
-    offset: page * pageSize,
-    ...(search ? { search } : {}),
-    ...(ordering ? { ordering } : {}),
-  };
+  const queryParams = list.params;
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.scribes.list(queryParams),
@@ -143,22 +130,15 @@ export default function ScribesPage() {
       </div>
 
       <DataTable
-        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
+        {...list.searchProps}
         searchPlaceholder={t('scribes.searchPlaceholder')}
-        pagination={false}
-        sorting={sorting}
-        onSortingChange={(next) => {
-          setSorting(next);
-          setPage(0);
-        }}
+        {...list.tableProps(data?.count)}
         toolbarActions={
           <Button size="sm" onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
@@ -166,20 +146,6 @@ export default function ScribesPage() {
           </Button>
         }
       />
-
-      {data && (
-        <DataPagination
-          scrollTargetRef={tableRef}
-          totalItems={data.count}
-          page={page + 1}
-          pageSize={pageSize}
-          onPageChange={(p) => setPage(p - 1)}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(0);
-          }}
-        />
-      )}
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">

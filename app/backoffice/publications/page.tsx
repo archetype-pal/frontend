@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { SortingState } from '@tanstack/react-table';
 import {
   Newspaper,
   Plus,
@@ -26,17 +25,14 @@ import {
 } from '@/components/backoffice/common/data-table';
 import { FilterBar, type FilterConfig } from '@/components/backoffice/common/filter-bar';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
-import { DataPagination } from '@/components/ui/data-pagination';
 import {
   getPublications,
   updatePublication,
   deletePublication,
 } from '@/services/backoffice/publications';
-import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { listAllPages } from '@/lib/backoffice/list-all-pages';
-import { toOrdering } from '@/lib/backoffice/ordering';
-import { useDebouncedSearch } from '@/hooks/backoffice/use-debounced-search';
+import { useServerList } from '@/hooks/backoffice/use-server-list';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import type { PublicationListItem } from '@/types/backoffice';
 
@@ -171,11 +167,7 @@ export default function PublicationsPage() {
     },
   ];
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  const { searchInput, setSearchInput, search, page, setPage } = useDebouncedSearch();
-  const [pageSize, setPageSize] = usePageSize('publications', 20);
-  const tableRef = useRef<HTMLDivElement>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const ordering = toOrdering(sorting, ORDERING_FIELDS);
+  const list = useServerList('publications', 20, ORDERING_FIELDS);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<{
     label: string;
@@ -183,9 +175,8 @@ export default function PublicationsPage() {
     execute: (slugs: string[]) => Promise<void>;
   } | null>(null);
 
-  const listParams = {
-    ...(search ? { search } : {}),
-    ...(ordering ? { ordering } : {}),
+  const queryParams = {
+    ...list.params,
     ...(filterValues.status && filterValues.status !== '__all'
       ? { status: filterValues.status }
       : {}),
@@ -197,7 +188,6 @@ export default function PublicationsPage() {
           ? { is_featured: true }
           : {}),
   };
-  const queryParams = { limit: pageSize, offset: page * pageSize, ...listParams };
 
   const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: backofficeKeys.publications.list(queryParams),
@@ -288,26 +278,19 @@ export default function PublicationsPage() {
       </div>
 
       <DataTable
-        tableRef={tableRef}
         isError={isError}
         isLoading={isLoading}
         isStale={isPlaceholderData}
         onRetry={() => refetch()}
         columns={columns}
         data={data?.results ?? []}
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
+        {...list.searchProps}
         searchPlaceholder={t('publications.searchPlaceholder')}
-        pagination={false}
-        sorting={sorting}
-        onSortingChange={(next) => {
-          setSorting(next);
-          setPage(0);
-        }}
+        {...list.tableProps(data?.count)}
         enableColumnVisibility
         enableExport
         fetchAllRows={(options) =>
-          listAllPages((p) => getPublications({ ...listParams, ...p }), options)
+          listAllPages((p) => getPublications({ ...queryParams, ...p }), options)
         }
         exportFilename="posts"
         enableRowSelection
@@ -319,29 +302,15 @@ export default function PublicationsPage() {
             values={filterValues}
             onChange={(key, value) => {
               setFilterValues((prev) => ({ ...prev, [key]: value }));
-              setPage(0);
+              list.setPage(0);
             }}
             onClear={() => {
               setFilterValues({});
-              setPage(0);
+              list.setPage(0);
             }}
           />
         }
       />
-
-      {data && (
-        <DataPagination
-          scrollTargetRef={tableRef}
-          totalItems={data.count}
-          page={page + 1}
-          pageSize={pageSize}
-          onPageChange={(p) => setPage(p - 1)}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(0);
-          }}
-        />
-      )}
 
       <ConfirmDialog
         open={bulkConfirmOpen}

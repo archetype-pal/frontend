@@ -25,7 +25,7 @@ import {
   type SearchOrdering,
 } from '@/lib/search-sort';
 
-export type ViewMode = 'table' | 'grid' | 'timeline' | 'distribution' | 'map';
+export type ViewMode = 'table' | 'grid' | 'timeline' | 'distribution';
 
 export type SearchActionsMenuProps = {
   triggerId?: string;
@@ -37,7 +37,6 @@ export type SearchActionsMenuProps = {
   showGridToggle: boolean;
   showTimelineToggle: boolean;
   showDistributionToggle: boolean;
-  showMapToggle: boolean;
   hasTimelineData: boolean;
   distributionEnabled: boolean;
   advancedEnabled: boolean;
@@ -64,7 +63,6 @@ export function SearchActionsMenu({
   showGridToggle,
   showTimelineToggle,
   showDistributionToggle,
-  showMapToggle,
   hasTimelineData,
   distributionEnabled,
   advancedEnabled,
@@ -169,7 +167,6 @@ export function SearchActionsMenu({
           {showTimelineToggle && viewItem('timeline', t('viewTimeline'), !hasTimelineData)}
           {showDistributionToggle &&
             viewItem('distribution', t('viewCharts'), !distributionEnabled)}
-          {showMapToggle && viewItem('map', t('viewMap'))}
           {/* Sort lives in the visible header control on sm+; this mirrors it so
               small screens can still sort from any view (frontend#67). */}
           {onSortChange && sortFields.length > 0 && (

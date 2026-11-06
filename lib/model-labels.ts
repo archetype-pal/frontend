@@ -222,3 +222,18 @@ export function pluralizeLabel(label: string): string {
   const isUpper = label.length > 0 && label.slice(-1) === label.slice(-1).toUpperCase();
   return `${label}${isUpper ? 'S' : 's'}`;
 }
+
+/** Where Django keeps the labels: public GET, superuser PUT of only the keys sent. */
+export const SITE_LABELS_PATH = '/api/v1/site-labels/';
+
+/**
+ * The stored labels of a `{ labels: {...} }` body over the defaults, or null
+ * when it carries none: an empty map is not a stored set of labels, and the
+ * editor must not show defaults as if they were.
+ */
+export function parseModelLabels(raw: unknown): ModelLabelsConfig | null {
+  const labels = (raw as { labels?: unknown } | null)?.labels;
+  if (!labels || typeof labels !== 'object' || Array.isArray(labels)) return null;
+  if (!Object.keys(labels).length) return null;
+  return { labels: normalizeModelLabels(labels as Partial<Record<ModelLabelKey, unknown>>) };
+}

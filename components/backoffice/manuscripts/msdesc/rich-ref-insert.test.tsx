@@ -1,10 +1,10 @@
 /** @vitest-environment jsdom */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { Editor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 
 import { docToTei, teiToDoc, type PMDoc } from '@/lib/tei-prosemirror';
-import { teiEditorExtensions, wrapTei } from '@/lib/tei-tiptap';
+import { teiEditorSchema } from '@/lib/tei-editor-schema';
+import { wrapTei } from '@/lib/tei-tiptap';
 import {
   externalRef,
   manuscriptRefFromItemPart,
@@ -24,8 +24,8 @@ import {
 /**
  * The Rich-mode `<ref>` insertion contract (roadmap 4.3): `insertRefIntoLeaf` —
  * the exact function `MsDescLeafEditor.handlePick` calls — plus the `wrapTei` +
- * `refAttrs` pairing it is built on. Driven against a real TipTap editor whose
- * schema mirrors the leaf editor's.
+ * `refAttrs` pairing it is built on. Driven against a real TipTap editor on the
+ * leaf editor's own schema.
  */
 
 // TipTap/ProseMirror touch layout APIs jsdom omits (mirrors the shared
@@ -48,25 +48,7 @@ beforeAll(() => {
 function makeEditor(tei: string): Editor {
   return new Editor({
     element: document.createElement('div'),
-    extensions: [
-      StarterKit.configure({
-        bold: false,
-        italic: false,
-        strike: false,
-        code: false,
-        codeBlock: false,
-        heading: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
-        blockquote: false,
-        horizontalRule: false,
-        hardBreak: false,
-        link: false,
-        underline: false,
-      }),
-      ...teiEditorExtensions,
-    ],
+    extensions: teiEditorSchema,
     content: teiToDoc(tei) as unknown as Record<string, unknown>,
   });
 }

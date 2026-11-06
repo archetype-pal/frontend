@@ -63,8 +63,9 @@ function imageSrc(raw: string | undefined, options: IIIFImageUrlOptions): string
   return toIiifProxyUrl(getIiifImageUrl(raw, options));
 }
 
+/** The image's glyph count: the API counts image annotations only. */
 function annotationCount(image: ManuscriptImage): number {
-  return image.number_of_image_annotations ?? image.number_of_annotations ?? 0;
+  return image.number_of_annotations ?? 0;
 }
 
 function textEntry(image: ManuscriptImage, type: string) {

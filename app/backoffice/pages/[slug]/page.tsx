@@ -37,6 +37,7 @@ import { toastApiError } from '@/lib/backoffice/format-api-error';
 import {
   ABOUT_HEADING_VALUE,
   isReservedPageSlug,
+  pageHref,
   resolvePageText,
   type LocalizedText,
   type PageStatus,
@@ -217,7 +218,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
           <Badge variant={status === 'Published' ? 'default' : 'secondary'}>{status}</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/about/${slug}`} target="_blank" rel="noopener noreferrer">
+          <Link href={pageHref(slug)} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm">
               <ExternalLink className="h-3.5 w-3.5 mr-1" />
               {t('pagesDetail.viewPublicPage')}
@@ -305,7 +306,7 @@ export default function PageEditorPage({ params }: { params: Promise<{ slug: str
             className="font-mono text-sm"
           />
           <p className={`text-xs ${reserved ? 'text-destructive' : 'text-muted-foreground'}`}>
-            {reserved ? t('pagesNew.reservedSlugError') : `URL: /about/${pageSlug || '...'}`}
+            {reserved ? t('pagesNew.reservedSlugError') : `URL: ${pageHref(pageSlug || '...')}`}
           </p>
         </div>
 

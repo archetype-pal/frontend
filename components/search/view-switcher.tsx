@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { Table, LayoutGrid, BarChart3, Map, PieChart } from 'lucide-react';
+import { Table, LayoutGrid, BarChart3, PieChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ViewMode } from '@/components/search/search-actions-menu';
 import { useTranslations } from 'next-intl';
@@ -14,7 +14,6 @@ type ViewSwitcherProps = {
   showGridToggle: boolean;
   showTimelineToggle: boolean;
   showDistributionToggle: boolean;
-  showMapToggle: boolean;
   hasTimelineData: boolean;
   distributionEnabled: boolean;
   className?: string;
@@ -22,7 +21,7 @@ type ViewSwitcherProps = {
 
 /**
  * The visible segmented view-switcher in the search sub-header. Surfaces the
- * Table / Grid / Timeline / Map / Charts lenses that previously hid inside the
+ * Table / Grid / Timeline / Charts lenses that previously hid inside the
  * Actions menu, so users actually discover the grid. Availability mirrors the
  * `show*Toggle` flags from `useSearchViewMode`; a view that exists for the type
  * but has no data (e.g. timeline with no date distribution) is shown disabled.
@@ -33,7 +32,6 @@ export function ViewSwitcher({
   showGridToggle,
   showTimelineToggle,
   showDistributionToggle,
-  showMapToggle,
   hasTimelineData,
   distributionEnabled,
   className,
@@ -56,7 +54,6 @@ export function ViewSwitcher({
         show: showTimelineToggle,
         disabled: !hasTimelineData,
       },
-      { mode: 'map', label: t('viewMap'), Icon: Map, show: showMapToggle, disabled: false },
       {
         mode: 'distribution',
         label: t('viewCharts'),

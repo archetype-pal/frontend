@@ -3,10 +3,7 @@
 import * as React from 'react';
 
 import { fetchHands } from '@/services/manuscripts';
-import {
-  fetchImageAllographIds,
-  fetchManuscriptViewerBaseData,
-} from '@/lib/manuscript-viewer-data';
+import { fetchManuscriptViewerBaseData } from '@/lib/manuscript-viewer-data';
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { Manuscript } from '@/types/manuscript';
 import type { Allograph } from '@/types/allographs';
@@ -15,8 +12,8 @@ import { errorMessage } from '@/lib/error-message';
 
 /**
  * Loads the viewer's base data for an image: the image + manuscript +
- * allographs + IIIF height, the hands list, and the allograph ids present on the image. Exposes
- * setHands/setHandsLoaded because the imageId-change reset still clears them.
+ * allographs + IIIF height, and the hands list. Exposes setHands/setHandsLoaded
+ * because the imageId-change reset still clears them.
  */
 export function useViewerBaseData(imageId: string) {
   const [manuscriptImage, setManuscriptImage] = React.useState<ManuscriptImageType | null>(null);
@@ -25,12 +22,6 @@ export function useViewerBaseData(imageId: string) {
   const [error, setError] = React.useState<string | null>(null);
 
   const [allographs, setAllographs] = React.useState<Allograph[]>([]);
-  const [imageAllographIds, setRawImageAllographIds] = React.useState<number[]>([]);
-  const [imageAllographIdsLoaded, setImageAllographIdsLoaded] = React.useState(false);
-  const setImageAllographIds = React.useCallback((ids: number[]) => {
-    setRawImageAllographIds(ids);
-    setImageAllographIdsLoaded(true);
-  }, []);
 
   const [hands, setHands] = React.useState<HandType[]>([]);
   const [handsLoaded, setHandsLoaded] = React.useState(false);
@@ -63,8 +54,6 @@ export function useViewerBaseData(imageId: string) {
     const loadData = async () => {
       try {
         setLoading(true);
-        setRawImageAllographIds([]);
-        setImageAllographIdsLoaded(false);
 
         const { image, manuscript, allographs, imageHeight } =
           await fetchManuscriptViewerBaseData(imageId);
@@ -118,38 +107,10 @@ export function useViewerBaseData(imageId: string) {
     };
   }, [manuscriptImage?.id, manuscriptImage?.item_part]);
 
-  // load allograph ids present on this image
-  React.useEffect(() => {
-    if (!manuscriptImage) return;
-
-    let isMounted = true;
-
-    const loadAllographIds = async () => {
-      try {
-        const ids = await fetchImageAllographIds(String(manuscriptImage.id));
-        if (!isMounted) return;
-
-        setImageAllographIds(ids);
-      } catch {
-        if (isMounted) {
-          setImageAllographIds([]);
-        }
-      }
-    };
-
-    void loadAllographIds();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [manuscriptImage, setImageAllographIds]);
-
   return {
     manuscriptImage,
     manuscript,
     allographs,
-    imageAllographIds,
-    imageAllographIdsLoaded,
     hands,
     handsLoaded,
     imageHeight,
@@ -157,6 +118,5 @@ export function useViewerBaseData(imageId: string) {
     error,
     setHands,
     setHandsLoaded,
-    setImageAllographIds,
   };
 }

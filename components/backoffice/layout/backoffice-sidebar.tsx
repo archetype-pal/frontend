@@ -68,14 +68,9 @@ interface BackofficeSidebarProps {
 
 export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   const pathname = usePathname();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { getLabel, getPluralLabel } = useModelLabels();
   const t = useTranslations('backoffice');
-  const includeAdmin = Boolean(user?.is_staff);
-  // The sanity-checks page hits superuser-only backend endpoints (403s for a
-  // staff-but-not-superuser user), so its link is gated more strictly than
-  // the rest of the admin group.
-  const isSuperuser = Boolean(user?.is_superuser);
   const navigation = useMemo<NavGroup[]>(() => {
     const groups: NavGroup[] = [
       {
@@ -124,33 +119,22 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
         ],
       },
     ];
-    if (includeAdmin) {
-      const adminItems: NavItem[] = [
+    // The shell admits only users who may manage, so the admin group is always theirs.
+    groups.push({
+      label: t('sidebar.groupAdmin'),
+      icon: Settings,
+      items: [
         { label: t('sidebar.userManagement'), href: '/backoffice/users', icon: UserCog },
         { label: t('sidebar.searchEngine'), href: '/backoffice/search-engine', icon: Search },
         { label: t('sidebar.dataQuality'), href: '/backoffice/quality', icon: Settings },
         { label: t('sidebar.translations'), href: '/backoffice/translations', icon: Languages },
         { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
         { label: t('sidebar.trash'), href: '/backoffice/trash', icon: Trash2 },
-      ];
-      // Superuser-only: the backend endpoints it calls 403 for staff who
-      // aren't also superusers, so the link is hidden for them rather than
-      // dangling to a page that will just error out.
-      if (isSuperuser) {
-        adminItems.push({
-          label: t('sidebar.sanityChecks'),
-          href: '/backoffice/sanity-checks',
-          icon: HeartPulse,
-        });
-      }
-      groups.push({
-        label: t('sidebar.groupAdmin'),
-        icon: Settings,
-        items: adminItems,
-      });
-    }
+        { label: t('sidebar.sanityChecks'), href: '/backoffice/sanity-checks', icon: HeartPulse },
+      ],
+    });
     return groups;
-  }, [getLabel, getPluralLabel, includeAdmin, isSuperuser, t]);
+  }, [getLabel, getPluralLabel, t]);
 
   // Lightweight poll for pending comments (60s)
   const { data: pendingComments } = useQuery({
@@ -219,6 +203,43 @@ function useSubGroupOpen(label: string, defaultOpen: boolean) {
   return { open, toggle };
 }
 
+function isActiveHref(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(href + '/');
+}
+
+/** An expanded sidebar entry: icon, label, and a count badge while it is above zero. */
+function NavItemLink({
+  item,
+  pathname,
+  badges,
+}: {
+  item: NavItem;
+  pathname: string;
+  badges: Record<string, number>;
+}) {
+  const ItemIcon = item.icon;
+  const badgeCount = badges[item.href] ?? 0;
+  return (
+    <Link
+      href={item.href}
+      className={cn(
+        'flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors',
+        isActiveHref(pathname, item.href)
+          ? 'bg-primary/10 text-primary font-medium'
+          : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+      )}
+    >
+      <ItemIcon className="h-4 w-4 shrink-0" />
+      <span className="flex-1">{item.label}</span>
+      {badgeCount > 0 ? (
+        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-medium text-destructive-foreground">
+          {badgeCount}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
 function CollapsibleSubGroup({
   subGroup,
   pathname,
@@ -253,31 +274,9 @@ function CollapsibleSubGroup({
       </button>
       {open && (
         <div className="flex flex-col gap-0.5">
-          {subGroup.items.map((item) => {
-            const ItemIcon = item.icon;
-            const active = pathname === item.href || pathname.startsWith(item.href + '/');
-            const badgeCount = badges[item.href];
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors',
-                  active
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
-                <ItemIcon className="h-4 w-4 shrink-0" />
-                <span className="flex-1">{item.label}</span>
-                {badgeCount != null && badgeCount > 0 ? (
-                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-medium text-destructive-foreground">
-                    {badgeCount}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
+          {subGroup.items.map((item) => (
+            <NavItemLink key={item.href} item={item} pathname={pathname} badges={badges} />
+          ))}
         </div>
       )}
     </div>
@@ -311,7 +310,7 @@ function NavGroupSection({
       <div className={cn('px-2', !isFirst && 'mt-2 border-t pt-2')}>
         {allItems.map((item) => {
           const ItemIcon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(item.href + '/');
+          const active = isActiveHref(pathname, item.href);
           return (
             <div key={item.href} className="py-0.5">
               <Tooltip delayDuration={0}>
@@ -349,31 +348,9 @@ function NavGroupSection({
 
       {/* Primary items */}
       <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l pl-2">
-        {group.items.map((item) => {
-          const ItemIcon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(item.href + '/');
-          const badgeCount = badges[item.href];
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors',
-                active
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              )}
-            >
-              <ItemIcon className="h-4 w-4 shrink-0" />
-              <span className="flex-1">{item.label}</span>
-              {badgeCount != null && badgeCount > 0 ? (
-                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-xs font-medium text-destructive-foreground">
-                  {badgeCount}
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
+        {group.items.map((item) => (
+          <NavItemLink key={item.href} item={item} pathname={pathname} badges={badges} />
+        ))}
 
         {/* Collapsible sub-groups */}
         {group.subGroups?.map((sg) => (

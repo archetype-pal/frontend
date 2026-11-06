@@ -40,7 +40,6 @@ import {
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/backoffice/common/confirm-dialog';
 import { NewImageTextDialog } from '@/components/backoffice/new-image-text-dialog';
-import { ImportTeiDialog } from '@/components/backoffice/import-tei-dialog';
 import { DataPagination } from '@/components/ui/data-pagination';
 import {
   Table,
@@ -62,7 +61,12 @@ import {
   type ImageTextListRow,
 } from '@/services/backoffice/image-texts-list';
 import { bulkActionImageTexts } from '@/services/backoffice/image-texts-bulk';
-import { transitionImageText, type ImageTextStatus } from '@/services/backoffice/review-queue';
+import { transitionImageText, type TransitionPayload } from '@/services/backoffice/review-queue';
+import {
+  IMAGE_TEXT_STATUSES,
+  TransitionPopover,
+} from '@/components/backoffice/image-text-transition';
+import type { ImageTextStatus } from '@/types/image-text';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 import { downloadBlob } from '@/lib/download';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
@@ -70,7 +74,6 @@ import { invalidateAfterImageTextDelete } from '@/lib/backoffice/image-text-cach
 import { errorMessage } from '@/lib/error-message';
 import { KIND_TONE, STATUS_DOT, STATUS_TONE } from '@/lib/backoffice/image-text-tones';
 
-const STATUSES: ImageTextStatus[] = ['Draft', 'Review', 'Live', 'Reviewed'];
 const KINDS: ImageTextKind[] = ['Transcription', 'Translation'];
 
 interface UrlFilterState {
@@ -89,7 +92,9 @@ function parseFilters(sp: URLSearchParams): UrlFilterState {
   return {
     kind: kindRaw && (KINDS as string[]).includes(kindRaw) ? (kindRaw as ImageTextKind) : '',
     status:
-      statusRaw && (STATUSES as string[]).includes(statusRaw) ? (statusRaw as ImageTextStatus) : '',
+      statusRaw && (IMAGE_TEXT_STATUSES as string[]).includes(statusRaw)
+        ? (statusRaw as ImageTextStatus)
+        : '',
     language: sp.get('language') ?? '',
     empty: emptyRaw === 'true' || emptyRaw === 'false' ? emptyRaw : '',
     search: sp.get('q') ?? '',
@@ -353,7 +358,7 @@ export function TextsList() {
             <FilterSelect
               label={t('textsList.filterStatus')}
               value={filters.status}
-              options={STATUSES}
+              options={IMAGE_TEXT_STATUSES}
               onChange={(v) => setParams({ status: v || null, page: null })}
             />
             <FilterSelect
@@ -466,7 +471,7 @@ export function TextsList() {
 
       <NewImageTextDialog open={newDialogOpen} onOpenChange={setNewDialogOpen} />
 
-      <ImportTeiDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
+      <NewImageTextDialog fromTeiFile open={importDialogOpen} onOpenChange={setImportDialogOpen} />
 
       <ConfirmDialog
         open={confirmBulkDelete}
@@ -529,23 +534,16 @@ function BulkActionBar({
   onAskDelete: () => void;
 }) {
   const t = useTranslations('backoffice');
-  const [transitionOpen, setTransitionOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
-  const [toStatus, setToStatus] = useState<ImageTextStatus>('Review');
-  const [note, setNote] = useState('');
   const [language, setLanguage] = useState('');
 
   const transitionMut = useMutation({
-    mutationFn: () =>
-      bulkActionImageTexts({
-        ids,
-        action: 'transition',
-        payload: { to_status: toStatus, note: note.trim() || undefined },
-      }),
-    onSuccess: ({ affected }) => {
-      toast.success(t('textsList.toastBulkTransitioned', { count: affected, status: toStatus }));
-      setTransitionOpen(false);
-      setNote('');
+    mutationFn: (payload: TransitionPayload) =>
+      bulkActionImageTexts({ ids, action: 'transition', payload }),
+    onSuccess: ({ affected }, payload) => {
+      toast.success(
+        t('textsList.toastBulkTransitioned', { count: affected, status: payload.to_status })
+      );
       onCleared();
       onInvalidated();
     },
@@ -575,59 +573,11 @@ function BulkActionBar({
     <div className="mx-6 flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-xs">
       <span className="font-medium">{t('textsList.selectedCount', { count: ids.length })}</span>
       <div className="ml-auto flex items-center gap-2">
-        <Popover open={transitionOpen} onOpenChange={setTransitionOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-7 text-xs">
-              {t('imageTexts.transitionButton')}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-72 space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t('imageTexts.transitionTargetLabel')}</Label>
-              <Select value={toStatus} onValueChange={(v) => setToStatus(v as ImageTextStatus)}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">{t('imageTexts.transitionNoteLabel')}</Label>
-              <Input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder={t('imageTexts.transitionNotePlaceholder')}
-                className="h-8 text-xs"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setTransitionOpen(false)}
-              >
-                {t('imageTexts.transitionCancel')}
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-xs"
-                disabled={transitionMut.isPending}
-                onClick={() => transitionMut.mutate()}
-              >
-                {transitionMut.isPending
-                  ? t('imageTexts.transitionSaving')
-                  : t('imageTexts.transitionApply', { target: toStatus })}
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <TransitionPopover
+          compact
+          label={t('imageTexts.transitionButton')}
+          onTransition={transitionMut.mutateAsync}
+        />
 
         <Popover open={languageOpen} onOpenChange={setLanguageOpen}>
           <PopoverTrigger asChild>
@@ -771,7 +721,7 @@ function ListRow({
       </TableCell>
       <TableCell>
         <div className="flex items-center justify-end gap-1">
-          <TransitionPopover row={row} onTransitioned={onTransitioned} />
+          <RowTransition row={row} onTransitioned={onTransitioned} />
           <Link
             href={editorLink}
             className="flex h-7 items-center rounded-md border px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -798,7 +748,7 @@ function ListRow({
   );
 }
 
-function TransitionPopover({
+function RowTransition({
   row,
   onTransitioned,
 }: {
@@ -806,95 +756,21 @@ function TransitionPopover({
   onTransitioned: () => void;
 }) {
   const t = useTranslations('backoffice');
-  // Default target = next forward step in the lifecycle so the common path
-  // (Draft → Review → Live → Reviewed) is one click.
-  const NEXT: Record<ImageTextStatus, ImageTextStatus> = {
-    Draft: 'Review',
-    Review: 'Live',
-    Live: 'Reviewed',
-    Reviewed: 'Live',
-  };
-  const [open, setOpen] = useState(false);
-  const [target, setTarget] = useState<ImageTextStatus>(NEXT[row.status]);
-  const [note, setNote] = useState('');
-
   const transition = useMutation({
-    mutationFn: () =>
-      transitionImageText(row.id, {
-        to_status: target,
-        note: note.trim() || undefined,
-      }),
-    onSuccess: () => {
-      toast.success(t('textsList.toastRowTransitioned', { id: row.id, target }));
-      setOpen(false);
-      setNote('');
+    mutationFn: (payload: TransitionPayload) => transitionImageText(row.id, payload),
+    onSuccess: (_saved, payload) => {
+      toast.success(t('textsList.toastRowTransitioned', { id: row.id, target: payload.to_status }));
       onTransitioned();
     },
     onError: (err: Error) =>
       toast.error(t('imageTexts.toastTransitionFailed'), { description: err.message }),
   });
-
   return (
-    <Popover
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (next) {
-          setTarget(NEXT[row.status]);
-          setNote('');
-        }
-      }}
-    >
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-7 text-xs">
-          {t('textsList.rowTransitionButton')}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 space-y-3">
-        <div className="text-xs">
-          <p className="text-muted-foreground">{t('imageTexts.transitionCurrent')}</p>
-          <p className="font-medium">{row.status}</p>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">{t('imageTexts.transitionTargetLabel')}</Label>
-          <Select value={target} onValueChange={(v) => setTarget(v as ImageTextStatus)}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUSES.filter((s) => s !== row.status).map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">{t('imageTexts.transitionNoteLabel')}</Label>
-          <Input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t('imageTexts.transitionNotePlaceholder')}
-            className="h-8 text-xs"
-          />
-        </div>
-        <div className="flex justify-end gap-2 pt-1">
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setOpen(false)}>
-            {t('imageTexts.transitionCancel')}
-          </Button>
-          <Button
-            size="sm"
-            className="h-7 text-xs"
-            disabled={transition.isPending}
-            onClick={() => transition.mutate()}
-          >
-            {transition.isPending
-              ? t('imageTexts.transitionSaving')
-              : t('imageTexts.transitionApply', { target })}
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+    <TransitionPopover
+      currentStatus={row.status}
+      label={t('textsList.rowTransitionButton')}
+      compact
+      onTransition={transition.mutateAsync}
+    />
   );
 }

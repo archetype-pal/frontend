@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
@@ -96,6 +96,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
   const [dirty, setDirty] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
 
   useEffect(() => {
     if (item) {
@@ -104,6 +106,8 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
           ? item.catalogue_numbers.map((cn) => `${cn.catalogue_label} ${cn.number}`).join(', ')
           : `${historicalItemLabel} #${item.id}`;
       track({ label, href: `/backoffice/manuscripts/${itemId}`, type: historicalItemLabel });
+      // A refetch (e.g. after editing the item from this page) must not wipe unsaved edits.
+      if (dirtyRef.current) return;
       // Sync draft from item; intentional setState in effect.
       // oxlint-disable-next-line react-hooks/set-state-in-effect
       setDraft({
@@ -115,7 +119,6 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
         probable_text_date: item.probable_text_date,
         dating_notes: item.dating_notes,
       });
-      setDirty(false);
     }
   }, [item, itemId, track, historicalItemLabel]);
 
@@ -286,7 +289,7 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
       <CompletenessChecklist
         items={[
           {
-            label: t('manuscriptWorkspace.checklistCurrentLocation'),
+            label: t('manuscriptWorkspace.checklistCurrentItem'),
             complete: item.item_parts.length > 0 && item.item_parts[0].current_item != null,
             value: item.item_parts[0]?.current_item_display ?? undefined,
           },

@@ -41,6 +41,7 @@ import {
   ChunkUploadError,
   uploadImageFile,
   watchUploadSession,
+  workerOwns,
   type UploadPhase,
   type UploadSession,
 } from '@/services/backoffice/uploads';
@@ -685,7 +686,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         );
         return 'handled';
       }
-      if (session.status === 'processing' || session.status === 'assembled') {
+      if (workerOwns(session)) {
         startWatch(crumb, session);
         return 'handled';
       }
@@ -722,12 +723,7 @@ export function UploadManagerProvider({ children }: { children: React.ReactNode 
         } catch {
           // Unknown server-side: fall through to a fresh upload.
         }
-        if (
-          live &&
-          (live.status === 'complete' ||
-            live.status === 'processing' ||
-            live.status === 'assembled')
-        ) {
+        if (live && (live.status === 'complete' || workerOwns(live))) {
           settleSession(crumb, live);
           return;
         }

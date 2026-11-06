@@ -18,11 +18,15 @@ import { useUnsavedGuard } from '@/hooks/backoffice/use-unsaved-guard';
 import { useKeyboardShortcut } from '@/hooks/backoffice/use-keyboard-shortcut';
 import {
   getDefaultModelLabelsConfig,
+  parseModelLabels,
+  SITE_LABELS_PATH,
   type LocalizedLabel,
   type ModelLabelKey,
   type ModelLabelLocale,
   type ModelLabelsConfig,
 } from '@/lib/model-labels';
+import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { backofficeGet, backofficePut } from '@/services/backoffice/api-client';
 
 type LabelFieldMeta = {
   key: ModelLabelKey;
@@ -241,27 +245,16 @@ const homePageFieldMeta: LabelFieldMeta[] = [
 ];
 
 async function fetchModelLabels(): Promise<ModelLabelsConfig> {
-  const res = await fetch('/api/model-labels');
-  if (!res.ok) throw new Error('Failed to load model labels');
-  return res.json();
+  const config = parseModelLabels(await backofficeGet<unknown>(SITE_LABELS_PATH));
+  if (!config) throw new Error('No stored labels to edit');
+  return config;
 }
 
+/** Django stores only the keys sent and answers with every stored label; null if none came back. */
 async function saveModelLabels(
   labels: Partial<Record<ModelLabelKey, LocalizedLabel>>
 ): Promise<ModelLabelsConfig | null> {
-  const res = await fetch('/api/model-labels', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ labels }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.detail || err.error || 'Failed to save');
-  }
-  // 204: the write landed but the backend returned no labels to cache.
-  return res.status === 204 ? null : res.json();
+  return parseModelLabels(await backofficePut<unknown>(SITE_LABELS_PATH, { labels }));
 }
 
 const LOCALE_FIELD_META: Array<{ locale: ModelLabelLocale; title: string }> = [
@@ -368,7 +361,7 @@ export default function TranslationsPage() {
       router.refresh();
     },
     onError: (err: Error) => {
-      toast.error(t('translations.toastFailedSave'), { description: err.message });
+      toast.error(t('translations.toastFailedSave'), { description: formatApiError(err) });
     },
   });
 

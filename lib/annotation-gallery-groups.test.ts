@@ -68,19 +68,20 @@ describe('groupAnnotations', () => {
     expect(hand.allographs[0].allographName).toBe('s, long');
   });
 
-  it('orders hands by their priority and puts unattributed graphs last', () => {
+  it('keeps the hands in the order they arrive and puts unattributed graphs last', () => {
     const groups = groupAnnotations(
       [
         makeGraph({ id: 1, hand: null }),
         makeGraph({ id: 2, hand: 200 }),
         makeGraph({ id: 3, hand: 100 }),
       ],
-      [makeHand({ id: 100, name: 'Second', num: 2 }), makeHand({ id: 200, name: 'First', num: 1 })],
+      // The API lists hands in display order; that order wins over name and id.
+      [makeHand({ id: 200, name: 'Second' }), makeHand({ id: 100, name: 'First' })],
       ALLOGRAPHS,
       LABELS
     );
 
-    expect(groups.map((g) => g.handName)).toEqual(['First', 'Second', 'Unattributed']);
+    expect(groups.map((g) => g.handName)).toEqual(['Second', 'First', 'Unattributed']);
   });
 
   it('lists graphs that have no allograph in a group of their own, last', () => {

@@ -113,7 +113,9 @@ export function getCurrentItems(params?: {
   return currentItemsCrud.list(params);
 }
 
+export const getCurrentItem = currentItemsCrud.get;
 export const createCurrentItem = currentItemsCrud.create;
+export const updateCurrentItem = currentItemsCrud.update;
 export const deleteCurrentItem = currentItemsCrud.remove;
 
 // ── Catalogue Numbers ───────────────────────────────────────────────────

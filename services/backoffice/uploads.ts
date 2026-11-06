@@ -9,6 +9,14 @@ import { planChunks } from '@/lib/backoffice/upload-helpers';
 export type UploadSessionStatus =
   'pending' | 'uploading' | 'assembled' | 'processing' | 'complete' | 'failed';
 
+/** The states the server's ingest task owns: from `finalize` until the session completes or fails. */
+const WORKER_STATUSES: readonly UploadSessionStatus[] = ['assembled', 'processing'];
+
+/** Whether the ingest task owns `session` now, so the client watches it rather than sending or re-creating it. */
+export function workerOwns(session: Pick<UploadSession, 'status'>): boolean {
+  return WORKER_STATUSES.includes(session.status);
+}
+
 export interface UploadTaskStatus {
   task_id: string;
   state: string;

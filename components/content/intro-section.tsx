@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronRight, ChevronLeft, Search, BookOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { CarouselItem } from '@/types/backoffice';
 import { fetchCarouselItems, getCarouselImageUrl } from '@/utils/api';
 import { sanitizeHtml, stripHtml } from '@/lib/sanitize-html';
 import { useSiteFeatures } from '@/contexts/site-features-context';
@@ -36,29 +36,16 @@ export default function IntroSection() {
   const defaultSearchHref = defaultSearchType ? searchHref(defaultSearchType) : '/not-found';
   const searchAvailable = isSectionEnabled('search') && defaultSearchType !== null;
   const [currentImage, setCurrentImage] = useState(0);
-  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
-  const hasLoadedRef = useRef(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: carouselItems = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['carousel-items'],
+    queryFn: fetchCarouselItems,
+    staleTime: 60_000,
+  });
   const intervalRef = useRef<ReturnType<typeof setInterval>>(null);
-
-  useEffect(() => {
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-
-    async function loadCarouselItems() {
-      try {
-        const items = await fetchCarouselItems();
-        setCarouselItems(items);
-      } catch (err) {
-        setError(`Failed to load carousel items ${err}`);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadCarouselItems();
-  }, []);
 
   const startAutoplay = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -91,7 +78,7 @@ export default function IntroSection() {
     goToSlide((currentImage - 1 + carouselItems.length) % carouselItems.length);
   };
 
-  const hasImages = !error && carouselItems.length > 0;
+  const hasImages = !isError && carouselItems.length > 0;
   const currentItem = hasImages ? carouselItems[currentImage] : null;
   const currentItemUrl = normalizeCarouselLink(currentItem?.url, aboutHref);
   const exploreCards = [

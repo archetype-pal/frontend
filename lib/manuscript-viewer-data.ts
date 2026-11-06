@@ -1,6 +1,5 @@
 import { getIiifBaseUrl } from '@/utils/iiif';
 import { fetchAllographs, fetchManuscript, fetchManuscriptImage } from '@/services/manuscripts';
-import { fetchAnnotationsForImage } from '@/services/annotations';
 import { browserSafeIiifUrl, isDbId } from '@/lib/annotation-popup-utils';
 
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
@@ -22,16 +21,6 @@ async function fetchIiifImageHeight(iiifImage: string): Promise<number> {
   } catch {
     return 2000;
   }
-}
-
-export async function fetchImageAllographIds(itemImageId: string): Promise<number[]> {
-  const graphs = await fetchAnnotationsForImage(itemImageId, undefined, 'image');
-
-  return Array.from(
-    new Set(
-      graphs.map((graph) => graph.allograph).filter((id): id is number => typeof id === 'number')
-    )
-  );
 }
 
 export function getSavedImageAllographIds(annotations: A9sAnnotation[]): number[] {

@@ -17,11 +17,13 @@ export function isTableOnlyType(type: ResultType): boolean {
 
 export function parseViewModeParam(raw: string | null, resultType: ResultType): ViewMode | null {
   if (!raw) return null;
+  // The map view is gone: old links and saved choices open the table.
+  if (raw === 'map') return 'table';
   const v = raw as ViewMode;
-  const allowed: ViewMode[] = ['table', 'grid', 'timeline', 'distribution', 'map'];
+  const allowed: ViewMode[] = ['table', 'grid', 'timeline', 'distribution'];
   if (!allowed.includes(v)) return null;
   if (v === 'distribution' && resultType !== 'graphs') return null;
-  if ((v === 'map' || v === 'grid') && isTableOnlyType(resultType)) return null;
+  if (v !== 'table' && isTableOnlyType(resultType)) return null;
   return v;
 }
 
@@ -52,11 +54,8 @@ export function useSearchViewMode(resultType: ResultType) {
       const raw = window.localStorage.getItem(VIEW_PREFS_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as Record<string, ViewMode>;
-      const candidate = parsed[resultType];
+      const candidate = parseViewModeParam(parsed[resultType] ?? null, resultType);
       if (!candidate) return;
-      if (candidate === 'distribution' && resultType !== 'graphs') return;
-      if (candidate === 'map' && isTableOnlyType(resultType)) return;
-      if (candidate === 'grid' && isTableOnlyType(resultType)) return;
       // oxlint-disable-next-line react-hooks/set-state-in-effect -- seeds viewMode from a browser-only store (localStorage) post-mount to avoid a hydration mismatch; cannot run during render or via useSyncExternalStore because it is keyed on the resultType prop and must yield to later setViewMode calls
       setViewMode(candidate);
     } catch {
@@ -72,8 +71,7 @@ export function useSearchViewMode(resultType: ResultType) {
   // next pass, so it converges in a single extra render with no loop.
   if (
     (isTableOnlyType(resultType) && viewMode !== 'table') ||
-    (resultType !== 'graphs' && viewMode === 'distribution') ||
-    (isTableOnlyType(resultType) && viewMode === 'map')
+    (resultType !== 'graphs' && viewMode === 'distribution')
   ) {
     setViewMode('table');
   }

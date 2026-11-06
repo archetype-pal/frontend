@@ -236,7 +236,6 @@ function CollectionPageContent() {
     activeCollection: localActiveCollection,
     isHydrated,
     collections,
-    canManageCollections,
     createCollection,
     clearCollection,
     removeItems,
@@ -394,11 +393,6 @@ function CollectionPageContent() {
   };
   const handleSaveSharedCollectionCopy = () => {
     if (!sharedCollection) return;
-
-    if (!canManageCollections) {
-      toast.error(t('page.toastLocalCollectionsUnavailable'));
-      return;
-    }
 
     const name = getAvailableCollectionName(collections, sharedCollection.name);
     if (!name || !createCollection(name, sharedCollection.items)) {

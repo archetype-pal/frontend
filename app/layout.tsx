@@ -82,10 +82,12 @@ export default async function RootLayout({
 }>) {
   const requestHeaders = await headers();
   const nonce = requestHeaders.get('x-nonce') ?? undefined;
-  // `degraded` is dropped here: it would otherwise be serialized into the RSC
-  // payload of the client provider below and advertise backend health publicly.
-  const [{ degraded: _degraded, ...siteFeaturesConfig }, modelLabelsConfig, rawLocale, messages] =
-    await Promise.all([readSiteFeatures(), readModelLabels(), getLocale(), getMessages()]);
+  const [siteFeaturesConfig, modelLabelsConfig, rawLocale, messages] = await Promise.all([
+    readSiteFeatures(),
+    readModelLabels(),
+    getLocale(),
+    getMessages(),
+  ]);
   const locale = coerceLocale(rawLocale);
 
   // `readSiteFeatures` folds the admin-saved theme over `getDefaultThemeColors()`
