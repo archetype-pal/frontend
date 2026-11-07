@@ -85,3 +85,10 @@ describe('locateAll', () => {
     expect(ranges.map((r) => r.start)).toEqual([0, 12, 29]);
   });
 });
+
+describe('apostrophes', () => {
+  it('finds a quotation that differs only by its apostrophe', () => {
+    expect(findQuote('Comite Malc’ . de Fif', "Comite Malc' . de Fif")).toHaveLength(1);
+    expect(findQuote("Comite Malc' . de Fif", 'Comite Malc’ . de Fif')).toHaveLength(1);
+  });
+});

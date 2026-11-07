@@ -20,6 +20,8 @@ export interface TextRange {
 
 const EDGE_PUNCTUATION = /^[\s.,;:!?'"“”‘’«»()[\]…-]+|[\s.,;:!?'"“”‘’«»()[\]…-]+$/g;
 
+const APOSTROPHES = /['’‘ʼ`´]/;
+
 /** Lowercased text with whitespace runs collapsed, and each character's index in the original. */
 function normalise(text: string): { norm: string; map: number[] } {
   let norm = '';
@@ -33,7 +35,8 @@ function normalise(text: string): { norm: string; map: number[] } {
       }
       continue;
     }
-    norm += ch.toLowerCase();
+    // A model types a straight apostrophe where the edition has a curly one (`Malc'`, `Malc’`).
+    norm += APOSTROPHES.test(ch) ? "'" : ch.toLowerCase();
     map.push(i);
   }
   return { norm, map };
