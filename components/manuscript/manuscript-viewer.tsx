@@ -594,6 +594,7 @@ export default function ManuscriptViewer({
     handleDeletePopupAnnotation,
   } = useAnnotationDeletion({
     canDeleteAnnotations,
+    canDeleteEditorialAnnotations: canPersistEditorialAnnotations,
     getCanonicalAnnotation,
     getAnnotationKind,
     getPopupById,
