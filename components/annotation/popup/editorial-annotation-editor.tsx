@@ -14,6 +14,7 @@ import type { PopupTab, SelectedComponentGroup } from './types';
 
 interface EditorialAnnotationEditorProps {
   isExisting: boolean;
+  readOnly?: boolean;
   hasLocalChanges: boolean;
   metaSummary?: AnnotationPopupMetaSummary;
   popupTab: PopupTab;
@@ -29,6 +30,7 @@ interface EditorialAnnotationEditorProps {
 
 export function EditorialAnnotationEditor({
   isExisting,
+  readOnly = false,
   hasLocalChanges,
   metaSummary,
   popupTab,
@@ -111,7 +113,7 @@ export function EditorialAnnotationEditor({
               selectedPositionLabels={selectedPositionLabels}
             />
 
-            {isExisting ? (
+            {isExisting && !readOnly ? (
               <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                 Press OK to keep changes local for the main toolbar Save, or use Save Annotation (s)
                 in this popup header to save immediately.
@@ -138,26 +140,29 @@ export function EditorialAnnotationEditor({
             <textarea
               value={draftInternalNoteText}
               onChange={(e) => onDraftInternalNoteTextChange(e.target.value)}
-              placeholder="Type internal note"
+              placeholder={readOnly ? undefined : 'Type internal note'}
+              readOnly={readOnly}
               rows={8}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring read-only:cursor-default read-only:bg-muted"
             />
           </div>
         </TabsContent>
       </div>
 
-      <div className="flex shrink-0 items-center justify-end gap-2 border-t px-4 py-3">
-        <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-          {isExisting ? 'Cancel' : 'Discard'}
-        </Button>
-        <Button
-          onClick={onConfirmDraftAnnotation}
-          disabled={isExisting && !hasLocalChanges}
-          type="button"
-        >
-          OK
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t px-4 py-3">
+          <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
+            {isExisting ? 'Cancel' : 'Discard'}
+          </Button>
+          <Button
+            onClick={onConfirmDraftAnnotation}
+            disabled={isExisting && !hasLocalChanges}
+            type="button"
+          >
+            OK
+          </Button>
+        </div>
+      )}
     </Tabs>
   );
 }
