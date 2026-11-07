@@ -19,6 +19,7 @@ import type {
 import type { A9sWithMeta, AnnotationCreationKind, PopupRecord } from '@/types/annotation-viewer';
 
 export const ANNOTATION_SELECTION_TOAST_ID = 'annotation-selection-toast';
+export const ANNOTATION_DENIED_TOAST_ID = 'annotation-denied-toast';
 
 interface UsePopupSelectionArgs {
   // popup collection (useManuscriptPopups)
