@@ -1,29 +1,16 @@
-import { fetchImageTextsForImage, type ImageTextDetail } from '@/services/image-texts';
+import { getServerAuthToken } from '@/lib/auth-token-server';
+import { fetchImageTextsForImage } from '@/services/image-texts';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { StaffEditLink } from '@/components/text/staff-edit-link';
+import { TextStatusBadge } from '@/components/text/text-status-badge';
 
 interface PageProps {
   params: Promise<{ id: string; imageId: string }>;
 }
 
-const STATUS_PALETTE: Record<ImageTextDetail['status'], string> = {
-  Live: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200',
-  Reviewed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200',
-  Review: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
-  Draft: 'bg-muted text-muted-foreground',
-};
-
-function StatusBadge({ status }: { status: ImageTextDetail['status'] }) {
-  return (
-    <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_PALETTE[status]}`}>
-      {status}
-    </span>
-  );
-}
-
 export default async function TextsTabPage({ params }: PageProps) {
   const { imageId } = await params;
-  const texts = await fetchImageTextsForImage(imageId);
+  const texts = await fetchImageTextsForImage(imageId, await getServerAuthToken());
 
   if (texts.length === 0) {
     return (
@@ -47,7 +34,7 @@ export default async function TextsTabPage({ params }: PageProps) {
               )}
             </div>
             <div className="flex items-center gap-3">
-              <StatusBadge status={text.status} />
+              <TextStatusBadge status={text.status} />
               <StaffEditLink textId={text.id} />
             </div>
           </header>

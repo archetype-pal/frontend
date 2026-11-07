@@ -95,10 +95,9 @@ export async function proxyFetch(path: string, init?: RequestInit): Promise<Resp
  */
 export async function optionalAuthFetch(
   path: string,
-  authenticated: boolean,
+  auth: boolean | string | null,
   init?: RequestInit
 ): Promise<Response> {
-  return authenticated && typeof window !== 'undefined'
-    ? proxyFetch(path, init)
-    : apiFetch(path, init);
+  if (typeof auth !== 'boolean') return authFetch(path, auth, init);
+  return auth && typeof window !== 'undefined' ? proxyFetch(path, init) : apiFetch(path, init);
 }

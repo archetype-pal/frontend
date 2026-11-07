@@ -20,11 +20,11 @@ type PaginatedImageTexts = PaginatedResponse<ImageTextDetail>;
 
 export async function fetchImageTextsForImage(
   imageId: string | number,
-  authenticated = false
+  auth: boolean | string | null = false
 ): Promise<ImageTextDetail[]> {
   const response = await optionalAuthFetch(
     `/api/v1/manuscripts/image-texts/?item_image=${imageId}`,
-    authenticated,
+    auth,
     { cache: 'no-store' }
   );
   if (!response.ok) return [];
@@ -35,13 +35,11 @@ export async function fetchImageTextsForImage(
 
 export async function fetchImageText(
   textId: string | number,
-  authenticated = false
+  auth: boolean | string | null = false
 ): Promise<ImageTextDetail | null> {
-  const response = await optionalAuthFetch(
-    `/api/v1/manuscripts/image-texts/${textId}/`,
-    authenticated,
-    { cache: 'no-store' }
-  );
+  const response = await optionalAuthFetch(`/api/v1/manuscripts/image-texts/${textId}/`, auth, {
+    cache: 'no-store',
+  });
   if (!response.ok) return null;
   return response.json();
 }

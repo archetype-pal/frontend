@@ -165,3 +165,21 @@ describe('ViewerTextPanel — dangling links (trashed regions)', () => {
     expect(onSpanActivate).toHaveBeenCalledWith(9);
   });
 });
+
+describe('ViewerTextPanel — text status', () => {
+  it.each(['Draft', 'Review'] as const)('marks a text in %s as not published yet', (status) => {
+    const { getByText } = render(
+      <ViewerTextPanel texts={[makeText({ status })]} hoveredGraphId={null} {...baseProps} />
+    );
+
+    expect(getByText(status)).toBeTruthy();
+  });
+
+  it('shows no status on a published text', () => {
+    const { queryByText } = render(
+      <ViewerTextPanel texts={[makeText()]} hoveredGraphId={null} {...baseProps} />
+    );
+
+    expect(queryByText('Live')).toBeNull();
+  });
+});
