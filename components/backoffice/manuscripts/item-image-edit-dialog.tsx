@@ -140,7 +140,14 @@ export function ItemImageEditDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg">
+        <DialogContent
+          className="max-w-lg"
+          // A link in here leaves the page: close first, as navigating away from an open
+          // modal leaves its layers behind and crashes the next dialog opened.
+          onClickCapture={(event) => {
+            if ((event.target as HTMLElement).closest('a[href^="/"]')) onOpenChange(false);
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{t('manuscriptsDetail.editImage')}</DialogTitle>
             <DialogDescription>{t('manuscriptsDetail.editImageDescription')}</DialogDescription>
