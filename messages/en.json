@@ -605,7 +605,7 @@
         "suggest": "Suggest with AI",
         "suggestAgain": "Ask again",
         "suggesting": "The model is looking…",
-        "suggestHint": "A model reads this page and the shape you drew, and fills in its allograph, components and features for you to check. It takes about 15 seconds and costs about $0.09. The page goes to a hosted AI model outside this site.",
+        "suggestHint": "A model reads this page and the shape you drew, and fills in its allograph, components and features for you to check. It takes about 15 seconds and costs about $0.07. The page goes to a hosted AI model outside this site.",
         "suggested": "Suggested: {label}",
         "suggestedNothing": "The model did not name a letter here.",
         "confidence": "{percent}% sure",
@@ -617,7 +617,7 @@
         "explainTab": "Explain",
         "explain": "Explain this annotation",
         "explaining": "The model is looking…",
-        "explainHint": "A model reads this page and sets out the evidence for this allograph: the letter-form, its context, and how scribes wrote at the time. It cannot know why the annotator chose it. A new answer takes about 15 seconds and costs about $0.09; one already written is free.",
+        "explainHint": "A model reads this page and sets out the evidence for this allograph: the letter-form, its context, and how scribes wrote at the time. It cannot know why the annotator chose it. A new answer takes about 15 seconds and costs about $0.07; one already written is free.",
         "explainSavedOnly": "This explains the annotation as saved, not your unsaved changes.",
         "verdict": {
           "obvious": "Clear from the shape",

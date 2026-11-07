@@ -605,7 +605,7 @@
         "suggest": "Mit KI vorschlagen",
         "suggestAgain": "Erneut fragen",
         "suggesting": "Das Modell prüft die Form…",
-        "suggestHint": "Ein Modell liest diese Seite und die gezeichnete Form und trägt Allograph, Komponenten und Merkmale zur Prüfung ein. Das dauert etwa 15 Sekunden und kostet etwa 0,09 $. Die Seite wird an ein gehostetes KI-Modell außerhalb dieser Website gesendet.",
+        "suggestHint": "Ein Modell liest diese Seite und die gezeichnete Form und trägt Allograph, Komponenten und Merkmale zur Prüfung ein. Das dauert etwa 15 Sekunden und kostet etwa 0,07 $. Die Seite wird an ein gehostetes KI-Modell außerhalb dieser Website gesendet.",
         "suggested": "Vorschlag: {label}",
         "suggestedNothing": "Das Modell hat hier keinen Buchstaben benannt.",
         "confidence": "zu {percent} % sicher",
@@ -617,7 +617,7 @@
         "explainTab": "Erklären",
         "explain": "Diese Annotation erklären",
         "explaining": "Das Modell prüft die Form…",
-        "explainHint": "Ein Modell liest diese Seite und legt die Belege für dieses Allograph dar: die Buchstabenform, den Kontext und die damalige Schreibweise. Es kann nicht wissen, warum die annotierende Person es gewählt hat. Eine neue Antwort dauert etwa 15 Sekunden und kostet etwa 0,09 $; eine bereits verfasste ist kostenlos.",
+        "explainHint": "Ein Modell liest diese Seite und legt die Belege für dieses Allograph dar: die Buchstabenform, den Kontext und die damalige Schreibweise. Es kann nicht wissen, warum die annotierende Person es gewählt hat. Eine neue Antwort dauert etwa 15 Sekunden und kostet etwa 0,07 $; eine bereits verfasste ist kostenlos.",
         "explainSavedOnly": "Dies erklärt die gespeicherte Annotation, nicht Ihre ungespeicherten Änderungen.",
         "verdict": {
           "obvious": "Aus der Form klar",
