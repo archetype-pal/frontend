@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Table, TableHeader, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, ScanSearch } from 'lucide-react';
 import type { ResultType } from '@/lib/search-types';
 import type {
   ClauseListItem,
@@ -29,6 +29,7 @@ import { CollectionStar } from '@/components/collection/collection-star';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
+import { similarGlyphsHref } from '@/lib/similar-glyphs';
 import type { CollectionItem } from '@/lib/collection-storage';
 import { getAnnotatedHitDetailUrl, getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
 import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
@@ -117,6 +118,7 @@ const catalogueNumColumn = <T extends { catalogue_numbers: string[] }>(): Column
 
 function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
   const infoUrl = (graph.image_iiif || '').trim();
+  const t = useTranslations('search');
   const src = useIiifThumbnailUrl(infoUrl, graph.coordinates);
 
   if (!infoUrl) return <span className="text-xs text-muted-foreground">N/A</span>;
@@ -138,6 +140,16 @@ function GraphThumbnailCell({ graph }: { graph: GraphListItem }) {
       />
       <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/[0.05] transition-colors duration-200 pointer-events-none z-10" />
       <CollectionStar itemId={graph.id} itemType="graph" item={graph} size={16} />
+      {graph.has_glyph_vector && (
+        <Link
+          href={similarGlyphsHref(graph.id)}
+          aria-label={t('lettersLikeThis')}
+          title={t('lettersLikeThis')}
+          className="absolute bottom-0.5 left-0.5 inline-flex rounded bg-background/90 p-0.5 text-foreground shadow-sm hover:bg-background"
+        >
+          <ScanSearch className="h-4 w-4" aria-hidden />
+        </Link>
+      )}
     </div>
   );
 }
