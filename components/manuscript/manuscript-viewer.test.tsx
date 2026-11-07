@@ -44,6 +44,7 @@ const glyphAssist = vi.hoisted(() => ({
   rejectSuggestion: vi.fn(async () => ({ status: 'rejected' })),
   explainAnnotation: vi.fn(),
   getStoredExplanation: vi.fn(async () => null),
+  suggestForAnnotation: vi.fn(),
 }));
 
 vi.mock('next/dynamic', () => ({
@@ -763,6 +764,52 @@ describe('ManuscriptViewer smoke test', () => {
 
       expect(await screen.findByText('Try again tomorrow.')).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+    });
+
+    it('fills in a saved annotation, and rejecting it closes the suggestion', async () => {
+      glyphAssist.getAssistEnabled.mockResolvedValue(true);
+      glyphAssist.suggestForAnnotation.mockResolvedValue({
+        ...suggestion,
+        components: [
+          {
+            component: 5,
+            component_name: 'Stem',
+            features: [51],
+            feature_details: [{ id: 51, name: 'forked' }],
+          },
+        ],
+      });
+      render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />, {
+        wrapper: withQueryClient,
+      });
+      await screen.findByRole('button', { name: 'Image tools' });
+      await waitFor(() => expect(glyphAssist.getAssistEnabled).toHaveBeenCalled());
+      const props = annotoriousPropsRef.current;
+      act(() => {
+        props!.exposeApi?.(mockViewerApi);
+        props!.onSelect?.({
+          id: 'db:12',
+          target: { selector: { type: 'FragmentSelector', value: 'xywh=pixel:0,0,10,10' } },
+          body: [],
+          _meta: { annotationType: 'image', allographId: allographA.id },
+        });
+      });
+      await screen.findByRole('dialog');
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Suggest with AI' }));
+
+      expect(await screen.findByText('The model adds 1 thing')).toBeTruthy();
+      expect(screen.getByText('Stem: forked')).toBeTruthy();
+      expect(glyphAssist.suggestForAnnotation).toHaveBeenCalledWith(12, {
+        allograph: allographA.id,
+        language: 'en',
+      });
+      expect(glyphAssist.suggestShape).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Accept' })).toBeTruthy();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
+
+      expect(glyphAssist.rejectSuggestion).toHaveBeenCalledWith(77);
     });
 
     it('explains a saved annotation in its own tab', async () => {
