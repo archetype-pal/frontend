@@ -112,6 +112,9 @@ const FILTERABLE_FIELDS_BY_TYPE: Record<ResultType, string[]> = {
     'language',
     'places',
     'people',
+    'granters',
+    'beneficiaries',
+    'witnesses',
   ],
   clauses: [
     'id',

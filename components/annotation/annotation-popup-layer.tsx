@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
+import type { PopupAssist } from '@/components/annotation/popup/types';
 import { DraggablePopupLayer } from '@/components/manuscript/draggable-popup-layer';
 
 import {
@@ -74,6 +76,9 @@ interface AnnotationPopupLayerProps {
   onToggleAnnotationCollection: (annotation: A9sWithMeta) => void;
   onCancelDraftAnnotation: (popupId: string) => void;
   onConfirmDraftAnnotation: (popupId: string) => Promise<void> | void;
+
+  /** Asking a model about a popup's shape; omitted where it cannot be asked. */
+  assistFor?: (popupRecord: PopupRecord) => PopupAssist | undefined;
 }
 
 // Renders the floating annotation popups (one per `visiblePopupRecords`
@@ -112,7 +117,9 @@ export function AnnotationPopupLayer({
   onToggleAnnotationCollection,
   onCancelDraftAnnotation,
   onConfirmDraftAnnotation,
+  assistFor,
 }: AnnotationPopupLayerProps) {
+  const t = useTranslations('annotation');
   if (visiblePopupRecords.length === 0) return null;
 
   return (
@@ -151,7 +158,9 @@ export function AnnotationPopupLayer({
           >
             {({ popupTransform, dragHandleProps, zIndex: cardZIndex, onPointerDownCapture }) => (
               <AnnotationPopupCard
-                title={popupCard.title}
+                title={
+                  popupCard.titleKey ? t(`popup.title.${popupCard.titleKey}`) : popupCard.title
+                }
                 isDraftAnnotation={popupCard.isDraft}
                 annotationKind={annotationKind}
                 popupCapabilities={popupCapabilities}
@@ -227,6 +236,7 @@ export function AnnotationPopupLayer({
                 selectedComponentGroups={popupCard.selectedComponentGroups}
                 selectedPositionLabels={popupCard.selectedPositionLabels}
                 selectedNotes={popupCard.selectedNotes}
+                assist={assistFor?.(popupRecord)}
               />
             )}
           </DraggablePopupLayer>

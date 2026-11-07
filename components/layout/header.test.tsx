@@ -16,6 +16,18 @@ const mockState = vi.hoisted(() => ({
     sectionOrder: ['search'] as string[],
     enabledSections: ['search'] as string[],
   },
+  getAgentTools: vi.fn(),
+  getLearnStatus: vi.fn(),
+  getDiplomaticSummary: vi.fn(),
+}));
+
+vi.mock('@/services/agent', () => ({ getAgentTools: mockState.getAgentTools }));
+vi.mock('@/services/learn', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/learn')>()),
+  getLearnStatus: mockState.getLearnStatus,
+}));
+vi.mock('@/services/diplomatic', () => ({
+  getDiplomaticSummary: mockState.getDiplomaticSummary,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -97,6 +109,11 @@ beforeEach(() => {
   mockState.push.mockClear();
   mockState.loadGlobalSuggestions.mockClear();
   mockState.getServerSuggestions.mockClear();
+  mockState.getAgentTools.mockReset().mockResolvedValue({ enabled: false, tools: [] });
+  mockState.getLearnStatus.mockReset().mockResolvedValue({ enabled: false });
+  mockState.getDiplomaticSummary
+    .mockReset()
+    .mockResolvedValue({ formulae: 0, entities: 0, relations: 0 });
 });
 
 describe('<Header> search entry points', () => {
@@ -175,5 +192,90 @@ describe('<Header> static page menus', () => {
     mockState.siteFeatures = { sectionOrder: ['heading:help'], enabledSections: [] };
     renderHeader({ pages: [], menuHeadings: [help] });
     expect(screen.queryByRole('button', { name: 'Help' })).toBeNull();
+  });
+});
+
+describe('<Header> Research menu', () => {
+  const researchLinks = () => {
+    const trigger = screen.queryByRole('button', { name: 'research' });
+    if (!trigger) return null;
+    return within(trigger.closest('li')!)
+      .getAllByRole('link')
+      .map((link) => [link.textContent, link.getAttribute('href')]);
+  };
+  const settled = () =>
+    waitFor(() => {
+      expect(mockState.getAgentTools).toHaveBeenCalled();
+      expect(mockState.getLearnStatus).toHaveBeenCalled();
+      expect(mockState.getDiplomaticSummary).toHaveBeenCalled();
+    });
+
+  it('lists Ask Archetype while the agent is switched on', async () => {
+    mockState.getAgentTools.mockResolvedValue({ enabled: true, tools: [] });
+    renderHeader();
+
+    await screen.findByRole('button', { name: 'research' });
+    expect(researchLinks()).toEqual([['ask', '/ask']]);
+  });
+
+  it('lists the palaeography tutor while it is switched on', async () => {
+    mockState.getLearnStatus.mockResolvedValue({ enabled: true });
+    renderHeader();
+
+    await screen.findByRole('button', { name: 'research' });
+    expect(researchLinks()).toEqual([['learn', '/learn']]);
+    // Whether it is on is the same for everyone, so the header asks anonymously.
+    expect(mockState.getLearnStatus).toHaveBeenCalledWith(false);
+  });
+
+  it('lists the formulary once a formula has been approved', async () => {
+    mockState.getDiplomaticSummary.mockResolvedValue({ formulae: 3, entities: 0, relations: 0 });
+    renderHeader();
+
+    await screen.findByRole('button', { name: 'research' });
+    expect(researchLinks()).toEqual([['formulary', '/formulary']]);
+  });
+
+  it.each([
+    ['an entity', { formulae: 0, entities: 1, relations: 0 }],
+    ['a relation', { formulae: 0, entities: 0, relations: 1 }],
+  ])('lists the network once %s has been approved', async (_, summary) => {
+    mockState.getDiplomaticSummary.mockResolvedValue(summary);
+    renderHeader();
+
+    await screen.findByRole('button', { name: 'research' });
+    expect(researchLinks()).toEqual([['network', '/network']]);
+  });
+
+  it('lists all four, Ask Archetype and the tutor first', async () => {
+    mockState.getAgentTools.mockResolvedValue({ enabled: true, tools: [] });
+    mockState.getLearnStatus.mockResolvedValue({ enabled: true });
+    mockState.getDiplomaticSummary.mockResolvedValue({ formulae: 1, entities: 2, relations: 0 });
+    renderHeader();
+
+    await waitFor(() => expect(researchLinks()).toHaveLength(4));
+    expect(researchLinks()).toEqual([
+      ['ask', '/ask'],
+      ['learn', '/learn'],
+      ['formulary', '/formulary'],
+      ['network', '/network'],
+    ]);
+  });
+
+  it('is absent while there is nothing to list', async () => {
+    renderHeader();
+
+    await settled();
+    expect(researchLinks()).toBeNull();
+  });
+
+  it('is absent when none can be asked', async () => {
+    mockState.getAgentTools.mockRejectedValue(new Error('502'));
+    mockState.getLearnStatus.mockRejectedValue(new Error('502'));
+    mockState.getDiplomaticSummary.mockRejectedValue(new Error('502'));
+    renderHeader();
+
+    await settled();
+    expect(researchLinks()).toBeNull();
   });
 });

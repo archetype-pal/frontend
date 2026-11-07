@@ -145,6 +145,10 @@ export const SEARCH_RESULT_CONFIG = {
       { key: 'language', render: 'checkbox' },
       { key: 'places', render: 'checkbox' },
       { key: 'people', render: 'checkbox' },
+      // Who a scholar approved in each role (backend W2.1); `people` is everyone the markup names.
+      { key: 'granters', render: 'checkbox' },
+      { key: 'beneficiaries', render: 'checkbox' },
+      { key: 'witnesses', render: 'checkbox' },
     ],
   },
   clauses: {

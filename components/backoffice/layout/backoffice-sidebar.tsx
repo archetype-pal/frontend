@@ -34,12 +34,19 @@ import {
   ToggleLeft,
   Trash2,
   HeartPulse,
+  ClipboardCheck,
+  Sparkles,
+  ScanText,
+  Cpu,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getComments } from '@/services/backoffice/publications';
+import { getAnnotationProposalDepth } from '@/services/backoffice/annotation-proposals';
+import { getDiplomaticProposalDepth } from '@/services/backoffice/diplomatic-proposals';
+import { fetchReviewQueue } from '@/services/backoffice/review-queue';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useTranslations } from 'next-intl';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -82,7 +89,22 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
           { label: t('sidebar.scribes'), href: '/backoffice/scribes', icon: Users },
           { label: t('sidebar.hands'), href: '/backoffice/hands', icon: Hand },
           { label: t('sidebar.annotations'), href: '/backoffice/annotations', icon: PenTool },
+          {
+            label: t('sidebar.annotationProposals'),
+            href: '/backoffice/annotation-proposals',
+            icon: Sparkles,
+          },
           { label: t('sidebar.texts'), href: '/backoffice/texts', icon: ScrollText },
+          {
+            label: t('sidebar.reviewQueue'),
+            href: '/backoffice/review-queue',
+            icon: ClipboardCheck,
+          },
+          {
+            label: t('sidebar.diplomaticProposals'),
+            href: '/backoffice/diplomatic-proposals',
+            icon: ScanText,
+          },
           { label: t('sidebar.characters'), href: '/backoffice/symbols', icon: Type },
         ],
         subGroups: [
@@ -133,6 +155,7 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
         { label: t('sidebar.siteFeatures'), href: '/backoffice/site-features', icon: ToggleLeft },
         { label: t('sidebar.trash'), href: '/backoffice/trash', icon: Trash2 },
         { label: t('sidebar.sanityChecks'), href: '/backoffice/sanity-checks', icon: HeartPulse },
+        { label: t('sidebar.mlJobs'), href: '/backoffice/ml-jobs', icon: Cpu },
       ],
     });
     return groups;
@@ -147,9 +170,40 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
     staleTime: 30_000,
   });
 
+  // Proposals awaiting a reviewer. No retry: a backend without the AI
+  // programme's routes answers 404, which should cost one request a minute.
+  const { data: proposalDepth } = useQuery({
+    queryKey: backofficeKeys.annotationProposals.depth(),
+    queryFn: getAnnotationProposalDepth,
+    enabled: isAuthenticated,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: false,
+  });
+  const { data: diplomaticDepth } = useQuery({
+    queryKey: backofficeKeys.diplomaticProposals.depth(),
+    queryFn: getDiplomaticProposalDepth,
+    enabled: isAuthenticated,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: false,
+  });
+
   const pendingCount = pendingComments?.count ?? 0;
+  const { data: reviewQueue } = useQuery({
+    queryKey: backofficeKeys.reviewQueue.all(),
+    queryFn: () => fetchReviewQueue(),
+    enabled: isAuthenticated,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: false,
+  });
+
   const badges: Record<string, number> = {
     '/backoffice/comments': pendingCount,
+    '/backoffice/review-queue': reviewQueue?.length ?? 0,
+    '/backoffice/annotation-proposals': proposalDepth?.pending ?? 0,
+    '/backoffice/diplomatic-proposals': diplomaticDepth?.pending ?? 0,
   };
 
   return (

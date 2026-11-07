@@ -397,3 +397,223 @@ export interface GraphItem {
   deleted_at: string | null;
   deleted_by: string | null;
 }
+
+export type GraphProposalStatus = 'pending' | 'accepted' | 'rejected';
+
+/**
+ * A machine-proposed annotation awaiting a human decision (AI programme W0.5).
+ * Read-only: the only writes are the accept and reject actions.
+ */
+export interface GraphProposalItem {
+  id: number;
+  item_image: number;
+  image_display: string;
+  /** The page's IIIF info.json URL; null when the image server can't address it. */
+  image_iiif: string | null;
+  historical_item: number;
+  /** The page's part: a correction may name only one of its hands. */
+  item_part: number;
+  /** GeoJSON Feature in the page's pixel space, Y-up, as on a graph. */
+  annotation: Record<string, unknown>;
+  allograph: number | null;
+  allograph_name: string | null;
+  // Null when the page's part has no hand recorded. An image proposal without
+  // one cannot be accepted: Graph's check constraint requires both.
+  hand: number | null;
+  hand_name: string | null;
+  annotation_type: 'image' | 'text' | 'editorial';
+  confidence: number | null;
+  ml_job: number | null;
+  model_name: string;
+  status: GraphProposalStatus;
+  reviewer: number | null;
+  reviewer_username: string;
+  reviewed: string | null;
+  reason: string;
+  accepted_graph: number | null;
+  created: string;
+  /** What the model filed, kept when a reviewer first corrected it; null if nobody has. */
+  proposed: GraphProposalFiled | null;
+  corrected_by: number | null;
+  corrected_by_username: string;
+  corrected: string | null;
+}
+
+/** A proposal as its model filed it, before any correction. */
+export interface GraphProposalFiled {
+  annotation: Record<string, unknown>;
+  allograph: number | null;
+  hand: number | null;
+}
+
+/** The charter transcription a diplomatic proposal was read from. */
+export interface DiplomaticProposalSource {
+  image_text: number;
+  type: string;
+  item_image: number;
+  /** With `item_image`, the viewer's route: /manuscripts/<part>/images/<image>. */
+  item_part: number;
+  historical_item: number;
+  label: string;
+  /** The catalogue date; what a W3.2 verdict was judged against. Empty when undated. */
+  date: string;
+}
+
+export interface ProposedEntity {
+  role: string;
+  name: string;
+  normalised?: string;
+  note?: string;
+}
+
+export interface ProposedFormula {
+  kind: string;
+  label: string;
+  excerpt?: string;
+  published_type?: string;
+}
+
+export interface ProposedTriple {
+  subject: string;
+  predicate: string;
+  object: string;
+}
+
+/**
+ * A pipeline's parsed answer. Its shape depends on the pipeline: W2.1
+ * `entities`, W2.2 `formulae`, W2.4 `translation` and `notes`, W3.2 a
+ * `verdict` with its evidence, W3.3 `triples`.
+ */
+export interface DiplomaticPayload {
+  entities?: ProposedEntity[];
+  formulae?: ProposedFormula[];
+  triples?: ProposedTriple[];
+  translation?: string;
+  notes?: string;
+  verdict?: string;
+  evidence?: string;
+  reasoning?: string;
+  suggested_range?: string;
+  [key: string]: unknown;
+}
+
+/** A machine-authored diplomatic proposal (AI programme Phases 2–3). Read-only. */
+export interface DiplomaticProposalItem {
+  id: number;
+  pipeline: string;
+  source_type: string;
+  source_id: number;
+  /** Null when the source is not a transcription, or no longer exists. */
+  source: DiplomaticProposalSource | null;
+  payload: DiplomaticPayload;
+  confidence: number | null;
+  ml_job: number | null;
+  model_name: string;
+  status: GraphProposalStatus;
+  reviewer: number | null;
+  reviewer_username: string;
+  reviewed: string | null;
+  reason: string;
+  /**
+   * Positions in the payload's list that the reviewer left out when accepting
+   * the rest. Empty when accepted whole, rejected, or still pending.
+   */
+  dropped_items: number[];
+  created: string;
+}
+
+export interface DiplomaticProposalDetail extends DiplomaticProposalItem {
+  /** The charter text as the model read it: TEI stripped, truncated past 12,000 characters. */
+  source_text: string;
+}
+
+// ── Inference ledger ────────────────────────────────────────────────────
+
+export type MLJobStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'refused';
+
+export type PageDraftStatus = 'queued' | 'working' | 'drafted' | 'failed' | 'refused';
+
+/**
+ * A user's request that a model draft one page's transcription (AI programme
+ * W1.4). What it files is an ordinary Draft, marked machine-drafted, for review.
+ */
+export type LetterRequestStatus = 'queued' | 'working' | 'proposed' | 'failed' | 'refused';
+
+/** A user's request that one page's letters be proposed by the letter models (AI programme W1.1). */
+export interface LetterRequest {
+  id: number;
+  item_image: number;
+  status: LetterRequestStatus;
+  /** Why it stopped, fit to show; empty unless it failed or was refused. */
+  error: string;
+  requested_by: string | null;
+  /** The inference that found the letters: the review queue filters by it. */
+  ml_job: number | null;
+  /** The letters the models found on the page, and how many were filed as proposals. */
+  found: number;
+  proposed: number;
+  created: string;
+  updated: string;
+}
+
+export interface PageDraft {
+  id: number;
+  item_image: number;
+  status: PageDraftStatus;
+  /** Why it stopped, fit to show; empty unless it failed or was refused. */
+  error: string;
+  requested_by: string | null;
+  /** The Draft transcription it filed. */
+  image_text: number | null;
+  ml_job: number | null;
+  cost_micros: number | null;
+  created: string;
+  updated: string;
+}
+
+/** One model call, as the ledger records it (AI programme W0.1). Append-only. */
+export interface MLJobListItem {
+  id: number;
+  /** The programme item that made the call ("W2.1"), or a named routine. */
+  task: string;
+  provider: string;
+  model_name: string;
+  model_version: string;
+  status: MLJobStatus;
+  /** Millionths of `cost_currency`. An integer, never a float. */
+  cost_micros: number;
+  cost_currency: string;
+  duration_ms: number | null;
+  created: string;
+}
+
+export interface MLJobDetail extends MLJobListItem {
+  /** sha256 of the prompt. The prompt itself is not stored. */
+  prompt_hash: string;
+  /** sha256 of the inputs. */
+  input_ref: string;
+  params: Record<string, unknown>;
+  error: string;
+  input_tokens: number;
+  output_tokens: number;
+  actor: number | null;
+  actor_username: string;
+  celery_task_id: string;
+  /** The records the call produced or changed. */
+  targets: { target_type: string; target_id: number }[];
+}
+
+/** The spend breaker's state over its trailing window. */
+export interface MLJobSummary {
+  inference_enabled: boolean;
+  hosted_providers_enabled: boolean;
+  window: string;
+  spend_micros: number;
+  /** 0 means no cap. */
+  cap_micros: number;
+  per_actor_cap_micros: number;
+  /** What the window's costs were in; more than one means the caps add unlike amounts. */
+  currencies: string[];
+  by_status: Record<MLJobStatus, number>;
+  tasks: { task: string; count: number }[];
+}

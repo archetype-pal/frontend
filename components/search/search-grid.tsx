@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, ScanSearch, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { IiifImage } from '@/components/ui/iiif-image';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { getAnnotatedHitDetailUrl, getImageDetailUrl } from '@/lib/media-url';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import { cn } from '@/lib/utils';
+import { similarGlyphsHref, similarityPercent } from '@/lib/similar-glyphs';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 import type { BackendGraph } from '@/services/annotations';
 import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
@@ -433,6 +434,16 @@ const GraphGridCard = React.memo(function GraphGridCard({
   // not a way to give up collecting and lightboxing results.
   const actions = (
     <>
+      {item.has_glyph_vector && !annotatingMode && (
+        <Link
+          href={similarGlyphsHref(item.id)}
+          aria-label={t('lettersLikeThis')}
+          title={t('lettersLikeThis')}
+          className={cn(GRID_CARD_ACTION_CLASS, 'inline-flex items-center justify-center')}
+        >
+          <ScanSearch className="h-4 w-4" />
+        </Link>
+      )}
       <OpenLightboxButton
         item={item}
         variant="ghost"
@@ -450,6 +461,9 @@ const GraphGridCard = React.memo(function GraphGridCard({
       )}
     </>
   );
+
+  const similarity =
+    typeof item._rankingScore === 'number' ? similarityPercent(item._rankingScore) : null;
 
   const selectToggle = annotatingMode && (
     <button
@@ -485,6 +499,14 @@ const GraphGridCard = React.memo(function GraphGridCard({
       {showThumbnail && (
         <div className="relative aspect-4/3 overflow-hidden bg-muted/30">
           {recentlyEdited && <RecentlyEditedBadge />}
+          {similarity !== null && (
+            <span
+              title={t('similarityTitle')}
+              className="absolute bottom-1.5 left-1.5 z-20 rounded-full border border-border bg-card/95 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-foreground shadow-sm"
+            >
+              {t('similarityBadge', { percent: similarity })}
+            </span>
+          )}
           {selectToggle}
           {imageUrl ? (
             <>

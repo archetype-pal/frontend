@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { fetchReviewQueue, transitionImageText } from '@/services/backoffice/review-queue';
 import type { ImageTextListRow } from '@/services/backoffice/image-texts-list';
 import { Button } from '@/components/ui/button';
+import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 
 export default function ReviewQueuePage() {
@@ -113,7 +114,7 @@ function ReviewRow({ row, onTransitioned }: { row: ImageTextListRow; onTransitio
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <Link href={`/backoffice/image-texts/${row.id}`} className="font-medium hover:underline">
-            #{row.id} — {row.type} on image {row.item_image}
+            #{row.id} — {row.type}: {row.item_image_label || `image ${row.item_image}`}
           </Link>
           {row.last_transition ? (
             <p className="text-xs text-muted-foreground">
@@ -156,6 +157,10 @@ function ReviewRow({ row, onTransitioned }: { row: ImageTextListRow; onTransitio
             {sendBack.isPending ? t('reviewQueue.sendingButton') : t('reviewQueue.sendBackButton')}
           </Button>
         </div>
+      </div>
+      {/* What Approve publishes, in view before it does. */}
+      <div className="mt-3 max-h-64 overflow-y-auto rounded-md border bg-muted/20 p-3 text-sm">
+        <ImageTextViewer html={row.content} />
       </div>
     </li>
   );

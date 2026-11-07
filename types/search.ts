@@ -54,6 +54,10 @@ export interface GraphListItem {
   place?: string;
   date_min?: number;
   date_max?: number;
+  /** The glyph has a search vector, so "letters like this" can start from it. */
+  has_glyph_vector?: boolean;
+  /** Only on a "letters like this" hit: (1 + cosine) / 2 against the glyph searched from. */
+  _rankingScore?: number;
 }
 
 export interface ScribeListItem {

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { HandDetail, HandImage, HandManuscript } from '@/types/hand-detail';
+import type { SimilarHands } from '@/services/hand-similarity';
 import { SiteFeaturesProvider } from '@/contexts/site-features-context';
 import { getDefaultConfig } from '@/lib/site-features';
 import { HandViewer } from './hand-viewer';
@@ -507,5 +508,76 @@ describe('HandViewer Information tab', () => {
 
     expect(screen.getByText('Manuscript')).toBeDefined();
     expect(screen.queryByText('Script')).toBeNull();
+  });
+});
+
+describe('HandViewer Similar hands tab (AI programme W1.3)', () => {
+  const SIMILAR: SimilarHands = {
+    hand: 5,
+    glyphs: 24,
+    minimum_glyphs: 10,
+    vectors: 'hog@48px-6cell-9bin-1',
+    computed: '2026-11-05T00:00:00Z',
+    results: [
+      {
+        rank: 1,
+        similarity: 0.35,
+        hand: {
+          id: 41,
+          name: 'Main Hand',
+          item_part: 73,
+          item_part_display_label: 'NRS GD55/117',
+          scribe: { id: 1, name: 'Barrow, Scribe Ab' },
+          date: null,
+          place: null,
+        },
+        letters: [{ allograph: 9, name: 'r', character: 'r', similarity: 0.36, glyphs: [5, 1] }],
+      },
+    ],
+  };
+
+  function renderWith(similarHands: SimilarHands | null) {
+    return render(
+      <SiteFeaturesProvider initialConfig={getDefaultConfig()}>
+        <HandViewer
+          hand={HAND}
+          images={IMAGES}
+          scribe={null}
+          manuscript={MANUSCRIPT}
+          similarHands={similarHands}
+        />
+      </SiteFeaturesProvider>
+    );
+  }
+
+  beforeEach(() => {
+    apiFetch.mockReset();
+    apiFetch.mockImplementation(async (url: string) => respond(url));
+  });
+
+  it('opens on the nearest hands, linked to their pages', () => {
+    nav.search = 'tab=similar';
+
+    renderWith(SIMILAR);
+
+    const tab = screen.getByRole('tab', { name: 'Similar hands' });
+    expect(tab.getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('link', { name: 'NRS GD55/117' }).getAttribute('href')).toBe(
+      '/hands/41'
+    );
+  });
+
+  it.each([
+    ['nothing stored', { ...SIMILAR, results: [], vectors: null, computed: null }],
+    ['an API that could not say', null],
+  ])('has no such tab with %s, and a link to it opens the information', (_, similarHands) => {
+    nav.search = 'tab=similar';
+
+    renderWith(similarHands);
+
+    expect(screen.queryByRole('tab', { name: 'Similar hands' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Information' }).getAttribute('aria-selected')).toBe(
+      'true'
+    );
   });
 });

@@ -77,7 +77,7 @@ export function PopupShell({
       aria-modal={false}
       aria-labelledby={titleId}
       data-popup-height={height}
-      className="fixed right-4 top-4 flex flex-col overflow-hidden rounded-lg border bg-background shadow-lg"
+      className="fixed right-4 top-4 flex flex-col overflow-hidden rounded-lg border bg-background shadow-lg max-sm:transform-none!"
       style={{
         transform: popupTransform,
         zIndex,

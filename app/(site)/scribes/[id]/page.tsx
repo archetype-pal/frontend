@@ -7,6 +7,7 @@ import type { ScribeDetail, ScribeHand } from '@/types/scribe-detail';
 import { apiFetch } from '@/lib/api-fetch';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
+import { getScribeSimilarHands } from '@/services/hand-similarity';
 
 async function getScribe(id: string): Promise<ScribeDetail> {
   return (await loadScribe(id)) ?? notFound();
@@ -49,7 +50,11 @@ export async function generateMetadata({
 
 export default async function ScribePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [scribe, hands] = await Promise.all([getScribe(id), getScribeHands(id)]);
+  const [scribe, hands, similarHands] = await Promise.all([
+    getScribe(id),
+    getScribeHands(id),
+    getScribeSimilarHands(id),
+  ]);
 
-  return <ScribeViewer scribe={scribe} hands={hands} />;
+  return <ScribeViewer scribe={scribe} hands={hands} similarHands={similarHands} />;
 }

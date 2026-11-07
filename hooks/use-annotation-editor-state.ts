@@ -113,7 +113,8 @@ export interface AnnotationEditorState {
   resetFrom: (annotations: A9sAnnotation[]) => void;
   /** Save all dirty records. Returns a discriminated outcome the caller
    * uses to drive toasts, popup clears, and OSD re-seeds. */
-  saveAll: () => Promise<SaveOutcome>;
+  /** Saves what has changed, or only the records `only` picks; the rest stay unsaved. */
+  saveAll: (only?: (record: AnnotationEditorRecord) => boolean) => Promise<SaveOutcome>;
 }
 
 export function useAnnotationEditorState(
@@ -275,202 +276,220 @@ export function useAnnotationEditorState(
     };
   }, [flushPendingUpdates]);
 
-  const saveAll = React.useCallback(async (): Promise<SaveOutcome> => {
-    if (
-      !viewerCapabilities.canPersistPublicAnnotations &&
-      !viewerCapabilities.canPersistEditorialAnnotations
-    ) {
-      return { kind: 'no-capability' };
-    }
-    if (!manuscriptImage) return { kind: 'no-image' };
-    if (!isAuthenticated) return { kind: 'no-token' };
-
-    const upsertCandidates = Object.values(editorRecords).filter((record) => {
-      if (record.dirtyState !== 'created' && record.dirtyState !== 'updated') {
-        return false;
+  const saveAll = React.useCallback(
+    async (only?: (record: AnnotationEditorRecord) => boolean): Promise<SaveOutcome> => {
+      if (
+        !viewerCapabilities.canPersistPublicAnnotations &&
+        !viewerCapabilities.canPersistEditorialAnnotations
+      ) {
+        return { kind: 'no-capability' };
       }
-      if (isTextRegionAnnotation(record.annotation)) {
-        return false;
-      }
-      return canPersistAnnotationKind(viewerCapabilities, getKindFromAnnotation(record.annotation));
-    });
+      if (!manuscriptImage) return { kind: 'no-image' };
+      if (!isAuthenticated) return { kind: 'no-token' };
 
-    const deleteCandidates = Object.values(editorRecords).filter((record) => {
-      return (
-        record.dirtyState === 'deleted' &&
-        record.source === 'persisted' &&
-        !isTextRegionAnnotation(record.annotation)
-      );
-    });
-
-    if (upsertCandidates.length === 0 && deleteCandidates.length === 0) {
-      return { kind: 'no-changes' };
-    }
-
-    // Build per-task promises. We drop records that can't produce a task
-    // (e.g. persisted-but-missing-id, shouldn't happen) so partition
-    // indices stay 1:1 with the records arrays. Pre-flight validation
-    // is the caller's responsibility.
-    const upsertTasks: Promise<unknown>[] = [];
-    const upsertRecords: AnnotationEditorRecord[] = [];
-    for (const record of upsertCandidates) {
-      const annotation = record.annotation;
-      const isEditorial = getKindFromAnnotation(annotation) === 'editorial';
-      const feature = a9sToBackendFeature(annotation, imageHeight);
-
-      const positionsPayload = annotation._meta?.positions ?? [];
-      const graphcomponentPayload = (annotation._meta?.graphcomponentSet ?? []).map((item) => ({
-        component: item.component,
-        features: item.features ?? [],
-      }));
-      const writePayload = isEditorial
-        ? {
-            annotation: feature,
-            annotation_type: 'editorial' as const,
-            allograph: null,
-            hand: null,
-            positions: [],
-            graphcomponent_set: [],
-            note: '',
-            internal_note: getEditorialInternalNote(annotation),
-          }
-        : {
-            annotation: feature,
-            annotation_type: 'image' as const,
-            allograph: annotation._meta?.allographId ?? null,
-            hand: annotation._meta?.handId ?? null,
-            positions: positionsPayload,
-            graphcomponent_set: graphcomponentPayload,
-            note: getStandardAnnotationNote(annotation),
-            internal_note: '',
-          };
-
-      if (record.source === 'persisted' && isDbAnnotation(annotation)) {
-        const id = dbIdFromA9s(annotation);
-        if (id == null) continue;
-        upsertTasks.push(updateViewerAnnotation(id, writePayload));
-      } else {
-        upsertTasks.push(
-          createViewerAnnotation({
-            ...writePayload,
-            item_image: Number(manuscriptImage.id),
-          })
+      const upsertCandidates = Object.values(editorRecords).filter((record) => {
+        if (record.dirtyState !== 'created' && record.dirtyState !== 'updated') {
+          return false;
+        }
+        if (isTextRegionAnnotation(record.annotation)) {
+          return false;
+        }
+        if (only && !only(record)) return false;
+        return canPersistAnnotationKind(
+          viewerCapabilities,
+          getKindFromAnnotation(record.annotation)
         );
+      });
+
+      const deleteCandidates = Object.values(editorRecords).filter((record) => {
+        return (
+          !only &&
+          record.dirtyState === 'deleted' &&
+          record.source === 'persisted' &&
+          !isTextRegionAnnotation(record.annotation)
+        );
+      });
+
+      if (upsertCandidates.length === 0 && deleteCandidates.length === 0) {
+        return { kind: 'no-changes' };
       }
-      upsertRecords.push(record);
-    }
 
-    const deleteTasks: Promise<unknown>[] = [];
-    const deleteRecords: AnnotationEditorRecord[] = [];
-    for (const record of deleteCandidates) {
-      const id = dbIdFromA9s(record.annotation);
-      if (id == null) continue;
-      deleteTasks.push(deleteViewerAnnotation(id));
-      deleteRecords.push(record);
-    }
+      // Build per-task promises. We drop records that can't produce a task
+      // (e.g. persisted-but-missing-id, shouldn't happen) so partition
+      // indices stay 1:1 with the records arrays. Pre-flight validation
+      // is the caller's responsibility.
+      const upsertTasks: Promise<unknown>[] = [];
+      const upsertRecords: AnnotationEditorRecord[] = [];
+      for (const record of upsertCandidates) {
+        const annotation = record.annotation;
+        const isEditorial = getKindFromAnnotation(annotation) === 'editorial';
+        const feature = a9sToBackendFeature(annotation, imageHeight);
 
-    // Per-task isolation: a single failure used to abort the whole save,
-    // leaving succeeded records marked dirty and re-creating duplicates on
-    // retry. allSettled keeps every commit and lets us report honestly.
-    const upsertResults = await Promise.allSettled(upsertTasks);
-    const deleteResults = await Promise.allSettled(deleteTasks);
+        const positionsPayload = annotation._meta?.positions ?? [];
+        const graphcomponentPayload = (annotation._meta?.graphcomponentSet ?? []).map((item) => ({
+          component: item.component,
+          features: item.features ?? [],
+        }));
+        const writePayload = isEditorial
+          ? {
+              annotation: feature,
+              annotation_type: 'editorial' as const,
+              allograph: null,
+              hand: null,
+              positions: [],
+              graphcomponent_set: [],
+              note: '',
+              internal_note: getEditorialInternalNote(annotation),
+            }
+          : {
+              annotation: feature,
+              annotation_type: 'image' as const,
+              allograph: annotation._meta?.allographId ?? null,
+              hand: annotation._meta?.handId ?? null,
+              positions: positionsPayload,
+              graphcomponent_set: graphcomponentPayload,
+              note: getStandardAnnotationNote(annotation),
+              internal_note: '',
+            };
 
-    const partition = partitionSaveResults(
-      upsertRecords,
-      upsertResults,
-      deleteRecords,
-      deleteResults
-    );
+        if (record.source === 'persisted' && isDbAnnotation(annotation)) {
+          const id = dbIdFromA9s(annotation);
+          if (id == null) continue;
+          upsertTasks.push(updateViewerAnnotation(id, writePayload));
+        } else {
+          upsertTasks.push(
+            createViewerAnnotation({
+              ...writePayload,
+              item_image: Number(manuscriptImage.id),
+              ...(annotation._meta?.suggestionId
+                ? { suggestion: annotation._meta.suggestionId }
+                : {}),
+            })
+          );
+        }
+        upsertRecords.push(record);
+      }
 
-    const succeededTotal =
-      partition.succeededUpsertRecordIds.size + partition.succeededDeleteRecordIds.size;
-    const failedTotal = partition.failedUpsertRecordIds.size + partition.failedDeleteRecordIds.size;
+      const deleteTasks: Promise<unknown>[] = [];
+      const deleteRecords: AnnotationEditorRecord[] = [];
+      for (const record of deleteCandidates) {
+        const id = dbIdFromA9s(record.annotation);
+        if (id == null) continue;
+        deleteTasks.push(deleteViewerAnnotation(id));
+        deleteRecords.push(record);
+      }
 
-    if (succeededTotal === 0) {
-      return {
-        kind: 'all-failed',
-        failedCount: failedTotal,
-        firstError: partition.firstError,
-      };
-    }
+      // Per-task isolation: a single failure used to abort the whole save,
+      // leaving succeeded records marked dirty and re-creating duplicates on
+      // retry. allSettled keeps every commit and lets us report honestly.
+      const upsertResults = await Promise.allSettled(upsertTasks);
+      const deleteResults = await Promise.allSettled(deleteTasks);
 
-    // Refresh server state.
-    let refreshed: Awaited<ReturnType<typeof fetchAnnotationsForImage>>;
-    try {
-      const refreshedImage = await fetchAnnotationsForImage(
-        String(manuscriptImage.id),
-        undefined,
-        'image',
-        true
+      const partition = partitionSaveResults(
+        upsertRecords,
+        upsertResults,
+        deleteRecords,
+        deleteResults
       );
-      const refreshedEditorial = canViewEditorialControls
-        ? await fetchAnnotationsForImage(String(manuscriptImage.id), undefined, 'editorial', true)
-        : [];
-      const refreshedText = await fetchAnnotationsForImage(
-        String(manuscriptImage.id),
-        undefined,
-        'text',
-        true
+
+      const succeededTotal =
+        partition.succeededUpsertRecordIds.size + partition.succeededDeleteRecordIds.size;
+      const failedTotal =
+        partition.failedUpsertRecordIds.size + partition.failedDeleteRecordIds.size;
+
+      if (succeededTotal === 0) {
+        return {
+          kind: 'all-failed',
+          failedCount: failedTotal,
+          firstError: partition.firstError,
+        };
+      }
+
+      // Refresh server state.
+      let refreshed: Awaited<ReturnType<typeof fetchAnnotationsForImage>>;
+      try {
+        const refreshedImage = await fetchAnnotationsForImage(
+          String(manuscriptImage.id),
+          undefined,
+          'image',
+          true
+        );
+        const refreshedEditorial = canViewEditorialControls
+          ? await fetchAnnotationsForImage(String(manuscriptImage.id), undefined, 'editorial', true)
+          : [];
+        const refreshedText = await fetchAnnotationsForImage(
+          String(manuscriptImage.id),
+          undefined,
+          'text',
+          true
+        );
+        refreshed = [...refreshedImage, ...refreshedEditorial, ...refreshedText];
+      } catch (error) {
+        return {
+          kind: 'saved-but-refresh-failed',
+          succeededCount: succeededTotal,
+          message: errorMessage(error, 'Failed to refresh annotations.'),
+        };
+      }
+
+      const mapped = refreshed.map((annotation) =>
+        backendToA9sAnnotation(
+          annotation,
+          imageHeight,
+          annotation.allograph != null ? allographNameById.get(annotation.allograph) : undefined
+        )
       );
-      refreshed = [...refreshedImage, ...refreshedEditorial, ...refreshedText];
-    } catch (error) {
+
+      const failedRecords = [
+        ...upsertRecords.filter((r) => partition.failedUpsertRecordIds.has(r.id)),
+        ...deleteRecords.filter((r) => partition.failedDeleteRecordIds.has(r.id)),
+        // Changes this save was not asked to make are still waiting, like the failed ones.
+        ...(only
+          ? Object.values(editorRecords).filter(
+              (r) => r.dirtyState !== 'clean' && !only(r) && !isTextRegionAnnotation(r.annotation)
+            )
+          : []),
+      ];
+      const nextEditorRecords = mergeFailedRecordsIntoRefresh(
+        buildHydratedEditorRecordMap(mapped),
+        failedRecords
+      );
+      const seed = Object.values(nextEditorRecords)
+        .filter((r) => !r.isDeleted)
+        .map((r) => r.annotation);
+
+      setEditorRecords(nextEditorRecords);
+
+      if (failedTotal === 0) {
+        return {
+          kind: 'all-succeeded',
+          counts: {
+            created: partition.succeededCreatedCount,
+            updated: partition.succeededUpdatedCount,
+            deleted: partition.succeededDeletedCount,
+          },
+          seed,
+        };
+      }
+
       return {
-        kind: 'saved-but-refresh-failed',
+        kind: 'partial',
         succeededCount: succeededTotal,
-        message: errorMessage(error, 'Failed to refresh annotations.'),
-      };
-    }
-
-    const mapped = refreshed.map((annotation) =>
-      backendToA9sAnnotation(
-        annotation,
-        imageHeight,
-        annotation.allograph != null ? allographNameById.get(annotation.allograph) : undefined
-      )
-    );
-
-    const failedRecords = [
-      ...upsertRecords.filter((r) => partition.failedUpsertRecordIds.has(r.id)),
-      ...deleteRecords.filter((r) => partition.failedDeleteRecordIds.has(r.id)),
-    ];
-    const nextEditorRecords = mergeFailedRecordsIntoRefresh(
-      buildHydratedEditorRecordMap(mapped),
-      failedRecords
-    );
-    const seed = Object.values(nextEditorRecords)
-      .filter((r) => !r.isDeleted)
-      .map((r) => r.annotation);
-
-    setEditorRecords(nextEditorRecords);
-
-    if (failedTotal === 0) {
-      return {
-        kind: 'all-succeeded',
-        counts: {
-          created: partition.succeededCreatedCount,
-          updated: partition.succeededUpdatedCount,
-          deleted: partition.succeededDeletedCount,
-        },
+        failedCount: failedTotal,
         seed,
       };
-    }
-
-    return {
-      kind: 'partial',
-      succeededCount: succeededTotal,
-      failedCount: failedTotal,
-      seed,
-    };
-  }, [
-    isAuthenticated,
-    manuscriptImage,
-    imageHeight,
-    allographNameById,
-    viewerCapabilities,
-    canViewEditorialControls,
-    canPersistAnnotationKind,
-    editorRecords,
-  ]);
+    },
+    [
+      isAuthenticated,
+      manuscriptImage,
+      imageHeight,
+      allographNameById,
+      viewerCapabilities,
+      canViewEditorialControls,
+      canPersistAnnotationKind,
+      editorRecords,
+    ]
+  );
 
   return {
     editorRecords,
