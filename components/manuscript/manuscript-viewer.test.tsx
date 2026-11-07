@@ -728,6 +728,30 @@ describe('ManuscriptViewer smoke test', () => {
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     });
 
+    it('turns the suggestion down when the draft is closed with the X', async () => {
+      await draftPopup();
+      fireEvent.click(await screen.findByRole('button', { name: 'Suggest with AI' }));
+      await screen.findByRole('button', { name: 'Accept' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Close annotation popup' }));
+
+      await waitFor(() => expect(glyphAssist.rejectSuggestion).toHaveBeenCalledWith(77));
+    });
+
+    it('turns down an answer that arrives after the draft was discarded', async () => {
+      let answer: (value: typeof suggestion) => void = () => undefined;
+      glyphAssist.suggestShape.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+      await draftPopup();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Suggest with AI' }));
+      expect(screen.getByRole('button', { name: 'OK' })).toHaveProperty('disabled', true);
+      fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      await act(async () => answer(suggestion));
+
+      await waitFor(() => expect(glyphAssist.rejectSuggestion).toHaveBeenCalledWith(77));
+    });
+
     it('says why when the model cannot answer, and leaves the draft as it was', async () => {
       const { GlyphAssistError } =
         await vi.importActual<typeof import('@/services/glyph-assist')>('@/services/glyph-assist');
