@@ -121,9 +121,9 @@ describe('<DiplomaticProposalsPage>', () => {
         .getByRole('link', { name: /Open the page in the viewer/ })
         .getAttribute('href')
     ).toBe('/manuscripts/420/images/3738');
-    expect(within(review()).getByRole('link', { name: 'Edit the source text' }).getAttribute('href')).toBe(
-      '/backoffice/image-texts/61'
-    );
+    expect(
+      within(review()).getByRole('link', { name: 'Edit the source text' }).getAttribute('href')
+    ).toBe('/backoffice/image-texts/61');
   });
 
   it('opens a proposal chosen from the list', async () => {
