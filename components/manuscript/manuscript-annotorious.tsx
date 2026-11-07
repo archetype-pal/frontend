@@ -125,6 +125,7 @@ interface Props {
   annotationFilter?: (annotation: Annotation) => boolean;
   confirmDelete?: (annotation: Annotation) => boolean;
   confirmDeleteMany?: (annotations: Annotation[]) => boolean;
+  canModifyAnnotation?: (annotation: Annotation) => boolean;
   allowMultipleSelection?: boolean;
   autoCommitDrawSelections?: boolean;
 }
@@ -154,6 +155,7 @@ export default function ManuscriptAnnotorious({
   annotationFilter,
   confirmDelete,
   confirmDeleteMany,
+  canModifyAnnotation,
   allowMultipleSelection = false,
   autoCommitDrawSelections = false,
 }: Props) {
@@ -171,6 +173,7 @@ export default function ManuscriptAnnotorious({
   const onDeleteTextRegionRef = useRef(onDeleteTextRegion);
   const confirmDeleteRef = useRef(confirmDelete);
   const confirmDeleteManyRef = useRef(confirmDeleteMany);
+  const canModifyAnnotationRef = useRef(canModifyAnnotation);
   const onSelectRef = useRef(onSelect);
   const onSelectionIdsChangeRef = useRef(onSelectionIdsChange);
   const onHoverRef = useRef(onHover);
@@ -206,6 +209,8 @@ export default function ManuscriptAnnotorious({
     a?._meta?.annotationType === 'editorial';
   const isTextRegionAnnotation = (a: Annotation | null | undefined) =>
     a?._meta?.annotationType === 'text';
+  const canModify = (a: Annotation | null | undefined) =>
+    !a || (canModifyAnnotationRef.current?.(a) ?? true);
 
   const emitSelectionIdsChange = React.useCallback(() => {
     onSelectionIdsChangeRef.current?.(Array.from(multiSelectedIdsRef.current));
@@ -393,6 +398,9 @@ export default function ManuscriptAnnotorious({
   useEffect(() => {
     confirmDeleteManyRef.current = confirmDeleteMany;
   }, [confirmDeleteMany]);
+  useEffect(() => {
+    canModifyAnnotationRef.current = canModifyAnnotation;
+  }, [canModifyAnnotation]);
 
   useEffect(() => {
     if (allowMultipleSelection) return;
@@ -892,7 +900,7 @@ export default function ManuscriptAnnotorious({
             } else if (currentMode === 'modify') {
               // Modify reshapes ANY annotation incl. a text-region: keep it
               // editable so the drag fires updateAnnotation → persistRegionGeometry.
-              anno.readOnly = false;
+              anno.readOnly = !canModify(a);
             } else if (currentMode === 'draw') {
               anno.readOnly = false;
             }
@@ -1011,7 +1019,7 @@ export default function ManuscriptAnnotorious({
               anno.readOnly = false;
             } else if (currentMode === 'modify') {
               // Editable in modify so a text-region reshape persists (see above).
-              anno.readOnly = false;
+              anno.readOnly = !canModify(a);
             } else if (currentMode === 'pan') {
               anno.readOnly = isDraftAnnotation(a) ? false : true;
             }
@@ -1121,7 +1129,7 @@ export default function ManuscriptAnnotorious({
               currentMode = 'modify';
               // Modify keeps every annotation (incl. a text-region) editable so a
               // reshape fires updateAnnotation → persistRegionGeometry.
-              anno.readOnly = false;
+              anno.readOnly = !canModify((anno.getSelected?.() as Annotation | undefined) ?? null);
               anno.setDrawingEnabled(false);
               setOsdDragToPan(true);
               viewerRef.current?.classList.remove(
@@ -1382,7 +1390,7 @@ export default function ManuscriptAnnotorious({
                   annoRef.current.readOnly = false;
                 } else if (currentMode === 'modify') {
                   // Editable in modify so a text-region reshape persists.
-                  annoRef.current.readOnly = false;
+                  annoRef.current.readOnly = !canModify(selected);
                 } else if (currentMode === 'pan') {
                   annoRef.current.readOnly = isDraftAnnotation(selected) ? false : true;
                 }

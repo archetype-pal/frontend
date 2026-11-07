@@ -488,6 +488,13 @@ export default function ManuscriptViewer({
     [getCanonicalAnnotation]
   );
 
+  const canModifyAnnotation = React.useCallback(
+    (annotation: A9sAnnotation) =>
+      !isDbId(annotation.id) ||
+      canPersistAnnotationKind(viewerCapabilities, getAnnotationKind(annotation)),
+    [viewerCapabilities, getAnnotationKind]
+  );
+
   const getStandardSaveValidationError = React.useCallback(
     (annotation: A9sAnnotation) =>
       standardSaveValidationError(annotation, getAnnotationKind(annotation)),
@@ -1061,6 +1068,7 @@ export default function ManuscriptViewer({
               }}
               confirmDelete={handleConfirmDelete}
               confirmDeleteMany={handleConfirmDeleteMany}
+              canModifyAnnotation={canModifyAnnotation}
               onSelect={handleSelectAnnotationFromViewer}
               onHover={(annotationId) =>
                 setHoveredRegionGraphId(
