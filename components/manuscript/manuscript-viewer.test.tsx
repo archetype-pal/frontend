@@ -43,6 +43,7 @@ const glyphAssist = vi.hoisted(() => ({
   suggestShape: vi.fn(),
   rejectSuggestion: vi.fn(async () => ({ status: 'rejected' })),
   explainAnnotation: vi.fn(),
+  getStoredExplanation: vi.fn(async () => null),
 }));
 
 vi.mock('next/dynamic', () => ({

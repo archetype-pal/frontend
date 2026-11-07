@@ -16,6 +16,11 @@ const services = vi.hoisted(() => ({
   rejectDiplomaticProposal: vi.fn(),
 }));
 
+vi.mock('next/navigation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 vi.mock('sonner', () => import('@/test/mocks/sonner'));
 vi.mock('@/services/backoffice/diplomatic-proposals', () => services);
@@ -116,7 +121,7 @@ describe('<DiplomaticProposalsPage>', () => {
         .getByRole('link', { name: /Open the page in the viewer/ })
         .getAttribute('href')
     ).toBe('/manuscripts/420/images/3738');
-    expect(within(review()).getByRole('link', { name: 'Edit the text' }).getAttribute('href')).toBe(
+    expect(within(review()).getByRole('link', { name: 'Edit the source text' }).getAttribute('href')).toBe(
       '/backoffice/image-texts/61'
     );
   });
