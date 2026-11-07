@@ -36,6 +36,8 @@ interface AnnotationHeaderProps {
   isSettingsActive?: boolean;
   showSettingsButton?: boolean;
   imageToolsControl?: React.ReactNode;
+  /** The managers' "find a letter on this page" control, beside the image tools. */
+  findOnPageControl?: React.ReactNode;
   isPageInCollection?: boolean;
   onTogglePageCollection?: () => void;
   annotationCollectionCount?: number;
@@ -72,6 +74,7 @@ export function AnnotationHeader({
   isSettingsActive = false,
   showSettingsButton = true,
   imageToolsControl,
+  findOnPageControl,
   isPageInCollection = false,
   onTogglePageCollection,
   annotationCollectionCount = 0,
@@ -318,6 +321,7 @@ export function AnnotationHeader({
             </Button>
           )}
 
+          {findOnPageControl}
           {imageToolsControl}
 
           <Tooltip>

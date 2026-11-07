@@ -15,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { IiifThumbnail } from '@/components/backoffice/common/iiif-thumbnail';
+import { useLettersUnderWay } from '@/components/backoffice/page-letters';
 import { ItemImageEditDialog } from './item-image-edit-dialog';
 import { ItemImageUploadDialog } from './item-image-upload-dialog';
 import { Button } from '@/components/ui/button';
@@ -26,16 +27,25 @@ import { ItemPartHandsSection } from './item-part-hands-section';
 import { createItemPart, deleteItemPart } from '@/services/backoffice/manuscripts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { toastApiError } from '@/lib/backoffice/format-api-error';
-import type { ItemPartImage, ItemPartNested } from '@/types/backoffice';
+import type { ItemPartImage, ItemPartNested, LetterRequest } from '@/types/backoffice';
 
 interface ItemPartsTabProps {
   historicalItemId: number;
   itemParts: ItemPartNested[];
 }
 
+/** Where proposing letters stands on this workspace's pages: undefined for a user who cannot ask. */
+interface PagesLetters {
+  byPage: Map<number, LetterRequest>;
+  on: boolean | undefined;
+}
+
 export function ItemPartsTab({ historicalItemId, itemParts }: ItemPartsTabProps) {
   const t = useTranslations('backoffice');
   const queryClient = useQueryClient();
+  // Followed once for the workspace, so a request's outcome is said once.
+  const { byPage, lettersOn, canManage } = useLettersUnderWay();
+  const letters = canManage ? { byPage, on: lettersOn } : undefined;
 
   const createMut = useMutation({
     mutationFn: () => createItemPart({ historical_item: historicalItemId }),
@@ -79,7 +89,12 @@ export function ItemPartsTab({ historicalItemId, itemParts }: ItemPartsTabProps)
       ) : (
         <div className="space-y-2">
           {itemParts.map((part) => (
-            <ItemPartCard key={part.id} part={part} historicalItemId={historicalItemId} />
+            <ItemPartCard
+              key={part.id}
+              part={part}
+              historicalItemId={historicalItemId}
+              letters={letters}
+            />
           ))}
         </div>
       )}
@@ -90,9 +105,11 @@ export function ItemPartsTab({ historicalItemId, itemParts }: ItemPartsTabProps)
 function ItemPartCard({
   part,
   historicalItemId,
+  letters,
 }: {
   part: ItemPartNested;
   historicalItemId: number;
+  letters: PagesLetters | undefined;
 }) {
   const t = useTranslations('backoffice');
   const tCommon = useTranslations('common');
@@ -178,6 +195,7 @@ function ItemPartCard({
                     historicalItemId={historicalItemId}
                     itemPartId={part.id}
                     itemPartLabel={part.display_label}
+                    letters={letters}
                   />
                 ))}
               </div>
@@ -244,14 +262,17 @@ function EditableImageThumbnail({
   historicalItemId,
   itemPartId,
   itemPartLabel,
+  letters,
 }: {
   image: ItemPartImage;
   historicalItemId: number;
   itemPartId: number;
   itemPartLabel: string;
+  letters: PagesLetters | undefined;
 }) {
   const t = useTranslations('backoffice');
   const [editOpen, setEditOpen] = useState(false);
+  const run = letters?.byPage.get(image.id);
 
   return (
     <>
@@ -265,6 +286,16 @@ function EditableImageThumbnail({
             <Badge className="absolute top-0.5 right-0.5 h-4 px-1 text-[9px] z-10">
               {t('manuscriptsDetail.textCountBadge', { count: image.text_count })}
             </Badge>
+          )}
+          {run && (
+            <span
+              role="status"
+              title={t('pageLetters.thumbnailWorking')}
+              className="absolute top-0.5 left-0.5 z-10 rounded-full bg-background/90 p-0.5"
+            >
+              <Loader2 className="h-3 w-3 animate-spin text-primary" aria-hidden />
+              <span className="sr-only">{t('pageLetters.thumbnailWorking')}</span>
+            </span>
           )}
           <button
             type="button"
@@ -284,6 +315,7 @@ function EditableImageThumbnail({
           historicalItemId={historicalItemId}
           itemPartId={itemPartId}
           itemPartLabel={itemPartLabel}
+          letters={letters && { run, on: letters.on }}
         />
       )}
     </>

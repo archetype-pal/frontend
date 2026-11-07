@@ -48,6 +48,17 @@ describe('site-features.json', () => {
   // ships invisible to the public rail — the surface it was added for. Adding a
   // manuscripts facet therefore means adding it here too (an operator can still
   // untick it at runtime; this only pins the checked-in seed).
+  // Same reason: a role facet left out here would be the backend's to show.
+  it('seeds the charter-role facets as visible to anonymous visitors, after People', () => {
+    const facets = categories.texts.visibleFacets;
+
+    expect(facets.slice(facets.indexOf('people') + 1)).toEqual([
+      'granters',
+      'beneficiaries',
+      'witnesses',
+    ]);
+  });
+
   it('seeds every manuscripts facet as visible to anonymous visitors', () => {
     expect([...categories.manuscripts.visibleFacets].sort()).toEqual(
       [...getFacetOrder('manuscripts')].sort()

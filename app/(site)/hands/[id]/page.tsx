@@ -7,6 +7,7 @@ import type { HandDetail, HandImage, HandScribe, HandManuscript } from '@/types/
 import { apiFetch } from '@/lib/api-fetch';
 import { readModelLabels } from '@/lib/model-labels-server';
 import { resolveModelLabel, type ModelLabelLocale } from '@/lib/model-labels';
+import { getSimilarHands } from '@/services/hand-similarity';
 
 async function getHand(id: string): Promise<HandDetail> {
   return (await loadHand(id)) ?? notFound();
@@ -72,11 +73,20 @@ export default async function HandPage({ params }: { params: Promise<{ id: strin
   const hand = await getHand(id);
 
   // Fetch related data in parallel
-  const [images, scribe, manuscript] = await Promise.all([
+  const [images, scribe, manuscript, similarHands] = await Promise.all([
     hand.item_part ? getHandImages(hand.item_part) : Promise.resolve([]),
     hand.scribe ? getScribe(hand.scribe) : Promise.resolve(null),
     hand.item_part ? getManuscript(hand.item_part) : Promise.resolve(null),
+    getSimilarHands(hand.id),
   ]);
 
-  return <HandViewer hand={hand} images={images} scribe={scribe} manuscript={manuscript} />;
+  return (
+    <HandViewer
+      hand={hand}
+      images={images}
+      scribe={scribe}
+      manuscript={manuscript}
+      similarHands={similarHands}
+    />
+  );
 }

@@ -903,6 +903,16 @@ g.a9s-annotation.a9s-text:hover .a9s-outer {
      clause/seg → indigo · Person → green · Place → teal
      Expansion → amber · Supplied → violet · other → slate
    Hovering names the element (its role, or the clause @type) in a pill. */
+.tei-note {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+  font-family: var(--font-sans, inherit);
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
 .tei-rich .tei-el {
   position: relative;
   border-radius: 3px;

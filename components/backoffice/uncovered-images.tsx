@@ -28,11 +28,14 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth-context';
+import { IiifImage } from '@/components/ui/iiif-image';
+import { getIiifImageUrl } from '@/utils/iiif';
 import { fetchUncoveredImages, type UncoveredMode } from '@/services/backoffice/uncovered-images';
 import {
   NewImageTextDialog,
   type NewTextKind,
 } from '@/components/backoffice/new-image-text-dialog';
+import { PageDraftButton, useDraftsUnderWay } from '@/components/backoffice/page-drafts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { cn } from '@/lib/utils';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
@@ -60,6 +63,8 @@ export function UncoveredImages() {
     itemImage: number | null;
     type: NewTextKind;
   }>({ open: false, itemImage: null, type: 'Transcription' });
+
+  const { byPage: draftsUnderWay, draftingOn } = useDraftsUnderWay();
 
   const { data, isFetching, isPlaceholderData, error } = useQuery({
     queryKey: backofficeKeys.uncoveredImages.list(mode, page, pageSize),
@@ -160,7 +165,7 @@ export function UncoveredImages() {
                     {t('quality.uncovered.colAnnotations')}
                   </TableHead>
                   <TableHead className="w-[100px]">{t('quality.uncovered.colHas')}</TableHead>
-                  <TableHead className="w-[220px] text-right">
+                  <TableHead className="w-[380px] text-right">
                     {t('quality.uncovered.colCreate')}
                   </TableHead>
                 </TableRow>
@@ -183,8 +188,30 @@ export function UncoveredImages() {
                     const hasTranslation = row.texts.some((t) => t.type === 'Translation');
                     return (
                       <TableRow key={row.id}>
-                        <TableCell className="font-mono text-xs">#{row.id}</TableCell>
-                        <TableCell className="text-sm">{row.locus || '—'}</TableCell>
+                        <TableCell className="text-sm">
+                          <div className="flex items-center gap-2">
+                            {row.image && (
+                              <span className="relative block h-12 w-12 shrink-0 overflow-hidden rounded border bg-muted">
+                                <IiifImage
+                                  src={getIiifImageUrl(row.image, { maxSize: 96 })}
+                                  alt=""
+                                  fill
+                                  sizes="48px"
+                                  className="object-cover"
+                                />
+                              </span>
+                            )}
+                            <span className="min-w-40 [overflow-wrap:anywhere]">
+                              {row.item_part_label}
+                              <span className="block font-mono text-xs text-muted-foreground">
+                                #{row.id}
+                              </span>
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm [overflow-wrap:anywhere]">
+                          {row.locus || '—'}
+                        </TableCell>
                         <TableCell className="text-right font-mono text-xs">
                           {row.annotation_count}
                         </TableCell>
@@ -200,6 +227,13 @@ export function UncoveredImages() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
+                            {!hasTranscription && (
+                              <PageDraftButton
+                                page={{ ...row, label: row.item_part_label }}
+                                draft={draftsUnderWay.get(row.id)}
+                                draftingOn={draftingOn}
+                              />
+                            )}
                             {!hasTranscription && (
                               <Button
                                 size="sm"

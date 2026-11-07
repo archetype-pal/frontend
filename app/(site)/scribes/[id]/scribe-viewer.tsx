@@ -18,17 +18,26 @@ import { sanitizeHtml } from '@/lib/sanitize-html';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { useSiteFeatures } from '@/contexts/site-features-context';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
+import type { ScribeSimilarHands } from '@/services/hand-similarity';
+import { ScribeSimilarHandsList } from './scribe-similar-hands';
 
 const TAB_VALUES = ['information', 'hands', 'idiographs'] as const;
+// The similar-hands tab exists only for a scribe with matches (AI programme W1.3).
+const TAB_VALUES_WITH_SIMILAR = [...TAB_VALUES, 'similar'] as const;
 const DEFAULT_TAB = 'information';
 
 interface ScribeViewerProps {
   scribe: ScribeDetail;
   hands: ScribeHand[];
+  similarHands?: ScribeSimilarHands | null;
 }
 
-export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
-  const { activeTab, handleTabChange } = useTabNavigation(TAB_VALUES, DEFAULT_TAB);
+export function ScribeViewer({ scribe, hands, similarHands }: ScribeViewerProps) {
+  const hasSimilarHands = Boolean(similarHands?.results.length);
+  const { activeTab, handleTabChange } = useTabNavigation(
+    hasSimilarHands ? TAB_VALUES_WITH_SIMILAR : TAB_VALUES,
+    DEFAULT_TAB
+  );
   const t = useTranslations('scribe');
   const { config: siteFeatures, isSectionEnabled } = useSiteFeatures();
   const scribesSearchEnabled =
@@ -67,6 +76,7 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
           <TabsTrigger value="idiographs">
             {t('tabs.idiographs')} ({scribe.idiographs?.length ?? 0})
           </TabsTrigger>
+          {hasSimilarHands && <TabsTrigger value="similar">{t('tabs.similar')}</TabsTrigger>}
         </TabsList>
 
         {/* Information Tab */}
@@ -201,6 +211,12 @@ export function ScribeViewer({ scribe, hands }: ScribeViewerProps) {
             </div>
           )}
         </TabsContent>
+
+        {similarHands && hasSimilarHands && (
+          <TabsContent value="similar">
+            <ScribeSimilarHandsList similar={similarHands} />
+          </TabsContent>
+        )}
       </Tabs>
     </main>
   );

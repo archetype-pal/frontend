@@ -6,6 +6,7 @@ import {
   SEARCH_RESULT_TYPES,
   resultTypeItems,
 } from './search-types';
+import { formatFacetTitle } from './search-query';
 
 describe('search type metadata', () => {
   it('defines canonical metadata for every result type', () => {
@@ -41,6 +42,23 @@ describe('search type metadata', () => {
     ]) {
       expect(renderMap[key]).toBe('checkbox');
     }
+  });
+
+  it('offers the approved charter roles as texts facets, after everyone the markup names', () => {
+    const order = getFacetOrder('texts');
+    const roles = ['granters', 'beneficiaries', 'witnesses'];
+
+    expect(order.slice(order.indexOf('people') + 1)).toEqual(roles);
+    expect(roles.map((key) => getFacetRenderMap('texts')[key])).toEqual([
+      'checkbox',
+      'checkbox',
+      'checkbox',
+    ]);
+    expect(roles.map((key) => formatFacetTitle(key, 'texts'))).toEqual([
+      'Granters',
+      'Beneficiaries',
+      'Witnesses',
+    ]);
   });
 
   it('derives facet order and render map from facet descriptors', () => {

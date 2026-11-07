@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isTei, teiToDptHtml, toDptHtml } from '@/lib/tei-to-dpt-html';
+import { isTei, machineDraftModel, teiToDptHtml, toDptHtml } from '@/lib/tei-to-dpt-html';
 
 describe('isTei', () => {
   it('detects TEI element markup', () => {
@@ -82,5 +82,24 @@ describe('toDptHtml', () => {
 
   it('translates TEI content', () => {
     expect(toDptHtml('<seg type="address">x</seg>')).toContain('data-dpt="clause"');
+  });
+});
+
+describe('notes and machine drafts', () => {
+  it('sets a note apart from the text', () => {
+    expect(
+      toDptHtml('<p><lb/>Sciant</p><p><note type="condition">Seal over lines 3-7.</note></p>')
+    ).toContain('<p class="tei-note">Seal over lines 3-7.</p>');
+    expect(toDptHtml('<p>To all<note>Uncertain.</note></p>')).toBe(
+      '<p>To all<span class="tei-note block">Uncertain.</span></p>'
+    );
+  });
+
+  it("names the model of a machine-made text, and nothing for a person's", () => {
+    expect(machineDraftModel('<p resp="#machine-draft" source="claude-fable-5-1">x</p>')).toBe(
+      'claude-fable-5-1'
+    );
+    expect(machineDraftModel('<p resp="#machine-draft">x</p>')).toBe('');
+    expect(machineDraftModel('<p>x</p>')).toBeNull();
   });
 });

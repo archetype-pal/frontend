@@ -19,9 +19,12 @@ import {
   Database,
   Search,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getAnnotationProposalDepth } from '@/services/backoffice/annotation-proposals';
+import { getDiplomaticProposalDepth } from '@/services/backoffice/diplomatic-proposals';
 import { getHistoricalItems } from '@/services/backoffice/manuscripts';
 import { getPublications, getComments } from '@/services/backoffice/publications';
 import { getScribes } from '@/services/backoffice/scribes';
@@ -180,6 +183,20 @@ export default function BackofficeDashboardPage() {
     enabled: isAuthenticated,
   });
 
+  // No retry: a backend without the AI programme's routes answers 404.
+  const annotationDepth = useQuery({
+    queryKey: backofficeKeys.annotationProposals.depth(),
+    queryFn: getAnnotationProposalDepth,
+    enabled: isAuthenticated,
+    retry: false,
+  });
+  const diplomaticDepth = useQuery({
+    queryKey: backofficeKeys.diplomaticProposals.depth(),
+    queryFn: getDiplomaticProposalDepth,
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
   const searchStats = useQuery({
     queryKey: backofficeKeys.searchEngine.stats(),
     queryFn: () => getSearchEngineStats(),
@@ -190,7 +207,14 @@ export default function BackofficeDashboardPage() {
   const pendingCount = pendingComments.data?.count ?? 0;
   const draftCount = draftPublications.data?.count ?? 0;
   const outOfSyncIndexes = searchStats.data?.indexes?.filter((i) => !i.in_sync) ?? [];
-  const hasPendingTasks = pendingCount > 0 || draftCount > 0 || outOfSyncIndexes.length > 0;
+  const letterProposals = annotationDepth.data?.pending ?? 0;
+  const charterProposals = diplomaticDepth.data?.pending ?? 0;
+  const hasPendingTasks =
+    pendingCount > 0 ||
+    draftCount > 0 ||
+    outOfSyncIndexes.length > 0 ||
+    letterProposals > 0 ||
+    charterProposals > 0;
 
   // Group recent entities by time
   const todayEntities = recentEntities.filter((e) => timeGroup(e.visitedAt) === 'today');
@@ -244,6 +268,34 @@ export default function BackofficeDashboardPage() {
               </span>
               <Badge variant="destructive" className="text-xs">
                 {pendingCount}
+              </Badge>
+            </Link>
+          )}
+          {letterProposals > 0 && (
+            <Link
+              href="/backoffice/annotation-proposals"
+              className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-accent/50"
+            >
+              <Sparkles className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="flex-1">
+                {t('dashboard.letterProposals', { count: letterProposals })}
+              </span>
+              <Badge variant="secondary" className="text-xs">
+                {letterProposals}
+              </Badge>
+            </Link>
+          )}
+          {charterProposals > 0 && (
+            <Link
+              href="/backoffice/diplomatic-proposals"
+              className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-accent/50"
+            >
+              <Sparkles className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="flex-1">
+                {t('dashboard.charterProposals', { count: charterProposals })}
+              </span>
+              <Badge variant="secondary" className="text-xs">
+                {charterProposals}
               </Badge>
             </Link>
           )}

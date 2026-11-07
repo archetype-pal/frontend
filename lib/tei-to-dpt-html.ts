@@ -112,7 +112,26 @@ export function teiToDptHtml(content: string): string {
   });
 }
 
+// An editor's or model's note is about the text, not part of it, so it must not read as
+// the charter's words. The tag survives neither the sanitiser nor a browser as itself.
+const NOTE_ALONE_RE = /<p\b[^>]*>\s*<note\b[^>]*>([\s\S]*?)<\/note>\s*<\/p>/gi;
+const NOTE_RE = /<note\b[^>]*>([\s\S]*?)<\/note>/gi;
+
+function notesApart(content: string): string {
+  return content
+    .replace(NOTE_ALONE_RE, '<p class="tei-note">$1</p>')
+    .replace(NOTE_RE, '<span class="tei-note block">$1</span>');
+}
+
+const MACHINE_DRAFT_RE = /\bresp="#machine-draft"(?:[^>]*\bsource="([^"]*)")?/;
+
+/** The model a machine-made text names, or null if a person wrote it ('' if it names none). */
+export function machineDraftModel(content: string): string | null {
+  const match = MACHINE_DRAFT_RE.exec(content);
+  return match ? (match[1] ?? '') : null;
+}
+
 /** Render either storage format as data-dpt HTML for the prose viewer. */
 export function toDptHtml(content: string): string {
-  return isTei(content) ? teiToDptHtml(content) : content;
+  return notesApart(isTei(content) ? teiToDptHtml(content) : content);
 }

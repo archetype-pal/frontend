@@ -1,4 +1,5 @@
 import type { Annotation as A9sAnnotation } from '@/components/manuscript/manuscript-annotorious';
+import type { ShapeSuggestion } from '@/types/glyph-assist';
 
 export type AnnotationPopupEditorMode =
   | 'public_demo_draft'
@@ -38,6 +39,8 @@ export type A9sWithMeta = A9sAnnotation & {
     graphcomponentSet?: A9sGraphComponent[];
     positions?: number[];
     positionDetails?: A9sPositionDetail[];
+    /** The model's suggestion this draft came from, which its save closes as accepted. */
+    suggestionId?: number;
   };
 };
 
@@ -77,7 +80,7 @@ export type AnnotationViewerSettings = {
 export type PopupRecord = {
   id: string;
   annotation: A9sWithMeta;
-  popupTab: 'details' | 'components' | 'positions' | 'notes';
+  popupTab: 'details' | 'components' | 'positions' | 'notes' | 'explain';
   shareUrl: string;
   isShareUrlVisible: boolean;
   draftAllographText: string;
@@ -91,6 +94,8 @@ export type PopupRecord = {
   // (the "allograph" field above the image editor). In that case the popup
   // shows the allograph read-only instead of an editable searchable select.
   allographLocked: boolean;
+  /** What a model said about this draft's shape, when asked. */
+  suggestion?: ShapeSuggestion | null;
 };
 
 export type ViewerMode = 'public' | 'editor';

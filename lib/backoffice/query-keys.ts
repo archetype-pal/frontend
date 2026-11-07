@@ -127,8 +127,41 @@ export const backofficeKeys = {
     list: (mode: string, page: number, pageSize: number) =>
       [...backofficeKeys.uncoveredImages.all(), mode, page, pageSize] as const,
   },
+  pageDrafts: {
+    all: () => [...backofficeKeys.all, 'page-drafts'] as const,
+    active: () => [...backofficeKeys.pageDrafts.all(), 'active'] as const,
+  },
+  pageLetters: {
+    all: () => [...backofficeKeys.all, 'page-letters'] as const,
+    active: () => [...backofficeKeys.pageLetters.all(), 'active'] as const,
+    page: (id: number) => [...backofficeKeys.pageLetters.all(), 'page', id] as const,
+  },
   reviewQueue: {
     all: () => [...backofficeKeys.all, 'review-queue'] as const,
+  },
+  allographs: {
+    // The labels-only list every allograph picker shares.
+    summaries: () => [...backofficeKeys.all, 'allographs', 'summaries'] as const,
+  },
+  annotationProposals: {
+    all: () => [...backofficeKeys.all, 'annotation-proposals'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.annotationProposals.all(), 'list', filters] as const,
+    depth: () => [...backofficeKeys.annotationProposals.all(), 'depth'] as const,
+  },
+  diplomaticProposals: {
+    all: () => [...backofficeKeys.all, 'diplomatic-proposals'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.diplomaticProposals.all(), 'list', filters] as const,
+    detail: (id: number) => [...backofficeKeys.diplomaticProposals.all(), 'detail', id] as const,
+    depth: () => [...backofficeKeys.diplomaticProposals.all(), 'depth'] as const,
+  },
+  mlJobs: {
+    all: () => [...backofficeKeys.all, 'ml-jobs'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...backofficeKeys.mlJobs.all(), 'list', filters] as const,
+    detail: (id: number) => [...backofficeKeys.mlJobs.all(), 'detail', id] as const,
+    summary: () => [...backofficeKeys.mlJobs.all(), 'summary'] as const,
   },
   previewAsPublic: (textId: number) =>
     [...backofficeKeys.all, 'preview-as-public', textId] as const,

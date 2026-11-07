@@ -201,6 +201,15 @@ describe('getPopupCardViewData', () => {
     expect(getPopupCardViewData(makePopup(), new Map()).title).toBe('New Annotation');
   });
 
+  it('does not show the name migrated data gives a mark with no allograph', () => {
+    const view = getPopupCardViewData(
+      makePopup({ draftAllographText: 'unmapped_allographs' }),
+      new Map()
+    );
+    expect(view.title).toBe('New Annotation');
+    expect(view.titleKey).toBe('draft');
+  });
+
   it('uses the live allograph id for a persisted annotation when draft text is absent', () => {
     const popup = makePopup({
       annotation: {

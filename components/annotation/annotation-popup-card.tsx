@@ -17,7 +17,7 @@ import { PublicDemoDraftEditor } from './popup/public-demo-draft-editor';
 import { StandardAnnotationEditor } from './popup/standard-annotation-editor';
 import { EditorialAnnotationEditor } from './popup/editorial-annotation-editor';
 import { PublicAnnotationView } from './popup/public-annotation-view';
-import type { PopupTab, SelectedComponentGroup } from './popup/types';
+import type { PopupAssist, PopupTab, SelectedComponentGroup } from './popup/types';
 
 interface AnnotationPopupCardProps {
   title: string;
@@ -82,6 +82,7 @@ interface AnnotationPopupCardProps {
   selectedComponentGroups: SelectedComponentGroup[];
   selectedPositionLabels: string[];
   selectedNotes: string[];
+  assist?: PopupAssist;
 }
 
 export function AnnotationPopupCard({
@@ -135,6 +136,7 @@ export function AnnotationPopupCard({
   selectedComponentGroups,
   selectedPositionLabels,
   selectedNotes,
+  assist,
 }: AnnotationPopupCardProps) {
   // Unique per instance — several popups can be open at once (multi-select).
   const titleId = React.useId();
@@ -152,7 +154,7 @@ export function AnnotationPopupCard({
       : annotationKind === 'editorial'
         ? 'Editorial'
         : 'Public';
-  const popupHeight = isStandardExisting ? 560 : isPublicExisting ? 480 : 440;
+  const popupHeight = isStandardExisting || assist?.suggestion ? 560 : isPublicExisting ? 480 : 440;
   const collectionLabel = isAnnotationInCollection ? 'Remove from Collection' : 'Add to Collection';
 
   return (
@@ -221,6 +223,7 @@ export function AnnotationPopupCard({
           onConfirmDraftAnnotation={onConfirmDraftAnnotation}
           popupTab={popupTab}
           onPopupTabChange={onPopupTabChange}
+          assist={assist}
         />
       ) : isEditorialDraft || isEditorialExisting ? (
         <EditorialAnnotationEditor

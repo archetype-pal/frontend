@@ -21,6 +21,8 @@ declare module '@recogito/annotorious-openseadragon' {
     }>;
     positions?: number[];
     positionDetails?: Array<{ id: number; name: string }>;
+    /** The model's suggestion this draft came from, which its save closes as accepted. */
+    suggestionId?: number;
   }
 
   export interface AnnotoriousAnnotation {
