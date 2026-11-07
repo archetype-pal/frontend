@@ -729,4 +729,32 @@ describe('ManuscriptViewer smoke test', () => {
 
     expect(await screen.findByRole('button', { name: 'Draw (d / space)' })).toBeTruthy();
   });
+
+  it('lets Modify change only what the user may save', async () => {
+    const saved = { ...draftAnnotation('db:1'), _meta: { annotationType: 'public' } };
+    const editorial = { ...draftAnnotation('db:2'), _meta: { annotationType: 'editorial' } };
+    const draft = draftAnnotation('local-1');
+    const canModifyFor = async (capabilities?: ViewerCapabilities) => {
+      const { unmount } = render(
+        <ManuscriptViewer
+          imageId="4432"
+          mode={capabilities ? 'editor' : 'public'}
+          capabilities={capabilities}
+        />
+      );
+      await screen.findByRole('button', { name: 'Modify (m)' });
+      const canModify = annotoriousPropsRef.current?.canModifyAnnotation;
+      const result = [draft, saved, editorial].map((annotation) => canModify?.(annotation));
+      unmount();
+      return result;
+    };
+
+    expect(await canModifyFor()).toEqual([true, false, false]);
+    expect(
+      await canModifyFor(
+        makeCaps({ canCreateEditorialAnnotations: false, canPersistEditorialAnnotations: false })
+      )
+    ).toEqual([true, true, false]);
+    expect(await canModifyFor(EDITING_CAPS)).toEqual([true, true, true]);
+  });
 });
