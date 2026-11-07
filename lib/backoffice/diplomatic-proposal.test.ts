@@ -7,6 +7,7 @@ import {
   isKnownPipeline,
   isTruncated,
   itemCount,
+  THIS_CHARTER,
   proposalQuotes,
 } from './diplomatic-proposal';
 
@@ -104,5 +105,15 @@ describe('choosing items', () => {
     expect(chosenItems(new Set(), 3)).toEqual([]);
     // A position past the end of the list is never sent.
     expect(chosenItems(new Set([0, 5, -1]), 2)).toEqual([0]);
+  });
+});
+
+describe('a relation naming the charter itself', () => {
+  it('is not a quotation to find in the text', () => {
+    const quotes = proposalQuotes('W3.3', {
+      triples: [{ subject: THIS_CHARTER, predicate: 'granted_by', object: 'Iohannes' }],
+    });
+
+    expect(quotes).toEqual(['Iohannes']);
   });
 });
