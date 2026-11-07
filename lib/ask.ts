@@ -18,6 +18,7 @@ export const KNOWN_TOOLS = [
   'get_charter',
   'get_image_regions',
   'cite_record',
+  'find_hands',
   'fetch_witnesses',
   'fetch_relations',
   'compare_hands',
