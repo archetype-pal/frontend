@@ -438,12 +438,21 @@ describe('getPopupEditorMode', () => {
       canEditDraft: false,
       canPersistDraft: false,
       canViewEditorMeta: false,
+      canEditEditorial: false,
       ...args.caps,
     });
   }
 
   it('persisted editorial → editorial_existing', () => {
-    expect(modeFor({ id: 'db:1', editorial: true, caps: {} })).toBe('editorial_existing');
+    expect(modeFor({ id: 'db:1', editorial: true, caps: { canEditEditorial: true } })).toBe(
+      'editorial_existing'
+    );
+  });
+
+  it('persisted editorial without editorial rights → editorial_read_only', () => {
+    expect(modeFor({ id: 'db:1', editorial: true, caps: { canEditEditorial: false } })).toBe(
+      'editorial_read_only'
+    );
   });
 
   it('persisted public with editor meta access → standard_existing', () => {

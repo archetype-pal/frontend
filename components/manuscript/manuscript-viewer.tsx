@@ -105,6 +105,7 @@ export default function ManuscriptViewer({
   const canViewEditorialControls = viewerCapabilities.canViewEditorialControls;
   const canUseSettings = viewerCapabilities.canUseSettings;
   const canUseEditorSettings = viewerCapabilities.canUseEditorSettings;
+  const canEditTexts = viewerCapabilities.canEditTexts;
 
   const canPersistAnyAnnotations = canPersistPublicAnnotations || canPersistEditorialAnnotations;
 
@@ -487,6 +488,13 @@ export default function ManuscriptViewer({
     [getCanonicalAnnotation]
   );
 
+  const canModifyAnnotation = React.useCallback(
+    (annotation: A9sAnnotation) =>
+      !isDbId(annotation.id) ||
+      canPersistAnnotationKind(viewerCapabilities, getAnnotationKind(annotation)),
+    [viewerCapabilities, getAnnotationKind]
+  );
+
   const getStandardSaveValidationError = React.useCallback(
     (annotation: A9sAnnotation) =>
       standardSaveValidationError(annotation, getAnnotationKind(annotation)),
@@ -586,6 +594,7 @@ export default function ManuscriptViewer({
     handleDeletePopupAnnotation,
   } = useAnnotationDeletion({
     canDeleteAnnotations,
+    canDeleteEditorialAnnotations: canPersistEditorialAnnotations,
     getCanonicalAnnotation,
     getAnnotationKind,
     getPopupById,
@@ -673,15 +682,23 @@ export default function ManuscriptViewer({
   );
 
   const handleModifyTool = React.useCallback(() => {
+    if (textLinkingActive && !viewerCapabilities.canModifyAnnotations) return;
     cancelPendingPopupClear();
     clearPopupCollection();
     dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
     viewerApiRef.current?.enableModify();
     setActiveTool('modify');
-  }, [cancelPendingPopupClear, clearPopupCollection, setActiveTool]);
+  }, [
+    textLinkingActive,
+    viewerCapabilities.canModifyAnnotations,
+    cancelPendingPopupClear,
+    clearPopupCollection,
+    setActiveTool,
+  ]);
 
   const handleCreateAnnotation = React.useCallback(
     (kind?: AnnotationCreationKind) => {
+      if (textLinkingActive && !canEditTexts) return;
       const nextKind = kind ?? getDefaultAnnotationCreationKind(viewerCapabilities);
       if (!nextKind) return;
       if (!canCreateAnnotationKind(viewerCapabilities, nextKind)) return;
@@ -690,7 +707,7 @@ export default function ManuscriptViewer({
       viewerApiRef.current?.enableDraw();
       setActiveTool('draw');
     },
-    [viewerCapabilities, setActiveTool, setCurrentCreationKind]
+    [textLinkingActive, canEditTexts, viewerCapabilities, setActiveTool, setCurrentCreationKind]
   );
 
   const handleToggleMoveDrawTool = React.useCallback(() => {
@@ -1012,7 +1029,10 @@ export default function ManuscriptViewer({
               canPersistAnyAnnotations={canPersistAnyAnnotations}
               unsavedChanges={unsavedChanges}
               canDeleteAnnotations={canDeleteAnnotations}
-              canCreatePublicAnnotations={canCreatePublicAnnotations}
+              canCreatePublicAnnotations={
+                canCreatePublicAnnotations && (!textLinkingActive || canEditTexts)
+              }
+              canModify={!textLinkingActive || viewerCapabilities.canModifyAnnotations}
               textOnlyMode={textLinkingActive}
               onToggleFullScreen={handleToggleFullScreen}
               onMoveTool={handleMoveTool}
@@ -1049,6 +1069,7 @@ export default function ManuscriptViewer({
               }}
               confirmDelete={handleConfirmDelete}
               confirmDeleteMany={handleConfirmDeleteMany}
+              canModifyAnnotation={canModifyAnnotation}
               onSelect={handleSelectAnnotationFromViewer}
               onHover={(annotationId) =>
                 setHoveredRegionGraphId(
@@ -1121,7 +1142,7 @@ export default function ManuscriptViewer({
                   texts={imageTexts}
                   displayMode={effectiveTextDisplayMode}
                   layout={isBottomDock ? 'row' : 'column'}
-                  canEdit={canPersistAnyAnnotations && !isPublicDemoMode}
+                  canEdit={canEditTexts && !isPublicDemoMode}
                   onTextSaved={() => void reloadTextsAndAnnotations()}
                   linkedGraphId={linkedGraphId}
                   hoveredGraphId={hoveredRegionGraphId}
