@@ -3996,6 +3996,7 @@
     "no_place": "This annotation has no place on the page to look at.",
     "no_picture": "The page's image could not be fetched for the model.",
     "no_models": "The reader on this server has no letter models installed.",
-    "failed": "The model could not answer. Please try again."
+    "failed": "The model could not answer. Please try again.",
+    "lesson_owner": "Only the account, or for a visitor the network, that started this lesson can ask it questions."
   }
 }

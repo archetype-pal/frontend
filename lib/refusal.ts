@@ -13,6 +13,7 @@ const WORDED = [
   'question_quota',
   'lesson_quota',
   'lesson_questions',
+  'lesson_owner',
   'tutor_unavailable',
   'too_large',
   'no_allograph',

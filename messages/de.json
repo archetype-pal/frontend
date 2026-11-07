@@ -3996,6 +3996,7 @@
     "no_place": "Diese Annotation hat keine Stelle auf der Seite, die sich betrachten ließe.",
     "no_picture": "Das Bild der Seite konnte für das Modell nicht abgerufen werden.",
     "no_models": "Auf diesem Server sind keine Buchstabenmodelle installiert.",
-    "failed": "Das Modell konnte nicht antworten. Bitte versuchen Sie es noch einmal."
+    "failed": "Das Modell konnte nicht antworten. Bitte versuchen Sie es noch einmal.",
+    "lesson_owner": "Nur das Konto oder, bei Besuchern, das Netzwerk, von dem diese Lektion gestartet wurde, kann ihr Fragen stellen."
   }
 }

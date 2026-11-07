@@ -3996,6 +3996,7 @@
     "no_place": "Cette annotation n’a pas d’emplacement à examiner sur la page.",
     "no_picture": "L’image de la page n’a pas pu être récupérée pour le modèle.",
     "no_models": "Le lecteur de ce serveur n’a aucun modèle de lettres installé.",
-    "failed": "Le modèle n’a pas pu répondre. Veuillez réessayer."
+    "failed": "Le modèle n’a pas pu répondre. Veuillez réessayer.",
+    "lesson_owner": "Seul le compte, ou pour un visiteur le réseau, qui a commencé cette leçon peut lui poser des questions."
   }
 }
