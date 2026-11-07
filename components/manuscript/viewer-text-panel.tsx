@@ -7,6 +7,7 @@ import { Download, ExternalLink, X } from 'lucide-react';
 
 import { useTranslations } from 'next-intl';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
+import { TextStatusBadge } from '@/components/text/text-status-badge';
 import { showActionNotification } from '@/components/ui/action-toast';
 import { Button } from '@/components/ui/button';
 import { useTextCardSplit } from '@/hooks/use-text-card-split';
@@ -314,6 +315,9 @@ function TextEditorCard({
             <span className="font-mono text-muted-foreground normal-case">{text.language}</span>
           ) : null}
         </span>
+        {text.status === 'Draft' || text.status === 'Review' ? (
+          <TextStatusBadge status={text.status} />
+        ) : null}
         <div className="ml-auto flex items-center gap-1">
           {/* Rich/Preview + validity (editors) portal in here. */}
           {canEdit ? (
