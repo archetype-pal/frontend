@@ -17,6 +17,7 @@ import { AlertTriangle, ArrowRight, Check } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { THIS_CHARTER } from '@/lib/backoffice/diplomatic-proposal';
 import { findQuote, quotedFragments } from '@/lib/backoffice/quote-finder';
 import { cn } from '@/lib/utils';
 import type { DiplomaticPayload, ProposedEntity } from '@/types/backoffice';
@@ -80,6 +81,18 @@ export function QuoteCheck({
 
 function Quoted({ children, className }: { children: React.ReactNode; className?: string }) {
   return <span className={cn('font-serif italic', className)}>{children}</span>;
+}
+
+/** One side of a relation: words quoted from the charter, or the charter itself. */
+function Party({ name, text }: { name: string; text: string | null }) {
+  const t = useTranslations('backoffice.diplomaticProposals');
+  if (name === THIS_CHARTER) return <span className="font-medium">{t('thisCharter')}</span>;
+  return (
+    <>
+      <Quoted>{name}</Quoted>
+      <QuoteCheck text={text} quote={name} compact />
+    </>
+  );
 }
 
 /** The reviewer's choice of items, while a list answer is pending. */
@@ -207,6 +220,7 @@ export function PayloadView({
   const t = useTranslations('backoffice.diplomaticProposals');
   const marks: ItemMarks = { choice, dropped };
   const kindLabel = (kind: string) => (known(KINDS, kind) ? t(`kind.${kind}`) : kind);
+  const partyLabel = (name: string) => (name === THIS_CHARTER ? t('thisCharter') : name);
   const predicateLabel = (predicate: string) =>
     known(PREDICATES, predicate) ? t(`predicate.${predicate}`) : predicate;
 
@@ -330,16 +344,14 @@ export function PayloadView({
             >
               <ItemMark
                 index={i}
-                label={`${triple.subject} – ${predicateLabel(triple.predicate)} – ${triple.object}`}
+                label={`${partyLabel(triple.subject)} – ${predicateLabel(triple.predicate)} – ${partyLabel(triple.object)}`}
                 marks={marks}
               />
-              <Quoted>{triple.subject}</Quoted>
-              <QuoteCheck text={text} quote={triple.subject} compact />
+              <Party name={triple.subject} text={text} />
               <Badge variant="outline" className="font-normal">
                 {predicateLabel(triple.predicate)}
               </Badge>
-              <Quoted>{triple.object}</Quoted>
-              <QuoteCheck text={text} quote={triple.object} compact />
+              <Party name={triple.object} text={text} />
               <LeftOut index={i} marks={marks} />
             </li>
           ))}

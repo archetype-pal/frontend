@@ -33,6 +33,9 @@ export const PIPELINE_SLUGS = {
 } as const satisfies Record<DiplomaticPipeline, string>;
 
 /** The model-quoted strings in a payload, unique and in reading order. */
+/** How a relation names the charter it was read from. */
+export const THIS_CHARTER = 'CHARTER';
+
 export function proposalQuotes(pipeline: string, payload: DiplomaticPayload): string[] {
   const quotes: string[] = [];
   switch (pipeline) {
@@ -50,7 +53,12 @@ export function proposalQuotes(pipeline: string, payload: DiplomaticPayload): st
       quotes.push(...quotedFragments(payload.evidence ?? ''));
       break;
     case 'W3.3':
-      for (const triple of payload.triples ?? []) quotes.push(triple.subject, triple.object);
+      for (const triple of payload.triples ?? []) {
+        for (const party of [triple.subject, triple.object]) {
+          // The charter itself, not words quoted from it.
+          if (party !== THIS_CHARTER) quotes.push(party);
+        }
+      }
       break;
   }
   return Array.from(new Set(quotes.map((q) => q.trim()).filter(Boolean)));
