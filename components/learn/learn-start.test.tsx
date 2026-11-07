@@ -256,38 +256,43 @@ describe('<LearnStart> a picture of your own', () => {
 });
 
 describe('<LearnStart> from a link to a page', () => {
-  it('starts the lesson once, and replaces the link in the history', async () => {
-    const { client, rerender } = renderWithQueryClient(<LearnStart pageId={64} />);
+  const start = async () => {
+    const button = await screen.findByRole('button', { name: 'Start the lesson' });
+    await waitFor(() => expect(button).toHaveProperty('disabled', false));
+    fireEvent.click(button);
+  };
 
-    expect(await screen.findByText(/Starting a lesson on/)).toBeTruthy();
+  it('asks first, and spends nothing until it is told to', async () => {
+    renderWithQueryClient(<LearnStart pageId={64} />);
+
+    expect(
+      await screen.findByText(
+        'Start a lesson on NLS Adv. MS 15.1.18, no. 16? It takes a few minutes.'
+      )
+    ).toBeTruthy();
+    expect(services.startLesson).not.toHaveBeenCalled();
+  });
+
+  it('starts once when told to, and replaces the link in the history', async () => {
+    renderWithQueryClient(<LearnStart pageId={64} />);
+
+    await start();
+
     await waitFor(() => expect(state.replace).toHaveBeenCalledWith(`/learn/${SESSION.id}`));
     expect(services.startLesson).toHaveBeenCalledTimes(1);
     expect(services.startLesson).toHaveBeenCalledWith({ itemImage: 64 }, 'en', false);
-
-    rerender(
-      <QueryClientProvider client={client}>
-        <LearnStart pageId={64} />
-      </QueryClientProvider>
-    );
-    expect(services.startLesson).toHaveBeenCalledTimes(1);
     expect(state.push).not.toHaveBeenCalled();
   });
 
-  it('names the page while it starts, once the pages are known', async () => {
+  it('names the page while it starts', async () => {
     services.startLesson.mockReturnValue(new Promise(() => {}));
     renderWithQueryClient(<LearnStart pageId={64} />);
+
+    await start();
 
     expect(
       await screen.findByText('Starting a lesson on NLS Adv. MS 15.1.18, no. 16…')
     ).toBeTruthy();
-  });
-
-  it('waits to know who is asking before it starts', async () => {
-    state.auth = { isAuthenticated: false, isReady: false };
-    renderWithQueryClient(<LearnStart pageId={64} />);
-
-    await screen.findByRole('button', { name: 'Start a lesson on NLS Adv. MS 15.1.18, no. 16' });
-    expect(services.startLesson).not.toHaveBeenCalled();
   });
 
   it('says why it could not start, and tries again when asked', async () => {
@@ -295,6 +300,8 @@ describe('<LearnStart> from a link to a page', () => {
       .mockRejectedValueOnce(new LearnError(503, 'The tutor is busy; try again in a minute.'))
       .mockResolvedValueOnce(SESSION);
     renderWithQueryClient(<LearnStart pageId={64} />);
+
+    await start();
 
     expect(await screen.findByText('The tutor is not available just now.')).toBeTruthy();
     expect(screen.getByText('The tutor is busy; try again in a minute.')).toBeTruthy();
@@ -305,9 +312,11 @@ describe('<LearnStart> from a link to a page', () => {
     expect(services.startLesson).toHaveBeenCalledTimes(2);
   });
 
-  it('still starts when what the tutor can do could not be read', async () => {
+  it('can still start when what the tutor can do could not be read', async () => {
     services.getLearnStatus.mockRejectedValue(new LearnError(502, ''));
     renderWithQueryClient(<LearnStart pageId={64} />);
+
+    await start();
 
     await waitFor(() => expect(state.replace).toHaveBeenCalledWith(`/learn/${SESSION.id}`));
     expect(screen.getByText('Could not find out what the tutor can do just now.')).toBeTruthy();
