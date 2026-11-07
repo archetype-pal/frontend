@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import { AnnotationPopupCard } from '@/components/annotation/annotation-popup-card';
 import type { PopupAssist } from '@/components/annotation/popup/types';
@@ -118,6 +119,7 @@ export function AnnotationPopupLayer({
   onConfirmDraftAnnotation,
   assistFor,
 }: AnnotationPopupLayerProps) {
+  const t = useTranslations('annotation');
   if (visiblePopupRecords.length === 0) return null;
 
   return (
@@ -156,7 +158,9 @@ export function AnnotationPopupLayer({
           >
             {({ popupTransform, dragHandleProps, zIndex: cardZIndex, onPointerDownCapture }) => (
               <AnnotationPopupCard
-                title={popupCard.title}
+                title={
+                  popupCard.titleKey ? t(`popup.title.${popupCard.titleKey}`) : popupCard.title
+                }
                 isDraftAnnotation={popupCard.isDraft}
                 annotationKind={annotationKind}
                 popupCapabilities={popupCapabilities}

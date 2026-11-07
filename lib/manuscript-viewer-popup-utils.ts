@@ -161,6 +161,9 @@ export function getPopupCapabilities(
   };
 }
 
+/** Names migrated data gives to a mark with no allograph, which are not for showing. */
+const PLACEHOLDER_ALLOGRAPHS = new Set(['unmapped_allographs', '_unspecified']);
+
 export function getPopupCardViewData(
   popupRecord: PopupRecord,
   allographNameById: Map<number, string>
@@ -169,13 +172,22 @@ export function getPopupCardViewData(
   const annotationKind = annotation._meta?.annotationType === 'editorial' ? 'editorial' : 'public';
   const isDraft = !isDbId(annotation.id);
 
-  const liveAllographTitle =
+  const allographName =
     popupRecord.draftAllographText.trim() ||
     allographNameById.get(popupRecord.draftAllographId ?? -1) ||
     '';
+  const liveAllographTitle = PLACEHOLDER_ALLOGRAPHS.has(allographName) ? '' : allographName;
 
-  const title =
+  const titleKey: 'editorial' | 'draft' | 'saved' | null =
     annotationKind === 'editorial'
+      ? 'editorial'
+      : liveAllographTitle
+        ? null
+        : isDraft
+          ? 'draft'
+          : 'saved';
+  const title =
+    titleKey === 'editorial'
       ? 'Editorial Annotation'
       : liveAllographTitle || (isDraft ? 'New Annotation' : 'Annotation');
 
@@ -215,6 +227,7 @@ export function getPopupCardViewData(
     annotationKind,
     isDraft,
     title,
+    titleKey,
     hasPositionsTab,
     selectedPositionLabels,
     selectedComponentGroups,
