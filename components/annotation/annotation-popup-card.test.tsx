@@ -19,6 +19,7 @@ function renderCard(overrides: Partial<AnnotationPopupCardProps> = {}) {
       canEditDraft: true,
       canPersistDraft: true,
       canViewEditorMeta: true,
+      canEditEditorial: true,
     },
     popupTransform: 'translate3d(0, 0, 0)',
     hasLocalChanges: false,

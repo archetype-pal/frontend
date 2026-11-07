@@ -124,7 +124,9 @@ export function AnnotationPopupLayer({
         const popupEditorMode = getPopupEditorMode(popupRecord, popupCapabilities);
         const annotationKind = getAnnotationKindFromPopupRecord(popupRecord);
         const canUseLoggedInPopupShortcuts =
-          popupEditorMode !== 'public_demo_draft' && popupEditorMode !== 'public_existing';
+          popupEditorMode !== 'public_demo_draft' &&
+          popupEditorMode !== 'public_existing' &&
+          popupEditorMode !== 'editorial_read_only';
         const metaSummary = getPopupMetaSummary(popupRecord, allographLabelById, handNameById);
         const isActive = popupRecord.id === activePopupId;
         const { x: initialX, y: initialY } = getPopupInitialPosition(
