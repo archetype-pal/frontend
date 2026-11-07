@@ -8,6 +8,7 @@
  * how sure it was, which is what the researcher checks it against.
  */
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 
@@ -16,16 +17,28 @@ import type { ShapeSuggestion as Suggestion } from '@/types/glyph-assist';
 
 export function ShapeSuggestion({
   suggestion,
+  edited,
   asking,
   error,
   onAsk,
 }: {
   suggestion: Suggestion | null;
+  edited: boolean;
   asking: boolean;
   error: string | null;
   onAsk: () => void;
 }) {
   const t = useTranslations('annotation.popup.assist');
+  // Asking again replaces what is in the fields, so changes get a second click first.
+  const [confirming, setConfirming] = useState(false);
+  const ask = () => {
+    if (edited && !confirming) {
+      setConfirming(true);
+      return;
+    }
+    setConfirming(false);
+    onAsk();
+  };
 
   return (
     <section className="mb-4 space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
@@ -36,14 +49,20 @@ export function ShapeSuggestion({
         size="sm"
         className="h-8 gap-1.5"
         disabled={asking}
-        onClick={onAsk}
+        onClick={ask}
       >
         {asking ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
         ) : (
           <Sparkles className="h-3.5 w-3.5" aria-hidden />
         )}
-        {asking ? t('suggesting') : suggestion ? t('suggestAgain') : t('suggest')}
+        {asking
+          ? t('suggesting')
+          : confirming
+            ? t('suggestAgainConfirm')
+            : suggestion
+              ? t('suggestAgain')
+              : t('suggest')}
       </Button>
       <div aria-live="polite" className="space-y-2 empty:hidden">
         {error && <p className="text-xs text-destructive">{error}</p>}
@@ -79,7 +98,9 @@ export function ShapeSuggestion({
               </div>
             )}
             {suggestion.allograph != null && (
-              <p className="text-xs text-muted-foreground">{t('suggestCheck')}</p>
+              <p className="text-xs text-muted-foreground">
+                {edited ? t('suggestEdited') : t('suggestCheck')}
+              </p>
             )}
           </>
         )}

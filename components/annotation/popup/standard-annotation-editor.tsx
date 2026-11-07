@@ -421,7 +421,11 @@ export function StandardAnnotationEditor({
       </Button>
       <Button
         onClick={onConfirmDraftAnnotation}
-        disabled={(isExisting && !hasLocalChanges) || (suggested && draftAllographId == null)}
+        disabled={
+          (isExisting && !hasLocalChanges) ||
+          (suggested && draftAllographId == null) ||
+          assist?.asking
+        }
         type="button"
       >
         {suggested ? t('popup.assist.accept') : t('popup.editor.ok')}
@@ -693,6 +697,7 @@ export function StandardAnnotationEditor({
               {assist && (
                 <ShapeSuggestion
                   suggestion={assist.suggestion}
+                  edited={assist.edited}
                   asking={assist.asking}
                   error={assist.error}
                   onAsk={assist.onAsk}

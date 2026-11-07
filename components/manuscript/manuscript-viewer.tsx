@@ -43,7 +43,7 @@ import { browserSafeIiifUrl, isDbId } from '@/lib/annotation-popup-utils';
 import { getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
 
 import { dbIdFromA9s } from '@/lib/anno-mapping';
-import { useShapeAssist } from '@/hooks/manuscript/use-shape-assist';
+import { isSuggestionEdited, useShapeAssist } from '@/hooks/manuscript/use-shape-assist';
 import type { PopupAssist } from '@/components/annotation/popup/types';
 import { useViewerAnnotationLoader } from '@/hooks/manuscript/use-viewer-annotation-loader';
 import { useImageAllographs } from '@/hooks/manuscript/use-image-allographs';
@@ -713,12 +713,24 @@ export default function ManuscriptViewer({
     setActiveTool('delete');
   }, [canDeleteAnnotations, setActiveTool]);
 
+  // Set by accepting a model's suggestion: that decision saves that annotation, and no
+  // other unsaved work with it.
+  const acceptedSuggestionRef = React.useRef<number | null>(null);
+
   const handleSave = React.useCallback(async (): Promise<void> => {
+    const accepted = acceptedSuggestionRef.current;
+    acceptedSuggestionRef.current = null;
+    const only =
+      accepted === null
+        ? undefined
+        : (record: (typeof editorRecords)[string]) =>
+            record.annotation._meta?.suggestionId === accepted;
     // Pre-flight validation lives in the viewer because the rules depend
     // on viewer-side classification (getAnnotationKind uses getCanonicalAnnotation).
     // The hook stays validation-free.
     const validationError = Object.values(editorRecords)
       .filter((r) => r.dirtyState === 'created' || r.dirtyState === 'updated')
+      .filter((r) => !only || only(r))
       .map((r) => getStandardSaveValidationError(r.annotation))
       .find((m): m is string => Boolean(m));
 
@@ -731,7 +743,7 @@ export default function ManuscriptViewer({
       return;
     }
 
-    const outcome = await editorState.saveAll();
+    const outcome = await editorState.saveAll(only);
     const { notice, committed } = describeSaveOutcome(outcome);
 
     // 'all-succeeded' and 'partial' both committed to the server → clear the
@@ -842,11 +854,23 @@ export default function ManuscriptViewer({
   // Accepting a suggestion is a decision about the record, so it saves there and
   // then; an ordinary draft stays local until the toolbar's Save.
   const handleConfirmOrAcceptDraft = React.useCallback(
-    (popupId: string) =>
-      getPopupById(popupId)?.suggestion
-        ? handleSavePopupAnnotation(popupId)
-        : handleConfirmDraftAnnotation(popupId),
+    (popupId: string) => {
+      const suggestion = getPopupById(popupId)?.suggestion;
+      if (!suggestion) return handleConfirmDraftAnnotation(popupId);
+      acceptedSuggestionRef.current = suggestion.id;
+      return handleSavePopupAnnotation(popupId);
+    },
     [getPopupById, handleConfirmDraftAnnotation, handleSavePopupAnnotation]
+  );
+
+  // Closing a draft's popup removes the draft, so its suggestion is turned down with it.
+  const handleClosePopup = React.useCallback(
+    (popupId: string) => {
+      const popup = getPopupById(popupId);
+      if (popup && !isDbId(popup.annotation.id)) closeSuggestion(popup);
+      closeDraftPopup(popupId);
+    },
+    [closeDraftPopup, closeSuggestion, getPopupById]
   );
 
   const assistFor = (popupRecord: VisiblePopup): PopupAssist | undefined => {
@@ -855,6 +879,7 @@ export default function ManuscriptViewer({
     return {
       graphId: saved ? dbIdFromA9s(popupRecord.annotation) : null,
       suggestion: popupRecord.suggestion ?? null,
+      edited: isSuggestionEdited(popupRecord),
       asking: shapeAssist.isAsking(popupRecord.id),
       error: shapeAssist.errorFor(popupRecord.id),
       onAsk: () => void shapeAssist.ask(popupRecord.id),
@@ -1132,7 +1157,7 @@ export default function ManuscriptViewer({
               onCopyShareUrl={(id) => void handleCopyShareUrl(id)}
               onHideShareUrl={handleHideShareUrl}
               onShareSelectedAnnotation={handleShareSelectedAnnotation}
-              onCloseSelectedAnnotation={closeDraftPopup}
+              onCloseSelectedAnnotation={handleClosePopup}
               onToggleAnnotationCollection={handleToggleAnnotationCollection}
               onCancelDraftAnnotation={handleCancelOrRejectDraft}
               onConfirmDraftAnnotation={handleConfirmOrAcceptDraft}

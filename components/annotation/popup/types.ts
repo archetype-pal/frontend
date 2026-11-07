@@ -13,6 +13,8 @@ export type PopupAssist = {
   /** The saved annotation's id, to explain it; null on a draft. */
   graphId: number | null;
   suggestion: ShapeSuggestion | null;
+  /** The researcher has changed what the model filled in. */
+  edited: boolean;
   asking: boolean;
   error: string | null;
   onAsk: () => void;

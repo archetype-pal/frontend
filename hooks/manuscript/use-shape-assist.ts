@@ -21,6 +21,23 @@ import {
 } from '@/services/glyph-assist';
 import type { PopupRecord } from '@/types/annotation-viewer';
 
+/** Whether the researcher has changed what the model filled in. */
+export function isSuggestionEdited(popup: PopupRecord): boolean {
+  const { suggestion } = popup;
+  if (!suggestion) return false;
+  const chosen = (rows: Array<{ component: number; features: number[] }>) =>
+    JSON.stringify(
+      rows
+        .map((row) => [row.component, [...row.features].sort((a, b) => a - b)])
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+    );
+  return (
+    (suggestion.allograph != null && popup.draftAllographId !== suggestion.allograph) ||
+    chosen(popup.draftGraphcomponentSet) !== chosen(suggestion.components) ||
+    [...popup.draftPositionIds].sort().join() !== [...suggestion.positions].sort().join()
+  );
+}
+
 export function useShapeAssist({
   canAsk,
   imageId,
@@ -38,6 +55,11 @@ export function useShapeAssist({
 }) {
   const t = useTranslations('annotation.popup.assist');
   const language = useLocale();
+  // The popups as they are when an answer arrives, not as they were when it was asked for.
+  const latestGetPopup = React.useRef(getPopupById);
+  React.useEffect(() => {
+    latestGetPopup.current = getPopupById;
+  }, [getPopupById]);
   const [askingIds, setAskingIds] = React.useState<ReadonlySet<string>>(new Set());
   const [errors, setErrors] = React.useState<Readonly<Record<string, string>>>({});
 
@@ -72,6 +94,12 @@ export function useShapeAssist({
           allograph: popup.allographLocked ? popup.draftAllographId : null,
           language,
         });
+        // The draft was discarded while the model was working: nobody is left to decide.
+        if (!latestGetPopup.current(popupId)) {
+          void rejectSuggestion(suggestion.id).catch(() => undefined);
+          return;
+        }
+        // Asked again: the previous answer is superseded.
         closeSuggestion(popup);
         const allograph = suggestion.allograph ?? popup.draftAllographId;
         updatePopupById(popupId, {
