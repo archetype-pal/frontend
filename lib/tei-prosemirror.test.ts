@@ -117,3 +117,14 @@ describe('indexLinkableElements', () => {
     expect(indexByText('<p>plain</p><p><seg>only</seg></p>')).toEqual({ 0: 'only' });
   });
 });
+
+describe('a machine draft', () => {
+  it('can be opened in the rich editor without losing its mark or its note', () => {
+    expect(
+      roundTripsExactly(
+        '<p resp="#machine-draft" source="claude-fable-5-1"><lb source="ms"/>Scott<ex>orum</ex>' +
+          '<lb source="ms"/>rex</p><p><note type="condition">Seal over lines 3-7.</note></p>'
+      )
+    ).toBe(true);
+  });
+});

@@ -86,22 +86,20 @@ describe('toDptHtml', () => {
 });
 
 describe('notes and machine drafts', () => {
-  it('sets a note apart from the text, in TEI and in plain markup alike', () => {
+  it('sets a note apart from the text', () => {
     expect(
-      toDptHtml('<div><lb/>Sciant<note type="condition">Seal over lines 3-7.</note></div>')
+      toDptHtml('<p><lb/>Sciant</p><p><note type="condition">Seal over lines 3-7.</note></p>')
     ).toContain('<p class="tei-note">Seal over lines 3-7.</p>');
-    expect(toDptHtml('<div><p>To all</p><note>Uncertain.</note></div>')).toBe(
-      '<div><p>To all</p><p class="tei-note">Uncertain.</p></div>'
+    expect(toDptHtml('<p>To all<note>Uncertain.</note></p>')).toBe(
+      '<p>To all<span class="tei-note block">Uncertain.</span></p>'
     );
   });
 
   it("names the model of a machine-made text, and nothing for a person's", () => {
-    expect(
-      machineDraftModel(
-        '<div type="transcription" resp="#machine-draft" source="claude-fable-5-1">x</div>'
-      )
-    ).toBe('claude-fable-5-1');
-    expect(machineDraftModel('<div resp="#machine-draft">x</div>')).toBe('');
-    expect(machineDraftModel('<div type="transcription">x</div>')).toBeNull();
+    expect(machineDraftModel('<p resp="#machine-draft" source="claude-fable-5-1">x</p>')).toBe(
+      'claude-fable-5-1'
+    );
+    expect(machineDraftModel('<p resp="#machine-draft">x</p>')).toBe('');
+    expect(machineDraftModel('<p>x</p>')).toBeNull();
   });
 });

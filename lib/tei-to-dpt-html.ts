@@ -114,10 +114,13 @@ export function teiToDptHtml(content: string): string {
 
 // An editor's or model's note is about the text, not part of it, so it must not read as
 // the charter's words. The tag survives neither the sanitiser nor a browser as itself.
+const NOTE_ALONE_RE = /<p\b[^>]*>\s*<note\b[^>]*>([\s\S]*?)<\/note>\s*<\/p>/gi;
 const NOTE_RE = /<note\b[^>]*>([\s\S]*?)<\/note>/gi;
 
 function notesApart(content: string): string {
-  return content.replace(NOTE_RE, '<p class="tei-note">$1</p>');
+  return content
+    .replace(NOTE_ALONE_RE, '<p class="tei-note">$1</p>')
+    .replace(NOTE_RE, '<span class="tei-note block">$1</span>');
 }
 
 const MACHINE_DRAFT_RE = /\bresp="#machine-draft"(?:[^>]*\bsource="([^"]*)")?/;
