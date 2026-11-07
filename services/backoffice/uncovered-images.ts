@@ -10,6 +10,7 @@ import type { PaginatedResponse } from '@/types/backoffice';
 export interface UncoveredImage {
   id: number;
   item_part: number;
+  item_part_label: string;
   image: string | null;
   locus: string;
   annotation_count: number;
@@ -28,7 +29,11 @@ export function fetchUncoveredImages(
   page = 0,
   pageSize = 20
 ): Promise<PaginatedUncovered> {
-  const qs = new URLSearchParams({ limit: String(pageSize), offset: String(page * pageSize) });
+  const qs = new URLSearchParams({
+    catalogued: 'true',
+    limit: String(pageSize),
+    offset: String(page * pageSize),
+  });
   if (mode === 'either') qs.set('has_text', 'false');
   if (mode === 'transcription') qs.set('has_transcription', 'false');
   if (mode === 'translation') qs.set('has_translation', 'false');

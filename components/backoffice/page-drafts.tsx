@@ -46,6 +46,7 @@ export interface DraftablePage {
   id: number;
   image: string | null;
   locus: string;
+  label?: string;
 }
 
 /**
@@ -221,7 +222,9 @@ export function PageDraftDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('dialogTitle', { id: page.id })}</DialogTitle>
-          <DialogDescription>{page.locus || t('noLocus')}</DialogDescription>
+          <DialogDescription>
+            {[page.label, page.locus || t('noLocus')].filter(Boolean).join(' · ')}
+          </DialogDescription>
         </DialogHeader>
         {preview && (
           <div className="relative h-72 w-full overflow-hidden rounded-md border bg-muted">

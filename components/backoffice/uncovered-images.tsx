@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth-context';
+import { IiifImage } from '@/components/ui/iiif-image';
+import { getIiifImageUrl } from '@/utils/iiif';
 import { fetchUncoveredImages, type UncoveredMode } from '@/services/backoffice/uncovered-images';
 import {
   NewImageTextDialog,
@@ -186,7 +188,27 @@ export function UncoveredImages() {
                     const hasTranslation = row.texts.some((t) => t.type === 'Translation');
                     return (
                       <TableRow key={row.id}>
-                        <TableCell className="font-mono text-xs">#{row.id}</TableCell>
+                        <TableCell className="text-sm">
+                          <div className="flex items-center gap-2">
+                            {row.image && (
+                              <span className="relative block h-12 w-12 shrink-0 overflow-hidden rounded border bg-muted">
+                                <IiifImage
+                                  src={getIiifImageUrl(row.image, { maxSize: 96 })}
+                                  alt=""
+                                  fill
+                                  sizes="48px"
+                                  className="object-cover"
+                                />
+                              </span>
+                            )}
+                            <span className="min-w-40 [overflow-wrap:anywhere]">
+                              {row.item_part_label}
+                              <span className="block font-mono text-xs text-muted-foreground">
+                                #{row.id}
+                              </span>
+                            </span>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-sm [overflow-wrap:anywhere]">
                           {row.locus || '—'}
                         </TableCell>
@@ -207,7 +229,7 @@ export function UncoveredImages() {
                           <div className="flex items-center justify-end gap-1">
                             {!hasTranscription && (
                               <PageDraftButton
-                                page={row}
+                                page={{ ...row, label: row.item_part_label }}
                                 draft={draftsUnderWay.get(row.id)}
                                 draftingOn={draftingOn}
                               />
