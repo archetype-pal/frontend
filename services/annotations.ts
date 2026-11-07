@@ -113,6 +113,8 @@ type ViewerAnnotationWritePayload = {
   positions?: number[];
   note?: string;
   internal_note?: string;
+  /** The model's suggestion this annotation came from (W3.5). */
+  suggestion?: number;
 };
 
 export async function createViewerAnnotation(

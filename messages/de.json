@@ -600,6 +600,42 @@
         "noFeaturesSelected": "Keine Merkmale ausgewählt.",
         "noPositionsDefined": "Keine Positionen definiert.",
         "componentsAndFeatures": "Komponenten & Merkmale"
+      },
+      "assist": {
+        "suggest": "Mit KI vorschlagen",
+        "suggestAgain": "Erneut fragen",
+        "suggesting": "Das Modell prüft die Form…",
+        "suggestHint": "Ein Modell liest diese Seite und die gezeichnete Form und trägt Allograph, Komponenten und Merkmale zur Prüfung ein. Das dauert etwa 15 Sekunden und kostet etwa 0,09 $. Die Seite wird an ein gehostetes KI-Modell außerhalb dieser Website gesendet.",
+        "suggested": "Vorschlag: {label}",
+        "suggestedNothing": "Das Modell hat hier keinen Buchstaben benannt.",
+        "confidence": "zu {percent} % sicher",
+        "alternatives": "Es könnte auch sein",
+        "suggestCheck": "Die Felder hier und auf den anderen Reitern enthalten jetzt den Vorschlag. Ändern Sie, was falsch ist, und nehmen Sie ihn an oder lehnen Sie ihn ab. Beim Annehmen wird die Annotation unter Ihrem Namen gespeichert.",
+        "accept": "Annehmen",
+        "reject": "Ablehnen",
+        "failed": "Das Modell konnte nicht antworten. Bitte versuchen Sie es erneut.",
+        "explainTab": "Erklären",
+        "explain": "Diese Annotation erklären",
+        "explaining": "Das Modell prüft die Form…",
+        "explainHint": "Ein Modell liest diese Seite und legt die Belege für dieses Allograph dar: die Buchstabenform, den Kontext und die damalige Schreibweise. Es kann nicht wissen, warum die annotierende Person es gewählt hat. Eine neue Antwort dauert etwa 15 Sekunden und kostet etwa 0,09 $; eine bereits verfasste ist kostenlos.",
+        "explainSavedOnly": "Dies erklärt die gespeicherte Annotation, nicht Ihre ungespeicherten Änderungen.",
+        "verdict": {
+          "obvious": "Aus der Form klar",
+          "likely": "Wahrscheinlich, mit dem Kontext",
+          "doubtful": "Zweifelhaft",
+          "disagree": "Das Modell liest es anders"
+        },
+        "disagrees": "Das Modell würde diese Form als {label} lesen.",
+        "basis": {
+          "form": "Die Buchstabenform",
+          "context": "Der Kontext",
+          "comparison": "Andere Beispiele dieser Hand",
+          "record": "Was der Datensatz sagt",
+          "practice": "Die damalige Schreibweise"
+        },
+        "practiceNote": "Aus dem allgemeinen Wissen des Modells, nicht aus diesem Korpus.",
+        "doubts": "Was dagegen spricht",
+        "aiNotice": "Verfasst von {model}, einem Sprachmodell. Prüfen Sie es an der Seite, bevor Sie sich darauf verlassen."
       }
     }
   },

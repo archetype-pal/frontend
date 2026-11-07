@@ -36,12 +36,15 @@ import type {
   ViewerMode,
   AnnotationCreationKind,
 } from '@/types/annotation-viewer';
+import type { PopupRecord as VisiblePopup } from '@/types/annotation-viewer';
 
 import { browserSafeIiifUrl, isDbId } from '@/lib/annotation-popup-utils';
 
 import { getPopupCardViewData } from '@/lib/manuscript-viewer-popup-utils';
 
 import { dbIdFromA9s } from '@/lib/anno-mapping';
+import { useShapeAssist } from '@/hooks/manuscript/use-shape-assist';
+import type { PopupAssist } from '@/components/annotation/popup/types';
 import { useViewerAnnotationLoader } from '@/hooks/manuscript/use-viewer-annotation-loader';
 import { useImageAllographs } from '@/hooks/manuscript/use-image-allographs';
 import { formatAllographLabel } from '@/lib/allograph-labels';
@@ -818,6 +821,46 @@ export default function ManuscriptViewer({
     handleToggleMoveDrawTool,
   });
 
+  const shapeAssist = useShapeAssist({
+    canAsk: canPersistPublicAnnotations && !isPublicDemoMode,
+    imageId,
+    imageHeight,
+    allographNameById,
+    getPopupById,
+    updatePopupById,
+  });
+  const { closeSuggestion } = shapeAssist;
+
+  const handleCancelOrRejectDraft = React.useCallback(
+    (popupId: string) => {
+      closeSuggestion(getPopupById(popupId));
+      handleCancelDraftAnnotation(popupId);
+    },
+    [closeSuggestion, getPopupById, handleCancelDraftAnnotation]
+  );
+
+  // Accepting a suggestion is a decision about the record, so it saves there and
+  // then; an ordinary draft stays local until the toolbar's Save.
+  const handleConfirmOrAcceptDraft = React.useCallback(
+    (popupId: string) =>
+      getPopupById(popupId)?.suggestion
+        ? handleSavePopupAnnotation(popupId)
+        : handleConfirmDraftAnnotation(popupId),
+    [getPopupById, handleConfirmDraftAnnotation, handleSavePopupAnnotation]
+  );
+
+  const assistFor = (popupRecord: VisiblePopup): PopupAssist | undefined => {
+    if (!shapeAssist.enabled) return undefined;
+    const saved = isDbId(popupRecord.annotation.id);
+    return {
+      graphId: saved ? dbIdFromA9s(popupRecord.annotation) : null,
+      suggestion: popupRecord.suggestion ?? null,
+      asking: shapeAssist.isAsking(popupRecord.id),
+      error: shapeAssist.errorFor(popupRecord.id),
+      onAsk: () => void shapeAssist.ask(popupRecord.id),
+    };
+  };
+
   // ---- Early returns ----
   if (loading) {
     return <ViewerLoadingState />;
@@ -1091,8 +1134,9 @@ export default function ManuscriptViewer({
               onShareSelectedAnnotation={handleShareSelectedAnnotation}
               onCloseSelectedAnnotation={closeDraftPopup}
               onToggleAnnotationCollection={handleToggleAnnotationCollection}
-              onCancelDraftAnnotation={handleCancelDraftAnnotation}
-              onConfirmDraftAnnotation={handleConfirmDraftAnnotation}
+              onCancelDraftAnnotation={handleCancelOrRejectDraft}
+              onConfirmDraftAnnotation={handleConfirmOrAcceptDraft}
+              assistFor={assistFor}
             />
           </div>
 

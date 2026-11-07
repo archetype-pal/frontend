@@ -354,6 +354,9 @@ export function useAnnotationEditorState(
           createViewerAnnotation({
             ...writePayload,
             item_image: Number(manuscriptImage.id),
+            ...(annotation._meta?.suggestionId
+              ? { suggestion: annotation._meta.suggestionId }
+              : {}),
           })
         );
       }

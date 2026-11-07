@@ -25,9 +25,11 @@ import { SearchableSelect, type SearchableSelectHandle } from '@/components/ui/s
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 
+import { AnnotationExplanation } from './annotation-explanation';
 import { AnnotationDetailOverview } from './read-only-detail-sections';
 import { ReadOnlyIdentityField } from './read-only-identity-field';
-import type { PopupTab, SelectedComponentGroup } from './types';
+import { ShapeSuggestion } from './shape-suggestion';
+import type { PopupAssist, PopupTab, SelectedComponentGroup } from './types';
 
 interface StandardAnnotationEditorProps {
   isExisting: boolean;
@@ -59,6 +61,8 @@ interface StandardAnnotationEditorProps {
 
   popupTab: PopupTab;
   onPopupTabChange: (value: PopupTab) => void;
+  /** Asking a model about this shape; omitted where it cannot be asked. */
+  assist?: PopupAssist;
 }
 
 export function StandardAnnotationEditor({
@@ -85,14 +89,20 @@ export function StandardAnnotationEditor({
   onConfirmDraftAnnotation,
   popupTab,
   onPopupTabChange,
+  assist,
 }: StandardAnnotationEditorProps) {
   const t = useTranslations('annotation');
+  const canExplain = isExisting && assist?.graphId != null;
+  // Nothing to accept when the model named no letter: the draft is the researcher's own.
+  const suggested = !isExisting && assist?.suggestion?.allograph != null;
   const { getPluralLabel } = useModelLabels();
   const allographSelectRef = React.useRef<SearchableSelectHandle>(null);
 
-  const standardPopupTab = ['details', 'components', 'positions', 'notes'].includes(popupTab)
-    ? popupTab
-    : 'details';
+  const standardPopupTab =
+    ['details', 'components', 'positions', 'notes'].includes(popupTab) ||
+    (popupTab === 'explain' && canExplain)
+      ? popupTab
+      : 'details';
 
   const selectedAllograph =
     draftAllographId != null
@@ -403,14 +413,18 @@ export function StandardAnnotationEditor({
   const standardFooter = (
     <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
       <Button variant="ghost" onClick={onCancelDraftAnnotation} type="button">
-        {isExisting ? t('popup.editor.cancel') : t('popup.editor.discard')}
+        {suggested
+          ? t('popup.assist.reject')
+          : isExisting
+            ? t('popup.editor.cancel')
+            : t('popup.editor.discard')}
       </Button>
       <Button
         onClick={onConfirmDraftAnnotation}
-        disabled={isExisting && !hasLocalChanges}
+        disabled={(isExisting && !hasLocalChanges) || (suggested && draftAllographId == null)}
         type="button"
       >
-        {t('popup.editor.ok')}
+        {suggested ? t('popup.assist.accept') : t('popup.editor.ok')}
       </Button>
     </div>
   );
@@ -636,6 +650,17 @@ export function StandardAnnotationEditor({
           >
             {t('popup.editor.notes')}
           </TabsTrigger>
+
+          {canExplain && (
+            <TabsTrigger
+              value="explain"
+              className="h-8 rounded-md border border-transparent px-3 text-sm font-medium
+                data-[state=active]:border data-[state=active]:bg-background
+                data-[state=active]:shadow-sm"
+            >
+              {t('popup.assist.explainTab')}
+            </TabsTrigger>
+          )}
         </TabsList>
       </div>
 
@@ -664,7 +689,17 @@ export function StandardAnnotationEditor({
               ) : null}
             </div>
           ) : (
-            standardIdentityFields
+            <>
+              {assist && (
+                <ShapeSuggestion
+                  suggestion={assist.suggestion}
+                  asking={assist.asking}
+                  error={assist.error}
+                  onAsk={assist.onAsk}
+                />
+              )}
+              {standardIdentityFields}
+            </>
           )}
         </TabsContent>
 
@@ -679,6 +714,12 @@ export function StandardAnnotationEditor({
         <TabsContent value="notes" className="mt-0">
           {standardNotesEditor}
         </TabsContent>
+
+        {canExplain && assist?.graphId != null && (
+          <TabsContent value="explain" className="mt-0">
+            <AnnotationExplanation graphId={assist.graphId} hasLocalChanges={hasLocalChanges} />
+          </TabsContent>
+        )}
       </div>
 
       <div className="shrink-0">{standardFooter}</div>

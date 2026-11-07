@@ -41,6 +41,8 @@ export interface Annotation {
     }>;
     positions?: number[];
     positionDetails?: { id: number; name: string }[];
+    /** The model's suggestion this draft came from, which its save closes as accepted. */
+    suggestionId?: number;
   };
 }
 type AnnotoriousFactory = typeof import('@recogito/annotorious-openseadragon').default;

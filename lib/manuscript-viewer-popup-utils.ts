@@ -130,6 +130,8 @@ export function buildPopupAnnotationPayload({
           graphcomponentSet: popup.draftGraphcomponentSet,
           positions: popup.draftPositionIds,
           positionDetails: buildPositionDetails(popup.draftPositionIds, positionNameById),
+          // Only the draft the model was asked about, not others given the same values.
+          suggestionId: base ? source._meta?.suggestionId : (popup.suggestion?.id ?? undefined),
         },
     body: isEditorial
       ? buildEditorialAnnotationBody(popup.draftInternalNoteText)

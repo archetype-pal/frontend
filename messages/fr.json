@@ -600,6 +600,42 @@
         "noFeaturesSelected": "Aucune caractéristique sélectionnée.",
         "noPositionsDefined": "Aucune position définie.",
         "componentsAndFeatures": "Composants et caractéristiques"
+      },
+      "assist": {
+        "suggest": "Suggérer avec l'IA",
+        "suggestAgain": "Redemander",
+        "suggesting": "Le modèle examine la forme…",
+        "suggestHint": "Un modèle lit cette page et la forme que vous avez tracée, puis remplit son allographe, ses composants et ses traits pour que vous les vérifiiez. Cela prend environ 15 secondes et coûte environ 0,09 $. La page est envoyée à un modèle d'IA hébergé hors de ce site.",
+        "suggested": "Suggestion : {label}",
+        "suggestedNothing": "Le modèle n'a pas identifié de lettre ici.",
+        "confidence": "sûr à {percent} %",
+        "alternatives": "Il pourrait aussi s'agir de",
+        "suggestCheck": "Les champs de cet onglet et des autres contiennent maintenant la suggestion. Corrigez ce qui est faux, puis acceptez-la ou rejetez-la. Accepter enregistre l'annotation sous votre nom.",
+        "accept": "Accepter",
+        "reject": "Rejeter",
+        "failed": "Le modèle n'a pas pu répondre. Veuillez réessayer.",
+        "explainTab": "Expliquer",
+        "explain": "Expliquer cette annotation",
+        "explaining": "Le modèle examine la forme…",
+        "explainHint": "Un modèle lit cette page et expose les indices en faveur de cet allographe : la forme de la lettre, son contexte et la manière d'écrire des scribes de l'époque. Il ne peut pas savoir pourquoi l'annotateur l'a choisi. Une nouvelle réponse prend environ 15 secondes et coûte environ 0,09 $ ; une réponse déjà rédigée est gratuite.",
+        "explainSavedOnly": "Ceci explique l'annotation enregistrée, pas vos modifications non enregistrées.",
+        "verdict": {
+          "obvious": "Évident d'après la forme",
+          "likely": "Probable, avec le contexte",
+          "doubtful": "Douteux",
+          "disagree": "Le modèle lit autre chose"
+        },
+        "disagrees": "Le modèle lirait cette forme comme {label}.",
+        "basis": {
+          "form": "La forme de la lettre",
+          "context": "Le contexte",
+          "comparison": "D'autres exemples de cette main",
+          "record": "Ce que dit la notice",
+          "practice": "La manière d'écrire à l'époque"
+        },
+        "practiceNote": "Tiré des connaissances générales du modèle, pas de ce corpus.",
+        "doubts": "Ce qui s'y oppose",
+        "aiNotice": "Rédigé par {model}, un modèle de langue. Vérifiez sur la page avant de vous y fier."
       }
     }
   },
