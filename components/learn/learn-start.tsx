@@ -4,7 +4,7 @@
  * The palaeography tutor's start page (AI programme W4.4): choose a corpus
  * page or bring a picture of your own, and the tutor writes a walkthrough of
  * its hand. Starting answers at once with the session, and the lesson's own
- * page waits for the tutor. `?page=<id>` starts on that corpus page directly.
+ * page waits for the tutor. `?page=<id>` offers that corpus page, one click away.
  */
 
 import { useEffect, useRef } from 'react';
@@ -62,16 +62,15 @@ export function LearnStart({ pageId = null }: { pageId?: number | null }) {
   // A failed status read does not stop a start: the start itself says why it cannot.
   const mayStart = isReady && (status.isSuccess ? status.data.enabled : status.isError);
 
-  // `?page=` starts once, and replaces itself in the history, so Back does not start another.
-  const autoStarted = useRef(false);
-  useEffect(() => {
-    if (pageId === null || autoStarted.current || !mayStart) return;
-    autoStarted.current = true;
+  // A link names a page and asks first: a lesson costs real money, and links get shared and
+  // followed by accident. It replaces itself in the history, so Back does not return here.
+  const startFromLink = () => {
+    if (pageId === null) return;
     mutate(
       { itemImage: pageId },
       { onSuccess: (session) => router.replace(`/learn/${session.id}`) }
     );
-  }, [pageId, mayStart, mutate, router]);
+  };
 
   const startPage = (page: LearnPage) =>
     mutate({ itemImage: page.id }, { onSuccess: (session) => router.push(`/learn/${session.id}`) });
@@ -86,7 +85,13 @@ export function LearnStart({ pageId = null }: { pageId?: number | null }) {
   const paramPage = pages.data?.find((page) => page.id === pageId);
   // From `?page=` until the lesson opens, unless the student has since chosen something else.
   const paramState =
-    pageId === null || (source && !fromParam) ? null : start.isError ? 'error' : 'starting';
+    pageId === null || (source && !fromParam)
+      ? null
+      : start.isError
+        ? 'error'
+        : pending
+          ? 'starting'
+          : 'ready';
 
   const pageError = start.isError && startingPage !== null && !fromParam ? start.error : null;
   const pictureError = start.isError && startingPicture ? start.error : null;
@@ -126,20 +131,21 @@ export function LearnStart({ pageId = null }: { pageId?: number | null }) {
                     ? t('startingPage', { label: paramPage.label })
                     : t('startingPageUnnamed', { id: pageId })}
                 </p>
+              ) : paramState === 'ready' ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3 text-sm">
+                  <p className="font-medium">
+                    {paramPage
+                      ? t('startFromLink', { label: paramPage.label })
+                      : t('startFromLinkUnnamed', { id: pageId })}
+                  </p>
+                  <Button type="button" size="sm" disabled={!mayStart} onClick={startFromLink}>
+                    {t('startFromLinkButton')}
+                  </Button>
+                </div>
               ) : (
                 <>
                   <LearnRefusal error={start.error} />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      mutate(
-                        { itemImage: pageId },
-                        { onSuccess: (session) => router.replace(`/learn/${session.id}`) }
-                      )
-                    }
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={startFromLink}>
                     {t('lesson.retry')}
                   </Button>
                 </>

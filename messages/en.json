@@ -3969,6 +3969,9 @@
       "failedTitle": "The tutor could not answer this question",
       "onlyStarter": "Only the person who started this lesson can ask it questions.",
       "usedUp": "This lesson's questions are used up. Start another lesson to ask more."
-    }
+    },
+    "startFromLink": "Start a lesson on {label}? It takes a few minutes.",
+    "startFromLinkUnnamed": "Start a lesson on page {id}? It takes a few minutes.",
+    "startFromLinkButton": "Start the lesson"
   }
 }

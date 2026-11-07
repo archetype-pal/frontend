@@ -3969,6 +3969,9 @@
       "failedTitle": "Der Tutor konnte diese Frage nicht beantworten",
       "onlyStarter": "Nur die Person, die diese Lektion begonnen hat, kann ihr Fragen stellen.",
       "usedUp": "Die Fragen dieser Lektion sind aufgebraucht. Beginnen Sie eine neue Lektion, um weiter zu fragen."
-    }
+    },
+    "startFromLink": "Eine Lektion zu {label} beginnen? Das dauert einige Minuten.",
+    "startFromLinkUnnamed": "Eine Lektion zu Seite {id} beginnen? Das dauert einige Minuten.",
+    "startFromLinkButton": "Lektion beginnen"
   }
 }

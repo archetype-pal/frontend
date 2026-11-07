@@ -3969,6 +3969,9 @@
       "failedTitle": "Le tuteur n'a pas pu répondre à cette question",
       "onlyStarter": "Seule la personne qui a commencé cette leçon peut lui poser des questions.",
       "usedUp": "Les questions de cette leçon sont épuisées. Commencez une autre leçon pour en poser davantage."
-    }
+    },
+    "startFromLink": "Commencer une leçon sur {label} ? Cela prend quelques minutes.",
+    "startFromLinkUnnamed": "Commencer une leçon sur la page {id} ? Cela prend quelques minutes.",
+    "startFromLinkButton": "Commencer la leçon"
   }
 }
