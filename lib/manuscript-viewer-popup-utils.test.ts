@@ -449,6 +449,12 @@ describe('getPopupEditorMode', () => {
     );
   });
 
+  it('persisted editorial without editorial rights → editorial_read_only', () => {
+    expect(modeFor({ id: 'db:1', editorial: true, caps: { canEditEditorial: false } })).toBe(
+      'editorial_read_only'
+    );
+  });
+
   it('persisted public with editor meta access → standard_existing', () => {
     expect(modeFor({ id: 'db:1', editorial: false, caps: { canViewEditorMeta: true } })).toBe(
       'standard_existing'
