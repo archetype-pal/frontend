@@ -55,7 +55,7 @@ export function AnnotationExplanation({
           variant="outline"
           size="sm"
           className="h-8 gap-1.5"
-          disabled={explain.isPending || stored.isPending}
+          disabled={explain.isPending}
           onClick={() => explain.mutate()}
         >
           {explain.isPending ? (
