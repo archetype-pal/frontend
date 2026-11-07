@@ -57,6 +57,13 @@ export function suggestShape(
   return post(`/api/v1/vision/pages/${imageId}/suggest/`, body);
 }
 
+export function suggestForAnnotation(
+  graphId: number,
+  body: { allograph: number | null; language: string }
+): Promise<ShapeSuggestion> {
+  return post(`/api/v1/vision/graphs/${graphId}/suggest/`, body);
+}
+
 export function rejectSuggestion(id: number): Promise<{ status: string }> {
   return post(`/api/v1/vision/suggestions/${id}/reject/`, {});
 }

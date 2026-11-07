@@ -18,7 +18,21 @@ export interface ShapeSuggestion {
   /** Why the box does not hold one letter, when it does not. */
   problem: string;
   model_name: string;
+  /** On a saved annotation: how the answer compares with what is recorded, which it only adds to. */
+  comparison?: {
+    /** What the fields held when first asked, which asking again starts from. */
+    base: { components: SuggestionBaseRow[]; positions: number[] };
+    added: string[];
+    notSeen: string[];
+  };
 }
+
+type SuggestionBaseRow = {
+  component: number;
+  componentName?: string;
+  features: number[];
+  featureDetails?: Array<{ id: number; name: string }>;
+};
 
 export type ExplanationBasis = 'form' | 'context' | 'practice' | 'comparison' | 'record';
 export type ExplanationVerdict = 'obvious' | 'likely' | 'doubtful' | 'disagree';

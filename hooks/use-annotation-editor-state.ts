@@ -355,7 +355,14 @@ export function useAnnotationEditorState(
         if (record.source === 'persisted' && isDbAnnotation(annotation)) {
           const id = dbIdFromA9s(annotation);
           if (id == null) continue;
-          upsertTasks.push(updateViewerAnnotation(id, writePayload));
+          upsertTasks.push(
+            updateViewerAnnotation(id, {
+              ...writePayload,
+              ...(annotation._meta?.suggestionId
+                ? { suggestion: annotation._meta.suggestionId }
+                : {}),
+            })
+          );
         } else {
           upsertTasks.push(
             createViewerAnnotation({

@@ -639,7 +639,11 @@
         "doubts": "Ce qui s'y oppose",
         "aiNotice": "Rédigé par {model}, un modèle de langue. Vérifiez sur la page avant de vous y fier.",
         "suggestAgainConfirm": "Cela remplace vos modifications. Redemander ?",
-        "suggestEdited": "Vous avez modifié la suggestion. Accepter enregistre votre version sous votre nom."
+        "suggestEdited": "Vous avez modifié la suggestion. Accepter enregistre votre version sous votre nom.",
+        "fillInHint": "Un modèle lit cette page et cette forme, et ajoute les composants, traits et positions qu’il voit, pour que vous les vérifiiez. Ce qui est enregistré ici ne lui est pas montré, et rien de ce qui est enregistré n’est retiré. Cela prend environ 15 secondes et coûte environ 0,07 $. La page est envoyée à un modèle d'IA hébergé hors de ce site.",
+        "fillInAdds": "{count, plural, =0 {Le modèle n’ajoute rien à ce qui est enregistré} =1 {Le modèle ajoute 1 élément} other {Le modèle ajoute # éléments}}",
+        "fillInNotSeen": "Enregistré, mais le modèle ne l’a pas vu. Cela reste, sauf si vous le retirez :",
+        "fillInCheck": "Les ajouts figurent dans les champs ici et dans les autres onglets. Corrigez ce qui est faux, puis acceptez ou rejetez-les. Accepter enregistre cette annotation sous votre nom."
       },
       "title": {
         "editorial": "Annotation éditoriale",

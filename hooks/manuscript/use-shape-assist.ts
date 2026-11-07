@@ -7,6 +7,9 @@
  * the popup's ordinary editing. The draft carries the suggestion's id through
  * to its save, which is what closes the proposal as accepted; discarding the
  * draft closes it as rejected.
+ *
+ * On a saved annotation the answer only adds to what is recorded. Nothing recorded
+ * leaves the fields, and what the model did not see is listed for the researcher.
  */
 
 import * as React from 'react';
@@ -14,14 +17,89 @@ import { useLocale, useTranslations } from 'next-intl';
 
 import { useRefusalWords } from '@/lib/refusal';
 
-import { a9sToBackendFeature } from '@/lib/anno-mapping';
+import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
+import { isDbId } from '@/lib/annotation-popup-utils';
 import {
   GlyphAssistError,
   getAssistEnabled,
   rejectSuggestion,
+  suggestForAnnotation,
   suggestShape,
 } from '@/services/glyph-assist';
-import type { PopupRecord } from '@/types/annotation-viewer';
+import type { A9sGraphComponent, PopupRecord } from '@/types/annotation-viewer';
+import type { ShapeSuggestion } from '@/types/glyph-assist';
+
+type Recorded = { components: A9sGraphComponent[]; positions: number[] };
+
+function describeRow(name: string | undefined, feature?: string): string {
+  return feature ? `${name ?? ''}: ${feature}` : (name ?? '');
+}
+
+/** What the fields hold once `suggestion` is added to `recorded`, and how the two differ. */
+export function addSuggestionToRecord(
+  recorded: Recorded,
+  suggestion: ShapeSuggestion,
+  positionNameById: Map<number, string>
+): ShapeSuggestion {
+  const merged = new Map(
+    recorded.components.map((row) => [
+      row.component,
+      {
+        component: row.component,
+        component_name: row.componentName ?? '',
+        features: [...row.features],
+        feature_details: [...(row.featureDetails ?? [])],
+      },
+    ])
+  );
+  const added: string[] = [];
+  const seen = new Set<string>();
+  for (const row of suggestion.components) {
+    seen.add(`${row.component}`);
+    let target = merged.get(row.component);
+    if (!target) {
+      target = {
+        component: row.component,
+        component_name: row.component_name,
+        features: [],
+        feature_details: [],
+      };
+      merged.set(row.component, target);
+      if (row.features.length === 0) added.push(describeRow(row.component_name));
+    }
+    for (const feature of row.feature_details) {
+      seen.add(`${row.component}:${feature.id}`);
+      if (target.features.includes(feature.id)) continue;
+      target.features.push(feature.id);
+      target.feature_details.push(feature);
+      added.push(describeRow(row.component_name, feature.name));
+    }
+  }
+  const notSeen: string[] = [];
+  for (const row of recorded.components) {
+    if (!seen.has(`${row.component}`) && row.features.length === 0) {
+      notSeen.push(describeRow(row.componentName));
+    }
+    for (const feature of row.featureDetails ?? []) {
+      if (!seen.has(`${row.component}:${feature.id}`)) {
+        notSeen.push(describeRow(row.componentName, feature.name));
+      }
+    }
+  }
+  const positionName = (id: number) => positionNameById.get(id) ?? `#${id}`;
+  added.push(
+    ...suggestion.positions.filter((id) => !recorded.positions.includes(id)).map(positionName)
+  );
+  notSeen.push(
+    ...recorded.positions.filter((id) => !suggestion.positions.includes(id)).map(positionName)
+  );
+  return {
+    ...suggestion,
+    components: [...merged.values()],
+    positions: [...new Set([...recorded.positions, ...suggestion.positions])],
+    comparison: { base: recorded, added, notSeen },
+  };
+}
 
 /** Whether the researcher has changed what the model filled in. */
 export function isSuggestionEdited(popup: PopupRecord): boolean {
@@ -45,6 +123,7 @@ export function useShapeAssist({
   imageId,
   imageHeight,
   allographNameById,
+  positionNameById,
   getPopupById,
   updatePopupById,
 }: {
@@ -52,6 +131,7 @@ export function useShapeAssist({
   imageId: string;
   imageHeight: number;
   allographNameById: Map<number, string>;
+  positionNameById: Map<number, string>;
   getPopupById: (popupId: string) => PopupRecord | null;
   updatePopupById: (popupId: string, updates: Partial<PopupRecord>) => void;
 }) {
@@ -92,16 +172,34 @@ export function useShapeAssist({
       setAskingIds((current) => new Set(current).add(popupId));
       setErrors(({ [popupId]: _cleared, ...rest }) => rest);
       try {
-        const suggestion = await suggestShape(Number(imageId), {
-          annotation: a9sToBackendFeature(popup.annotation, imageHeight),
-          allograph: popup.allographLocked ? popup.draftAllographId : null,
-          language,
-        });
+        const savedId = isDbId(popup.annotation.id) ? dbIdFromA9s(popup.annotation) : null;
+        const answer =
+          savedId != null
+            ? await suggestForAnnotation(savedId, {
+                allograph: popup.draftAllographId,
+                language,
+              })
+            : await suggestShape(Number(imageId), {
+                annotation: a9sToBackendFeature(popup.annotation, imageHeight),
+                allograph: popup.allographLocked ? popup.draftAllographId : null,
+                language,
+              });
         // The draft was discarded while the model was working: nobody is left to decide.
         if (!latestGetPopup.current(popupId)) {
-          void rejectSuggestion(suggestion.id).catch(() => undefined);
+          void rejectSuggestion(answer.id).catch(() => undefined);
           return;
         }
+        const suggestion =
+          savedId != null
+            ? addSuggestionToRecord(
+                popup.suggestion?.comparison?.base ?? {
+                  components: popup.draftGraphcomponentSet,
+                  positions: popup.draftPositionIds,
+                },
+                answer,
+                positionNameById
+              )
+            : answer;
         // Asked again: the previous answer is superseded.
         closeSuggestion(popup);
         const allograph = suggestion.allograph ?? popup.draftAllographId;
@@ -134,6 +232,7 @@ export function useShapeAssist({
     [
       refusalWords,
       allographNameById,
+      positionNameById,
       closeSuggestion,
       getPopupById,
       imageHeight,

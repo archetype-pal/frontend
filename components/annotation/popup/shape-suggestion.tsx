@@ -5,7 +5,8 @@
  *
  * The answer fills the draft's own fields, so accepting, editing and rejecting
  * are the popup's ordinary controls. Beside them it shows what the model saw and
- * how sure it was, which is what the researcher checks it against.
+ * how sure it was, which is what the researcher checks it against. On a saved
+ * annotation it also says what the answer adds and what the model did not see.
  */
 
 import { useState } from 'react';
@@ -16,12 +17,15 @@ import { Button } from '@/components/ui/button';
 import type { ShapeSuggestion as Suggestion } from '@/types/glyph-assist';
 
 export function ShapeSuggestion({
+  existing = false,
   suggestion,
   edited,
   asking,
   error,
   onAsk,
 }: {
+  /** The shape is a saved annotation, whose record the answer only adds to. */
+  existing?: boolean;
   suggestion: Suggestion | null;
   edited: boolean;
   asking: boolean;
@@ -29,6 +33,7 @@ export function ShapeSuggestion({
   onAsk: () => void;
 }) {
   const t = useTranslations('annotation.popup.assist');
+  const comparison = suggestion?.comparison;
   // Asking again replaces what is in the fields, so changes get a second click first.
   const [confirming, setConfirming] = useState(false);
   const ask = () => {
@@ -42,7 +47,11 @@ export function ShapeSuggestion({
 
   return (
     <section className="mb-4 space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
-      {!suggestion && <p className="text-xs text-muted-foreground">{t('suggestHint')}</p>}
+      {!suggestion && (
+        <p className="text-xs text-muted-foreground">
+          {existing ? t('fillInHint') : t('suggestHint')}
+        </p>
+      )}
       <Button
         type="button"
         variant="outline"
@@ -75,16 +84,35 @@ export function ShapeSuggestion({
               </p>
             )}
             <p className="font-medium">
-              {suggestion.allograph != null
-                ? t('suggested', { label: suggestion.allograph_label })
-                : t('suggestedNothing')}
+              {comparison
+                ? t('fillInAdds', { count: comparison.added.length })
+                : suggestion.allograph != null
+                  ? t('suggested', { label: suggestion.allograph_label })
+                  : t('suggestedNothing')}
               {suggestion.confidence != null && (
                 <span className="ml-2 text-xs font-normal tabular-nums text-muted-foreground">
                   {t('confidence', { percent: Math.round(suggestion.confidence * 100) })}
                 </span>
               )}
             </p>
+            {comparison && comparison.added.length > 0 && (
+              <ul className="list-disc space-y-0.5 pl-4 text-xs">
+                {comparison.added.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            )}
             {suggestion.reasoning && <p className="leading-snug">{suggestion.reasoning}</p>}
+            {comparison && comparison.notSeen.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">{t('fillInNotSeen')}</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs">
+                  {comparison.notSeen.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {suggestion.alternatives.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground">{t('alternatives')}</p>
@@ -97,9 +125,9 @@ export function ShapeSuggestion({
                 </ul>
               </div>
             )}
-            {suggestion.allograph != null && (
+            {suggestion.allograph != null && (!comparison || comparison.added.length > 0) && (
               <p className="text-xs text-muted-foreground">
-                {edited ? t('suggestEdited') : t('suggestCheck')}
+                {edited ? t('suggestEdited') : comparison ? t('fillInCheck') : t('suggestCheck')}
               </p>
             )}
           </>

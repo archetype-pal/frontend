@@ -838,6 +838,7 @@ export default function ManuscriptViewer({
     imageId,
     imageHeight,
     allographNameById,
+    positionNameById,
     getPopupById,
     updatePopupById,
   });
@@ -863,11 +864,11 @@ export default function ManuscriptViewer({
     [getPopupById, handleConfirmDraftAnnotation, handleSavePopupAnnotation]
   );
 
-  // Closing a draft's popup removes the draft, so its suggestion is turned down with it.
+  // Closing a popup drops what is in its fields, so a suggestion is turned down with it.
   const handleClosePopup = React.useCallback(
     (popupId: string) => {
       const popup = getPopupById(popupId);
-      if (popup && !isDbId(popup.annotation.id)) closeSuggestion(popup);
+      closeSuggestion(popup);
       closeDraftPopup(popupId);
     },
     [closeDraftPopup, closeSuggestion, getPopupById]

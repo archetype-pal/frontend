@@ -639,7 +639,11 @@
         "doubts": "What speaks against it",
         "aiNotice": "Written by {model}, a language model. Check it against the page before you rely on it.",
         "suggestAgainConfirm": "This replaces your changes. Ask again?",
-        "suggestEdited": "You have changed the suggestion. Accepting saves your version under your name."
+        "suggestEdited": "You have changed the suggestion. Accepting saves your version under your name.",
+        "fillInHint": "A model reads this page and this shape, and adds the components, features and positions it can see, for you to check. It is not shown what is recorded here, and nothing recorded is removed. It takes about 15 seconds and costs about $0.07. The page goes to a hosted AI model outside this site.",
+        "fillInAdds": "{count, plural, =0 {The model adds nothing to what is recorded} =1 {The model adds 1 thing} other {The model adds # things}}",
+        "fillInNotSeen": "Recorded, but the model did not see it. It stays unless you remove it:",
+        "fillInCheck": "The additions are in the fields here and on the other tabs. Change anything that is wrong, then accept or reject them. Accepting saves this annotation under your name."
       },
       "title": {
         "editorial": "Editorial annotation",

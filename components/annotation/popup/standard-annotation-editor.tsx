@@ -94,7 +94,9 @@ export function StandardAnnotationEditor({
   const t = useTranslations('annotation');
   const canExplain = isExisting && assist?.graphId != null;
   // Nothing to accept when the model named no letter: the draft is the researcher's own.
-  const suggested = !isExisting && assist?.suggestion?.allograph != null;
+  // Nor when it adds nothing to a saved annotation: there is nothing to decide.
+  const suggested =
+    assist?.suggestion?.allograph != null && assist.suggestion.comparison?.added.length !== 0;
   const { getPluralLabel } = useModelLabels();
   const allographSelectRef = React.useRef<SearchableSelectHandle>(null);
 
@@ -672,6 +674,16 @@ export function StandardAnnotationEditor({
         <TabsContent value="details" className="mt-0">
           {isExisting ? (
             <div className="space-y-4">
+              {assist && (
+                <ShapeSuggestion
+                  existing
+                  suggestion={assist.suggestion}
+                  edited={assist.edited}
+                  asking={assist.asking}
+                  error={assist.error}
+                  onAsk={assist.onAsk}
+                />
+              )}
               {standardIdentityFields}
 
               {popupCapabilities.canViewEditorMeta && (

@@ -639,7 +639,11 @@
         "doubts": "Was dagegen spricht",
         "aiNotice": "Verfasst von {model}, einem Sprachmodell. Prüfen Sie es an der Seite, bevor Sie sich darauf verlassen.",
         "suggestAgainConfirm": "Dies ersetzt Ihre Änderungen. Erneut fragen?",
-        "suggestEdited": "Sie haben den Vorschlag geändert. Beim Annehmen wird Ihre Fassung unter Ihrem Namen gespeichert."
+        "suggestEdited": "Sie haben den Vorschlag geändert. Beim Annehmen wird Ihre Fassung unter Ihrem Namen gespeichert.",
+        "fillInHint": "Ein Modell liest diese Seite und diese Form und ergänzt die Komponenten, Merkmale und Positionen, die es erkennt, damit Sie sie prüfen. Was hier erfasst ist, wird ihm nicht gezeigt, und nichts Erfasstes wird entfernt. Das dauert etwa 15 Sekunden und kostet etwa 0,07 $. Die Seite wird an ein gehostetes KI-Modell außerhalb dieser Website gesendet.",
+        "fillInAdds": "{count, plural, =0 {Das Modell ergänzt nichts zum Erfassten} =1 {Das Modell ergänzt 1 Angabe} other {Das Modell ergänzt # Angaben}}",
+        "fillInNotSeen": "Erfasst, aber vom Modell nicht erkannt. Es bleibt, sofern Sie es nicht entfernen:",
+        "fillInCheck": "Die Ergänzungen stehen in den Feldern hier und auf den anderen Reitern. Ändern Sie, was falsch ist, und nehmen Sie sie dann an oder lehnen Sie sie ab. Annehmen speichert diese Annotation unter Ihrem Namen."
       },
       "title": {
         "editorial": "Redaktionelle Annotation",
