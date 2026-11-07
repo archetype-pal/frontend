@@ -86,4 +86,24 @@ describe('optionalAuthFetch', () => {
       `${API_BASE_URL}/api/v1/manuscripts/graphs/?item_image=1`,
     ]);
   });
+
+  it("sends a server page's login to Django, and none when there is no login", async () => {
+    vi.stubGlobal('window', undefined);
+    vi.resetModules();
+    const { optionalAuthFetch, API_BASE_URL } = await import('./api-fetch');
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response('[]'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await optionalAuthFetch('/api/v1/manuscripts/image-texts/?item_image=1', 'abc');
+    await optionalAuthFetch('/api/v1/manuscripts/image-texts/?item_image=1', null);
+
+    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual([
+      `${API_BASE_URL}/api/v1/manuscripts/image-texts/?item_image=1`,
+      `${API_BASE_URL}/api/v1/manuscripts/image-texts/?item_image=1`,
+    ]);
+    const authorization = fetchMock.mock.calls.map((c) =>
+      new Headers(c[1]?.headers).get('Authorization')
+    );
+    expect(authorization).toEqual(['Token abc', null]);
+  });
 });
