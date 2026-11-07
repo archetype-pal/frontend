@@ -2,7 +2,7 @@ name: CD AI preview
 
 # Only the ai-preview tag. frontend:beta is what beta deploys, so this workflow
 # must never publish it. NEXT_PUBLIC_* is inlined at build time, and static
-# generation fetches the API, so this fails until the preview's API answers.
+# generation fetches the API, so build again once the preview's API answers.
 on:
   push:
     branches: [feat/annotation-proposal-queue]
