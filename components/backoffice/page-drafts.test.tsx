@@ -87,7 +87,7 @@ describe('<PageDraftButton>', () => {
     fireEvent.click(button());
     expect(screen.getByText('Draft a transcription of page #70?')).toBeTruthy();
     expect(screen.getByText('It takes a minute or two and costs about $0.28.')).toBeTruthy();
-    expect(screen.getByText(/Nothing is published until someone reviews it/)).toBeTruthy();
+    expect(screen.getByText(/Nothing is published until someone approves it/)).toBeTruthy();
     expect(requestPageDraft).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Draft this page' }));
@@ -186,7 +186,7 @@ describe('useDraftsUnderWay', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalled());
     expect(fetchPageDraft).toHaveBeenCalledWith(70);
     const [message, options] = vi.mocked(toast.success).mock.calls[0];
-    expect(message).toBe('Page #70 is drafted and waits for review.');
+    expect(message).toBe('Page #70 is drafted and waits in the review queue.');
     const action = actionOf(options);
     expect(action.label).toBe('Open draft');
     action.onClick();

@@ -637,7 +637,9 @@
         },
         "practiceNote": "Tiré des connaissances générales du modèle, pas de ce corpus.",
         "doubts": "Ce qui s'y oppose",
-        "aiNotice": "Rédigé par {model}, un modèle de langue. Vérifiez sur la page avant de vous y fier."
+        "aiNotice": "Rédigé par {model}, un modèle de langue. Vérifiez sur la page avant de vous y fier.",
+        "suggestAgainConfirm": "Cela remplace vos modifications. Redemander ?",
+        "suggestEdited": "Vous avez modifié la suggestion. Accepter enregistre votre version sous votre nom."
       }
     }
   },
@@ -1195,7 +1197,8 @@
       "subGroupExpand": "Développer {label}",
       "subGroupCollapse": "Réduire {label}",
       "annotationProposals": "Annotations proposées",
-      "diplomaticProposals": "Propositions sur les chartes"
+      "diplomaticProposals": "Propositions sur les chartes",
+      "reviewQueue": "File de relecture"
     },
     "confirmDialog": {
       "confirm": "Confirmer",
@@ -2286,7 +2289,7 @@
       "acceptNote": {
         "entities": "Accepter enregistre {count, plural, =1 {cette entité} other {ces # entités}} pour la charte.",
         "formulae": "Accepter ajoute {count, plural, =1 {cette formule} other {ces # formules}} au formulaire, avec cette charte comme occurrence.",
-        "translation": "Accepter enregistre ceci comme projet de traduction, marqué comme rédigé par une machine. C’est refusé si la page a déjà une traduction.",
+        "translation": "Accepter enregistre ceci comme traduction dans la file de relecture, marquée comme rédigée par une machine. Refusé si la page a déjà une traduction.",
         "dating": "Accepter enregistre que le signalement est fondé. Aucune date n’est modifiée : une charte se redate dans le catalogue.",
         "relations": "Accepter enregistre {count, plural, =1 {cette relation} other {ces # relations}} pour la charte."
       },
@@ -3457,12 +3460,12 @@
       "previewAlt": "Page #{id}",
       "dialogReader": "Claude Fable 5.1 lit la page et écrit le texte de l’édition, en marquant les abréviations qu’il développe.",
       "dialogCost": "Cela prend une ou deux minutes et coûte environ 0,28 $.",
-      "dialogReview": "Le résultat est un brouillon de transcription, signalé comme produit par une machine. Rien n’est publié avant d’avoir été relu.",
+      "dialogReview": "Le résultat va dans la file de relecture, marqué comme produit par une machine. Rien n'est publié tant que personne ne l'a approuvé.",
       "dialogCancel": "Annuler",
       "dialogConfirm": "Rédiger cette page",
       "toastQueued": "La page #{id} est en cours de rédaction. Un message s’affichera quand elle sera terminée.",
       "toastAlreadyDrafting": "La page #{id} est déjà en cours de rédaction.",
-      "toastDrafted": "La page #{id} est rédigée et attend sa relecture.",
+      "toastDrafted": "La page n° {id} est rédigée et attend dans la file de relecture.",
       "toastOpen": "Ouvrir le brouillon",
       "toastFailed": "La page #{id} n’a pas pu être rédigée",
       "toastRefused": "La page #{id} n’a pas été rédigée",

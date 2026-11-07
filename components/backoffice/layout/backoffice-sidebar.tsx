@@ -34,6 +34,7 @@ import {
   ToggleLeft,
   Trash2,
   HeartPulse,
+  ClipboardCheck,
   Sparkles,
   ScanText,
   Cpu,
@@ -45,6 +46,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { getComments } from '@/services/backoffice/publications';
 import { getAnnotationProposalDepth } from '@/services/backoffice/annotation-proposals';
 import { getDiplomaticProposalDepth } from '@/services/backoffice/diplomatic-proposals';
+import { fetchReviewQueue } from '@/services/backoffice/review-queue';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { useTranslations } from 'next-intl';
 import { useModelLabels } from '@/contexts/model-labels-context';
@@ -93,6 +95,11 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
             icon: Sparkles,
           },
           { label: t('sidebar.texts'), href: '/backoffice/texts', icon: ScrollText },
+          {
+            label: t('sidebar.reviewQueue'),
+            href: '/backoffice/review-queue',
+            icon: ClipboardCheck,
+          },
           {
             label: t('sidebar.diplomaticProposals'),
             href: '/backoffice/diplomatic-proposals',
@@ -183,8 +190,18 @@ export function BackofficeSidebar({ collapsed }: BackofficeSidebarProps) {
   });
 
   const pendingCount = pendingComments?.count ?? 0;
+  const { data: reviewQueue } = useQuery({
+    queryKey: backofficeKeys.reviewQueue.all(),
+    queryFn: () => fetchReviewQueue(),
+    enabled: isAuthenticated,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: false,
+  });
+
   const badges: Record<string, number> = {
     '/backoffice/comments': pendingCount,
+    '/backoffice/review-queue': reviewQueue?.length ?? 0,
     '/backoffice/annotation-proposals': proposalDepth?.pending ?? 0,
     '/backoffice/diplomatic-proposals': diplomaticDepth?.pending ?? 0,
   };

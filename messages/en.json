@@ -637,7 +637,9 @@
         },
         "practiceNote": "From the model's general knowledge, not from this corpus.",
         "doubts": "What speaks against it",
-        "aiNotice": "Written by {model}, a language model. Check it against the page before you rely on it."
+        "aiNotice": "Written by {model}, a language model. Check it against the page before you rely on it.",
+        "suggestAgainConfirm": "This replaces your changes. Ask again?",
+        "suggestEdited": "You have changed the suggestion. Accepting saves your version under your name."
       }
     }
   },
@@ -1195,7 +1197,8 @@
       "subGroupExpand": "Expand {label}",
       "subGroupCollapse": "Collapse {label}",
       "annotationProposals": "Proposed annotations",
-      "diplomaticProposals": "Charter proposals"
+      "diplomaticProposals": "Charter proposals",
+      "reviewQueue": "Review queue"
     },
     "confirmDialog": {
       "confirm": "Confirm",
@@ -2286,7 +2289,7 @@
       "acceptNote": {
         "entities": "Accepting records {count, plural, =1 {this entity} other {these # entities}} against the charter.",
         "formulae": "Accepting adds {count, plural, =1 {this formula} other {these # formulae}} to the formulary, with this charter as an occurrence.",
-        "translation": "Accepting saves this as a draft translation, marked as drafted by a machine. It is refused if the page already has a translation.",
+        "translation": "Accepting saves this as a translation in the review queue, marked as drafted by a machine. It is refused if the page already has a translation.",
         "dating": "Accepting records that the flag stands. It changes no date: re-dating a charter is done in the catalogue.",
         "relations": "Accepting records {count, plural, =1 {this relation} other {these # relations}} against the charter."
       },
@@ -3457,12 +3460,12 @@
       "previewAlt": "Page #{id}",
       "dialogReader": "Claude Fable 5.1 reads the page and writes the edition's text, marking the abbreviations it expands.",
       "dialogCost": "It takes a minute or two and costs about $0.28.",
-      "dialogReview": "The result is a Draft transcription, marked as machine-made. Nothing is published until someone reviews it.",
+      "dialogReview": "The result goes to the review queue, marked as machine-made. Nothing is published until someone approves it.",
       "dialogCancel": "Cancel",
       "dialogConfirm": "Draft this page",
       "toastQueued": "Page #{id} is being drafted. You will be told when it is done.",
       "toastAlreadyDrafting": "Page #{id} is already being drafted.",
-      "toastDrafted": "Page #{id} is drafted and waits for review.",
+      "toastDrafted": "Page #{id} is drafted and waits in the review queue.",
       "toastOpen": "Open draft",
       "toastFailed": "Page #{id} could not be drafted",
       "toastRefused": "Page #{id} was not drafted",

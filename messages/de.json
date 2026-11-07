@@ -637,7 +637,9 @@
         },
         "practiceNote": "Aus dem allgemeinen Wissen des Modells, nicht aus diesem Korpus.",
         "doubts": "Was dagegen spricht",
-        "aiNotice": "Verfasst von {model}, einem Sprachmodell. Prüfen Sie es an der Seite, bevor Sie sich darauf verlassen."
+        "aiNotice": "Verfasst von {model}, einem Sprachmodell. Prüfen Sie es an der Seite, bevor Sie sich darauf verlassen.",
+        "suggestAgainConfirm": "Dies ersetzt Ihre Änderungen. Erneut fragen?",
+        "suggestEdited": "Sie haben den Vorschlag geändert. Beim Annehmen wird Ihre Fassung unter Ihrem Namen gespeichert."
       }
     }
   },
@@ -1195,7 +1197,8 @@
       "subGroupExpand": "{label} erweitern",
       "subGroupCollapse": "{label} einklappen",
       "annotationProposals": "Vorgeschlagene Annotationen",
-      "diplomaticProposals": "Urkundenvorschläge"
+      "diplomaticProposals": "Urkundenvorschläge",
+      "reviewQueue": "Prüfwarteschlange"
     },
     "confirmDialog": {
       "confirm": "Bestätigen",
@@ -2286,7 +2289,7 @@
       "acceptNote": {
         "entities": "Beim Annehmen {count, plural, =1 {wird diese Entität} other {werden diese # Entitäten}} zur Urkunde erfasst.",
         "formulae": "Beim Annehmen {count, plural, =1 {wird diese Formel} other {werden diese # Formeln}} ins Formular aufgenommen, mit dieser Urkunde als Beleg.",
-        "translation": "Beim Annehmen wird dies als Übersetzungsentwurf gespeichert, als maschinell entworfen gekennzeichnet. Hat die Seite bereits eine Übersetzung, wird es abgelehnt.",
+        "translation": "Beim Annehmen wird dies als Übersetzung in die Prüfwarteschlange gestellt, als maschinell entworfen gekennzeichnet. Es wird abgelehnt, wenn die Seite bereits eine Übersetzung hat.",
         "dating": "Beim Annehmen wird erfasst, dass der Hinweis zutrifft. Kein Datum wird geändert: Eine Urkunde wird im Katalog neu datiert.",
         "relations": "Beim Annehmen {count, plural, =1 {wird diese Beziehung} other {werden diese # Beziehungen}} zur Urkunde erfasst."
       },
@@ -3457,12 +3460,12 @@
       "previewAlt": "Seite #{id}",
       "dialogReader": "Claude Fable 5.1 liest die Seite und schreibt den Text der Edition; die aufgelösten Abkürzungen werden markiert.",
       "dialogCost": "Das dauert ein bis zwei Minuten und kostet etwa 0,28 $.",
-      "dialogReview": "Das Ergebnis ist ein Transkriptionsentwurf, als maschinell erstellt gekennzeichnet. Nichts wird veröffentlicht, bevor jemand ihn geprüft hat.",
+      "dialogReview": "Das Ergebnis kommt in die Prüfwarteschlange, als maschinell erstellt gekennzeichnet. Nichts wird veröffentlicht, bevor es jemand freigibt.",
       "dialogCancel": "Abbrechen",
       "dialogConfirm": "Diese Seite entwerfen",
       "toastQueued": "Seite #{id} wird entworfen. Sie werden benachrichtigt, sobald es fertig ist.",
       "toastAlreadyDrafting": "Seite #{id} wird bereits entworfen.",
-      "toastDrafted": "Seite #{id} ist entworfen und wartet auf Prüfung.",
+      "toastDrafted": "Seite #{id} ist entworfen und wartet in der Prüfwarteschlange.",
       "toastOpen": "Entwurf öffnen",
       "toastFailed": "Seite #{id} konnte nicht entworfen werden",
       "toastRefused": "Seite #{id} wurde nicht entworfen",
