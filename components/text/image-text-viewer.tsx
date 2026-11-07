@@ -1,9 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { Sparkles } from 'lucide-react';
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { applyHighlightClasses } from '@/lib/tei-highlight';
-import { toDptHtml } from '@/lib/tei-to-dpt-html';
+import { machineDraftModel, toDptHtml } from '@/lib/tei-to-dpt-html';
 import { cn } from '@/lib/utils';
 import { scrollIntoNearestScroller } from '@/lib/scroll-utils';
 
@@ -72,6 +74,17 @@ function markSearchHits(root: HTMLElement, query: string): HTMLElement | null {
   return first;
 }
 
+/** Says a model wrote this text, wherever it is read: a reader cannot tell otherwise. */
+function MachineDraftNotice({ model }: { model: string }) {
+  const t = useTranslations('manuscript.text');
+  return (
+    <p className="mb-3 flex gap-1.5 rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+      <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+      {model ? t('machineDraft', { model }) : t('machineDraftUnnamed')}
+    </p>
+  );
+}
+
 export function ImageTextViewer({
   html,
   className,
@@ -80,6 +93,7 @@ export function ImageTextViewer({
   highlightQuery,
 }: ImageTextViewerProps) {
   const filterMode = highlightTypes != null;
+  const machineModel = machineDraftModel(html);
   // Content may be legacy data-dpt HTML or (post-Phase-H) TEI XML; render both
   // as data-dpt HTML so the prose CSS and text↔region linking are unchanged.
   const safeHtml = React.useMemo(
@@ -126,16 +140,19 @@ export function ImageTextViewer({
   // coverage. Applied here so every consumer (viewer panel, text pages,
   // backoffice preview/editor) gets it.
   return (
-    <div
-      ref={ref}
-      className={cn(
-        'font-transcription',
-        // Filter mode replaces the blanket .tei-rich element highlight with the
-        // type-filtered .tei-hl-mode one; otherwise honour richMarkup.
-        filterMode ? 'tei-hl-mode' : richMarkup && 'tei-rich',
-        className ?? 'prose prose-sm dark:prose-invert max-w-none'
-      )}
-      dangerouslySetInnerHTML={{ __html: renderedHtml }}
-    />
+    <>
+      {machineModel !== null && <MachineDraftNotice model={machineModel} />}
+      <div
+        ref={ref}
+        className={cn(
+          'font-transcription',
+          // Filter mode replaces the blanket .tei-rich element highlight with the
+          // type-filtered .tei-hl-mode one; otherwise honour richMarkup.
+          filterMode ? 'tei-hl-mode' : richMarkup && 'tei-rich',
+          className ?? 'prose prose-sm dark:prose-invert max-w-none'
+        )}
+        dangerouslySetInnerHTML={{ __html: renderedHtml }}
+      />
+    </>
   );
 }

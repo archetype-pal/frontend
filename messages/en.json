@@ -364,7 +364,9 @@
       "openInEditor": "Open in the full editor",
       "downloadTei": "Download {type} as TEI",
       "hidePanel": "Hide text panel",
-      "loadingEditor": "Loading editor…"
+      "loadingEditor": "Loading editor…",
+      "machineDraft": "Drafted by a language model ({model}). It may contain errors: check it against the image.",
+      "machineDraftUnnamed": "Drafted by a language model. It may contain errors: check it against the image."
     },
     "sections": {
       "msDesc": "Manuscript description",
@@ -2358,7 +2360,8 @@
       "leftOutBadge": "Left out",
       "noneChosen": "Nothing is ticked. Tick what the charter supports, or reject the proposal.",
       "leavesOut": "{count, plural, =1 {The unticked item is} other {The # unticked items are}} left out, and the proposal keeps a note of {count, plural, =1 {it} other {them}}.",
-      "leftOutCount": "{count, plural, =1 {1 item left out} other {# items left out}}"
+      "leftOutCount": "{count, plural, =1 {1 item left out} other {# items left out}}",
+      "thisCharter": "this charter"
     },
     "mlJobs": {
       "title": "Model runs",

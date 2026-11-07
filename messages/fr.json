@@ -364,7 +364,9 @@
       "openInEditor": "Ouvrir dans l'éditeur complet",
       "downloadTei": "Télécharger {type} en TEI",
       "hidePanel": "Masquer le panneau de texte",
-      "loadingEditor": "Chargement de l'éditeur…"
+      "loadingEditor": "Chargement de l'éditeur…",
+      "machineDraft": "Rédigé par un modèle de langue ({model}). Il peut contenir des erreurs : vérifiez sur l'image.",
+      "machineDraftUnnamed": "Rédigé par un modèle de langue. Il peut contenir des erreurs : vérifiez sur l'image."
     },
     "sections": {
       "msDesc": "Description du manuscrit",
@@ -2358,7 +2360,8 @@
       "leftOutBadge": "Écarté",
       "noneChosen": "Rien n’est coché. Cochez ce que la charte confirme, ou rejetez la proposition.",
       "leavesOut": "{count, plural, =1 {L’élément non coché est écarté} other {Les # éléments non cochés sont écartés}}, et la proposition en garde la trace.",
-      "leftOutCount": "{count, plural, =1 {1 élément écarté} other {# éléments écartés}}"
+      "leftOutCount": "{count, plural, =1 {1 élément écarté} other {# éléments écartés}}",
+      "thisCharter": "cette charte"
     },
     "mlJobs": {
       "title": "Exécutions de modèles",

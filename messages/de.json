@@ -364,7 +364,9 @@
       "openInEditor": "Im vollständigen Editor öffnen",
       "downloadTei": "{type} als TEI herunterladen",
       "hidePanel": "Textbereich ausblenden",
-      "loadingEditor": "Editor wird geladen…"
+      "loadingEditor": "Editor wird geladen…",
+      "machineDraft": "Von einem Sprachmodell ({model}) entworfen. Es kann Fehler enthalten: Prüfen Sie es am Bild.",
+      "machineDraftUnnamed": "Von einem Sprachmodell entworfen. Es kann Fehler enthalten: Prüfen Sie es am Bild."
     },
     "sections": {
       "msDesc": "Handschriftenbeschreibung",
@@ -2358,7 +2360,8 @@
       "leftOutBadge": "Ausgelassen",
       "noneChosen": "Nichts ist angekreuzt. Kreuzen Sie an, was die Urkunde belegt, oder lehnen Sie den Vorschlag ab.",
       "leavesOut": "{count, plural, =1 {Der nicht angekreuzte Eintrag wird} other {Die # nicht angekreuzten Einträge werden}} ausgelassen; der Vorschlag vermerkt {count, plural, =1 {ihn} other {sie}}.",
-      "leftOutCount": "{count, plural, =1 {1 Eintrag ausgelassen} other {# Einträge ausgelassen}}"
+      "leftOutCount": "{count, plural, =1 {1 Eintrag ausgelassen} other {# Einträge ausgelassen}}",
+      "thisCharter": "diese Urkunde"
     },
     "mlJobs": {
       "title": "Modellläufe",
