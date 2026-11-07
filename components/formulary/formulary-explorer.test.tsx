@@ -82,7 +82,7 @@ describe('<FormularyExplorer>', () => {
     expect(within(sealing).getByText('sigilli mei appositione roboraui').getAttribute('lang')).toBe(
       'la'
     );
-    expect(within(curse).getByText('Not in the published typology')).not.toBeNull();
+    expect(within(curse).getByText('No published type')).not.toBeNull();
   });
 
   it('lists the charters that use it, with where to read and see each', async () => {

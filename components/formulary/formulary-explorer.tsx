@@ -92,9 +92,7 @@ function FormulaCard({ formula }: { formula: Formula }) {
             {t('publishedType', { type: formula.published_type })}
           </span>
         ) : (
-          <Badge variant="outline" className="border-amber-400 text-amber-800 dark:text-amber-200">
-            {t('unpublishedType')}
-          </Badge>
+          <span className="text-xs text-muted-foreground">{t('unpublishedType')}</span>
         )}
       </div>
       <h2 id={headingId} className="mt-2 text-lg font-semibold">

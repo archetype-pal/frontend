@@ -28,7 +28,7 @@ describe('<PayloadView>', () => {
 
     expect(screen.getByText('Salutation')).not.toBeNull();
     expect(screen.getByText('Published type: Salutatio B')).not.toBeNull();
-    expect(screen.getByText('Not in the published typology')).not.toBeNull();
+    expect(screen.getByText('No published type')).not.toBeNull();
     expect(screen.getAllByText('In the text')).toHaveLength(1);
     expect(screen.getAllByText('Not in the text')).toHaveLength(1);
   });
