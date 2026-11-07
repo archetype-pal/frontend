@@ -12,6 +12,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -98,11 +99,22 @@ export function ProposalReview({
   const located = useMemo(() => (text == null ? null : locateAll(text, quotes)), [text, quotes]);
   const missing = located ? located.found.filter((f) => !f).length : 0;
 
+  const router = useRouter();
   const accept = useMutation({
     mutationFn: () =>
       acceptDiplomaticProposal(proposal.id, itemised ? chosenItems(chosen, total) : undefined),
-    onSuccess: ({ created }) => {
-      toast.success(t('toastAccepted', { created }));
+    onSuccess: ({ created, image_text: textId }) => {
+      toast.success(
+        t('toastAccepted', { created }),
+        textId
+          ? {
+              action: {
+                label: t('toastOpenNewText'),
+                onClick: () => router.push(`/backoffice/image-texts/${textId}`),
+              },
+            }
+          : undefined
+      );
       onDecided(proposal.id);
     },
     onError: (err) => toastApiError(t('toastAcceptFailed'), err),

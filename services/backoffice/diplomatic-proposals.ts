@@ -45,10 +45,12 @@ export function getDiplomaticProposalDepth() {
  * A 400 says why a choice does not fit, a 409 why it can't be accepted.
  */
 export function acceptDiplomaticProposal(id: number, items?: readonly number[]) {
-  return backofficePost<{ status: GraphProposalStatus; created: number; dropped: number[] }>(
-    `${BASE}${id}/accept/`,
-    items ? { items: [...items] } : {}
-  );
+  return backofficePost<{
+    status: GraphProposalStatus;
+    created: number;
+    dropped: number[];
+    image_text: number | null;
+  }>(`${BASE}${id}/accept/`, items ? { items: [...items] } : {});
 }
 
 export function rejectDiplomaticProposal(id: number, reason = '') {
