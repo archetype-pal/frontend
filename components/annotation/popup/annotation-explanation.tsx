@@ -6,12 +6,13 @@
  * the evidence, by kind, and whether it would read the shape differently.
  */
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { GlyphAssistError, explainAnnotation } from '@/services/glyph-assist';
+import { useRefusalWords } from '@/lib/refusal';
+import { GlyphAssistError, explainAnnotation, getStoredExplanation } from '@/services/glyph-assist';
 import type { ExplanationBasis } from '@/types/glyph-assist';
 
 const BASES: ExplanationBasis[] = ['form', 'context', 'comparison', 'record', 'practice'];
@@ -25,9 +26,24 @@ export function AnnotationExplanation({
 }) {
   const t = useTranslations('annotation.popup.assist');
   const locale = useLocale();
-  const explain = useMutation({ mutationFn: () => explainAnnotation(graphId, locale) });
-  const answer = explain.data;
-  const detail = explain.error instanceof GlyphAssistError ? explain.error.detail : '';
+  const refusalWords = useRefusalWords();
+  const queryClient = useQueryClient();
+  const queryKey = ['graph-explanation', graphId, locale];
+  // Lives in the cache rather than here, so it outlasts this tab being switched away from.
+  const stored = useQuery({
+    queryKey,
+    queryFn: () => getStoredExplanation(graphId, locale),
+    retry: false,
+  });
+  const explain = useMutation({
+    mutationFn: () => explainAnnotation(graphId, locale),
+    onSuccess: (answer) => queryClient.setQueryData(queryKey, answer),
+  });
+  const answer = stored.data;
+  const detail =
+    explain.error instanceof GlyphAssistError
+      ? refusalWords(explain.error.code, explain.error.detail)
+      : '';
 
   return (
     <div className="space-y-3 text-sm">
@@ -39,7 +55,7 @@ export function AnnotationExplanation({
           variant="outline"
           size="sm"
           className="h-8 gap-1.5"
-          disabled={explain.isPending}
+          disabled={explain.isPending || stored.isPending}
           onClick={() => explain.mutate()}
         >
           {explain.isPending ? (
