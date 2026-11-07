@@ -22,6 +22,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatAllographLabel } from '@/lib/allograph-labels';
 import { formatApiError } from '@/lib/backoffice/format-api-error';
+import { BackofficeApiError } from '@/services/backoffice/api-client';
+import { refusalCode, useRefusalWords } from '@/lib/refusal';
 import {
   findOnPage,
   type FindOnPageReply,
@@ -37,6 +39,7 @@ function letterLabel(letter: PageLetter): string {
 
 export function FindOnPageControl({ imageId }: { imageId: number | string }) {
   const t = useTranslations('manuscript.findOnPage');
+  const refusalWords = useRefusalWords();
   const [request, setRequest] = React.useState('');
   const [reply, setReply] = React.useState<Reply | null>(null);
   const [pending, setPending] = React.useState(false);
@@ -46,7 +49,8 @@ export function FindOnPageControl({ imageId }: { imageId: number | string }) {
     try {
       setReply(await findOnPage(imageId, body));
     } catch (error) {
-      setReply({ status: 'failed', detail: formatApiError(error) });
+      const code = error instanceof BackofficeApiError ? refusalCode(error.body) : '';
+      setReply({ status: 'failed', detail: refusalWords(code, formatApiError(error)) });
     } finally {
       setPending(false);
     }

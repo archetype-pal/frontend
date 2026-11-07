@@ -640,6 +640,11 @@
         "aiNotice": "Rédigé par {model}, un modèle de langue. Vérifiez sur la page avant de vous y fier.",
         "suggestAgainConfirm": "Cela remplace vos modifications. Redemander ?",
         "suggestEdited": "Vous avez modifié la suggestion. Accepter enregistre votre version sous votre nom."
+      },
+      "title": {
+        "editorial": "Annotation éditoriale",
+        "draft": "Nouvelle annotation",
+        "saved": "Annotation"
       }
     }
   },
@@ -1310,7 +1315,9 @@
       "descScribes": "Scribes et leurs mains",
       "titlePalaeography": "Paléographie",
       "titlePublications": "Articles",
-      "titleScribes": "Scribes"
+      "titleScribes": "Scribes",
+      "letterProposals": "{count, plural, =1 {1 proposition de lettre attend une relecture} other {# propositions de lettres attendent une relecture}}",
+      "charterProposals": "{count, plural, =1 {1 proposition sur une charte attend une relecture} other {# propositions sur des chartes attendent une relecture}}"
     },
     "scribes": {
       "title": "Scribes",
@@ -2280,7 +2287,7 @@
       "sourceGone": "Son texte a été supprimé : il n’y a rien à quoi l’enregistrer. Rejetez-la plutôt.",
       "openViewer": "Ouvrir la page dans la visionneuse",
       "opensInNewTab": "(s’ouvre dans un nouvel onglet)",
-      "openText": "Modifier le texte",
+      "openText": "Modifier le texte source",
       "proposedBy": "Proposé par {model}",
       "proposedByUnknown": "Proposé par un modèle",
       "confidence": "{value} % de confiance",
@@ -2317,7 +2324,7 @@
       "notInText": "Absent du texte",
       "normalisedAs": "normalisé en",
       "publishedType": "Type publié : {type}",
-      "unpublishedType": "Absent de la typologie publiée",
+      "unpublishedType": "Aucun type publié",
       "translationNotes": "Incertitudes relevées",
       "catalogueDate": "Date du catalogue : {date}",
       "catalogueUndated": "Le catalogue ne donne pas de date",
@@ -2364,7 +2371,8 @@
       "noneChosen": "Rien n’est coché. Cochez ce que la charte confirme, ou rejetez la proposition.",
       "leavesOut": "{count, plural, =1 {L’élément non coché est écarté} other {Les # éléments non cochés sont écartés}}, et la proposition en garde la trace.",
       "leftOutCount": "{count, plural, =1 {1 élément écarté} other {# éléments écartés}}",
-      "thisCharter": "cette charte"
+      "thisCharter": "cette charte",
+      "toastOpenNewText": "Ouvrir le nouveau texte"
     },
     "mlJobs": {
       "title": "Exécutions de modèles",
@@ -3475,11 +3483,11 @@
     },
     "pageLetters": {
       "title": "Lettres",
-      "intro": "Les modèles de lettres repèrent les lettres de cette page et versent dans la file de relecture les quelques plus probables de chaque allographe, sauf celles déjà marquées ou proposées ici. Ils tournent sur ce serveur : la page n’est envoyée nulle part ailleurs, et rien n’est facturé.",
+      "intro": "Les modèles de lettres repèrent les lettres de cette page et versent dans la file de relecture celles dont ils sont le plus sûrs, sauf celles déjà marquées ou proposées ici. Une page chargée peut en donner plus d’une centaine. Ils tournent sur ce serveur : la page n’est envoyée nulle part ailleurs, et rien n’est facturé.",
       "button": "Proposer les lettres",
       "off": "La proposition de lettres par un modèle est désactivée sur ce serveur.",
       "working": "Proposition des lettres…",
-      "workingTitle": "Les modèles de lettres lisent cette page. Cela prend moins d’une minute.",
+      "workingTitle": "Les modèles de lettres lisent cette page. Cela prend une minute ou deux.",
       "thumbnailWorking": "Proposition des lettres en cours",
       "toastQueued": "Les lettres de la page n° {id} sont en cours de proposition. Vous serez prévenu quand elles seront dans la file.",
       "toastAlready": "Les lettres de la page n° {id} sont déjà en cours de proposition.",
@@ -3630,7 +3638,7 @@
     "off": "Un administrateur doit l'activer avant que des questions puissent être posées ici.",
     "toolsError": "Impossible de charger ce que sait faire Interroger Archetype.",
     "failure": {
-      "throttled": "Cela fait beaucoup de questions en peu de temps. Veuillez réessayer dans une heure.",
+      "throttled": "Vous avez atteint la limite pour le moment.",
       "unavailable": "Interroger Archetype ne peut pas recevoir de question pour le moment.",
       "invalid": "La question n'a pas pu être envoyée.",
       "unreachable": "Interroger Archetype est injoignable. Veuillez réessayer dans un instant.",
@@ -3665,7 +3673,8 @@
       "cite_record": "Vérifier chaque citation dans la notice avant de l'utiliser",
       "fetch_witnesses": "Rechercher les témoins validés par un spécialiste",
       "fetch_relations": "Rechercher qui a accordé, attesté ou écrit une charte, d'après les relations validées par un spécialiste",
-      "compare_hands": "Comparer les mains de scribe de deux chartes"
+      "compare_hands": "Comparer les mains de scribe de deux chartes",
+      "find_hands": "Trouver les mains recensées pour un scribe ou sur une page"
     },
     "reasons": {
       "fetch_witnesses": "Aucun témoin n'a encore été extrait et validé.",
@@ -3684,7 +3693,7 @@
     "searchPlaceholder": "Rechercher, par ex. sigilli",
     "count": "{count, plural, one {# formule} other {# formules}}",
     "publishedType": "Type publié : {type}",
-    "unpublishedType": "Absent de la typologie publiée",
+    "unpublishedType": "Aucun type publié",
     "exemplarLabel": "Formulation type",
     "foundIn": "{count, plural, one {Attestée dans # charte} other {Attestée dans # chartes}}",
     "showAll": "Afficher les {count}",
@@ -3973,5 +3982,20 @@
     "startFromLink": "Commencer une leçon sur {label} ? Cela prend quelques minutes.",
     "startFromLinkUnnamed": "Commencer une leçon sur la page {id} ? Cela prend quelques minutes.",
     "startFromLinkButton": "Commencer la leçon"
+  },
+  "refusal": {
+    "switched_off": "Le modèle est désactivé sur ce serveur.",
+    "limit": "Le modèle a atteint sa limite de dépenses pour le moment. Veuillez réessayer plus tard.",
+    "throttled": "Cela fait beaucoup de demandes en peu de temps. Veuillez réessayer plus tard.",
+    "question_quota": "Vous avez atteint le nombre de questions autorisé par jour. Veuillez réessayer plus tard.",
+    "lesson_quota": "Vous avez atteint le nombre de leçons autorisé par jour. Veuillez réessayer plus tard.",
+    "lesson_questions": "Cette leçon a reçu toutes ses questions. Commencez-en une autre pour en poser davantage.",
+    "tutor_unavailable": "Veuillez réessayer plus tard.",
+    "too_large": "Ce cadre couvre une trop grande partie de la page. Tracez-le autour d’une seule forme.",
+    "no_allograph": "Seule une annotation dotée d’un allographe peut être expliquée.",
+    "no_place": "Cette annotation n’a pas d’emplacement à examiner sur la page.",
+    "no_picture": "L’image de la page n’a pas pu être récupérée pour le modèle.",
+    "no_models": "Le lecteur de ce serveur n’a aucun modèle de lettres installé.",
+    "failed": "Le modèle n’a pas pu répondre. Veuillez réessayer."
   }
 }

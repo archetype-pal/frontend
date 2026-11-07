@@ -12,6 +12,8 @@
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 
+import { useRefusalWords } from '@/lib/refusal';
+
 import { a9sToBackendFeature } from '@/lib/anno-mapping';
 import {
   GlyphAssistError,
@@ -54,6 +56,7 @@ export function useShapeAssist({
   updatePopupById: (popupId: string, updates: Partial<PopupRecord>) => void;
 }) {
   const t = useTranslations('annotation.popup.assist');
+  const refusalWords = useRefusalWords();
   const language = useLocale();
   // The popups as they are when an answer arrives, not as they were when it was asked for.
   const latestGetPopup = React.useRef(getPopupById);
@@ -117,7 +120,8 @@ export function useShapeAssist({
           draftPositionIds: suggestion.positions,
         });
       } catch (error) {
-        const detail = error instanceof GlyphAssistError ? error.detail : '';
+        const detail =
+          error instanceof GlyphAssistError ? refusalWords(error.code, error.detail) : '';
         setErrors((current) => ({ ...current, [popupId]: detail || t('failed') }));
       } finally {
         setAskingIds((current) => {
@@ -128,6 +132,7 @@ export function useShapeAssist({
       }
     },
     [
+      refusalWords,
       allographNameById,
       closeSuggestion,
       getPopupById,

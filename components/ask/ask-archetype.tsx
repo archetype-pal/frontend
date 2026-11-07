@@ -21,12 +21,14 @@ import { Label } from '@/components/ui/label';
 import { AgentAnswer } from '@/components/ask/agent-answer';
 import { AgentLimits } from '@/components/ask/agent-limits';
 import { AGENT_TOOLS_KEY, MAX_QUESTION, askFailure } from '@/lib/ask';
+import { useRefusalWords } from '@/lib/refusal';
 import { cn } from '@/lib/utils';
 import { AskError, askArchetype, getAgentTools } from '@/services/agent';
 import type { AgentRun } from '@/types/agent';
 
 export function AskArchetype() {
   const t = useTranslations('ask');
+  const refusalWords = useRefusalWords();
   const [question, setQuestion] = useState('');
   const [runs, setRuns] = useState<AgentRun[]>([]);
   const latestHeading = useRef<HTMLHeadingElement>(null);
@@ -70,7 +72,8 @@ export function AskArchetype() {
   };
 
   const failure = ask.isError ? askFailure(ask.error) : null;
-  const detail = ask.error instanceof AskError ? ask.error.detail : '';
+  const detail =
+    ask.error instanceof AskError ? refusalWords(ask.error.code, ask.error.detail) : '';
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10">

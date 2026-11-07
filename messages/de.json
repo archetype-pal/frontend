@@ -640,6 +640,11 @@
         "aiNotice": "Verfasst von {model}, einem Sprachmodell. Prüfen Sie es an der Seite, bevor Sie sich darauf verlassen.",
         "suggestAgainConfirm": "Dies ersetzt Ihre Änderungen. Erneut fragen?",
         "suggestEdited": "Sie haben den Vorschlag geändert. Beim Annehmen wird Ihre Fassung unter Ihrem Namen gespeichert."
+      },
+      "title": {
+        "editorial": "Redaktionelle Annotation",
+        "draft": "Neue Annotation",
+        "saved": "Annotation"
       }
     }
   },
@@ -1310,7 +1315,9 @@
       "descScribes": "Schreiber und ihre Hände",
       "titlePalaeography": "Paläographie",
       "titlePublications": "Beiträge",
-      "titleScribes": "Schreiber"
+      "titleScribes": "Schreiber",
+      "letterProposals": "{count, plural, =1 {1 Buchstabenvorschlag wartet auf Prüfung} other {# Buchstabenvorschläge warten auf Prüfung}}",
+      "charterProposals": "{count, plural, =1 {1 Urkundenvorschlag wartet auf Prüfung} other {# Urkundenvorschläge warten auf Prüfung}}"
     },
     "scribes": {
       "title": "Schreiber",
@@ -2280,7 +2287,7 @@
       "sourceGone": "Sein Text wurde gelöscht, daher gibt es nichts, wozu er erfasst werden könnte. Lehnen Sie ihn stattdessen ab.",
       "openViewer": "Seite im Viewer öffnen",
       "opensInNewTab": "(öffnet in einem neuen Tab)",
-      "openText": "Text bearbeiten",
+      "openText": "Quelltext bearbeiten",
       "proposedBy": "Vorgeschlagen von {model}",
       "proposedByUnknown": "Von einem Modell vorgeschlagen",
       "confidence": "{value} % Konfidenz",
@@ -2317,7 +2324,7 @@
       "notInText": "Nicht im Text",
       "normalisedAs": "normalisiert als",
       "publishedType": "Veröffentlichter Typ: {type}",
-      "unpublishedType": "Nicht in der veröffentlichten Typologie",
+      "unpublishedType": "Kein veröffentlichter Typ",
       "translationNotes": "Vermerkte Unsicherheiten",
       "catalogueDate": "Katalogdatum: {date}",
       "catalogueUndated": "Der Katalog nennt kein Datum",
@@ -2364,7 +2371,8 @@
       "noneChosen": "Nichts ist angekreuzt. Kreuzen Sie an, was die Urkunde belegt, oder lehnen Sie den Vorschlag ab.",
       "leavesOut": "{count, plural, =1 {Der nicht angekreuzte Eintrag wird} other {Die # nicht angekreuzten Einträge werden}} ausgelassen; der Vorschlag vermerkt {count, plural, =1 {ihn} other {sie}}.",
       "leftOutCount": "{count, plural, =1 {1 Eintrag ausgelassen} other {# Einträge ausgelassen}}",
-      "thisCharter": "diese Urkunde"
+      "thisCharter": "diese Urkunde",
+      "toastOpenNewText": "Neuen Text öffnen"
     },
     "mlJobs": {
       "title": "Modellläufe",
@@ -3475,11 +3483,11 @@
     },
     "pageLetters": {
       "title": "Buchstaben",
-      "intro": "Die Buchstabenmodelle finden die Buchstaben dieser Seite und legen von jedem Allograph die wenigen wahrscheinlichsten in die Prüfwarteschlange, aber keinen, der hier schon markiert oder vorgeschlagen ist. Sie laufen auf diesem Server: Die Seite geht nirgendwohin, und nichts wird berechnet.",
+      "intro": "Die Buchstabenmodelle finden die Buchstaben dieser Seite und legen diejenigen, bei denen sie am sichersten sind, in die Prüfwarteschlange, aber keinen, der hier schon markiert oder vorgeschlagen ist. Eine dichte Seite kann über hundert ergeben. Sie laufen auf diesem Server: Die Seite geht nirgendwohin, und nichts wird berechnet.",
       "button": "Buchstaben vorschlagen",
       "off": "Das Vorschlagen von Buchstaben durch ein Modell ist auf diesem Server ausgeschaltet.",
       "working": "Buchstaben werden vorgeschlagen…",
-      "workingTitle": "Die Buchstabenmodelle lesen diese Seite. Das dauert weniger als eine Minute.",
+      "workingTitle": "Die Buchstabenmodelle lesen diese Seite. Das dauert ein bis zwei Minuten.",
       "thumbnailWorking": "Buchstaben werden vorgeschlagen",
       "toastQueued": "Die Buchstaben von Seite #{id} werden vorgeschlagen. Sie erfahren, wenn sie in der Warteschlange sind.",
       "toastAlready": "Die Buchstaben von Seite #{id} werden bereits vorgeschlagen.",
@@ -3630,7 +3638,7 @@
     "off": "Eine Administratorin oder ein Administrator muss es einschalten, bevor hier Fragen gestellt werden können.",
     "toolsError": "Es konnte nicht geladen werden, was Archetype fragen kann.",
     "failure": {
-      "throttled": "Das sind viele Fragen in kurzer Zeit. Bitte versuchen Sie es in einer Stunde erneut.",
+      "throttled": "Sie haben das Limit vorerst erreicht.",
       "unavailable": "Archetype fragen kann gerade keine Frage annehmen.",
       "invalid": "Die Frage konnte nicht gesendet werden.",
       "unreachable": "Archetype fragen ist nicht erreichbar. Bitte versuchen Sie es gleich noch einmal.",
@@ -3665,7 +3673,8 @@
       "cite_record": "Jeden Beleg am Datensatz prüfen, bevor er verwendet wird",
       "fetch_witnesses": "Zeugen nachschlagen, die eine Fachperson bestätigt hat",
       "fetch_relations": "Nachschlagen, wer eine Urkunde ausgestellt, bezeugt oder geschrieben hat, wie von einer Fachperson bestätigt",
-      "compare_hands": "Die Schreiberhände zweier Urkunden vergleichen"
+      "compare_hands": "Die Schreiberhände zweier Urkunden vergleichen",
+      "find_hands": "Die für einen Schreiber oder auf einer Seite erfassten Hände finden"
     },
     "reasons": {
       "fetch_witnesses": "Bisher wurden keine Zeugen extrahiert und bestätigt.",
@@ -3684,7 +3693,7 @@
     "searchPlaceholder": "Suchen, z. B. sigilli",
     "count": "{count, plural, one {# Formel} other {# Formeln}}",
     "publishedType": "Veröffentlichter Typ: {type}",
-    "unpublishedType": "Nicht in der veröffentlichten Typologie",
+    "unpublishedType": "Kein veröffentlichter Typ",
     "exemplarLabel": "Typischer Wortlaut",
     "foundIn": "{count, plural, one {In # Urkunde belegt} other {In # Urkunden belegt}}",
     "showAll": "Alle {count} anzeigen",
@@ -3973,5 +3982,20 @@
     "startFromLink": "Eine Lektion zu {label} beginnen? Das dauert einige Minuten.",
     "startFromLinkUnnamed": "Eine Lektion zu Seite {id} beginnen? Das dauert einige Minuten.",
     "startFromLinkButton": "Lektion beginnen"
+  },
+  "refusal": {
+    "switched_off": "Das Modell ist auf diesem Server abgeschaltet.",
+    "limit": "Das Modell hat sein Ausgabenlimit vorerst erreicht. Bitte versuchen Sie es später noch einmal.",
+    "throttled": "Das sind viele Anfragen in kurzer Zeit. Bitte versuchen Sie es später noch einmal.",
+    "question_quota": "Sie haben die pro Tag erlaubte Anzahl an Fragen erreicht. Bitte versuchen Sie es später noch einmal.",
+    "lesson_quota": "Sie haben die pro Tag erlaubte Anzahl an Lektionen erreicht. Bitte versuchen Sie es später noch einmal.",
+    "lesson_questions": "Diese Lektion hat alle ihre Fragen erhalten. Beginnen Sie eine weitere, um mehr zu fragen.",
+    "tutor_unavailable": "Bitte versuchen Sie es später noch einmal.",
+    "too_large": "Dieser Rahmen deckt zu viel von der Seite ab. Ziehen Sie ihn um eine einzelne Form.",
+    "no_allograph": "Nur eine Annotation mit einem Allographen kann erklärt werden.",
+    "no_place": "Diese Annotation hat keine Stelle auf der Seite, die sich betrachten ließe.",
+    "no_picture": "Das Bild der Seite konnte für das Modell nicht abgerufen werden.",
+    "no_models": "Auf diesem Server sind keine Buchstabenmodelle installiert.",
+    "failed": "Das Modell konnte nicht antworten. Bitte versuchen Sie es noch einmal."
   }
 }

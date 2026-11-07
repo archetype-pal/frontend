@@ -11,13 +11,15 @@
  */
 
 import { apiFetch, proxyFetch } from '@/lib/api-fetch';
+import { refusalCode } from '@/lib/refusal';
 import type { LearnPage, LearnStatus, TutorSession } from '@/types/learn';
 
 /** A request the tutor would not take. `status` is 0 when it never reached the API. */
 export class LearnError extends Error {
   constructor(
     readonly status: number,
-    readonly detail: string
+    readonly detail: string,
+    readonly code: string = ''
   ) {
     super(detail || `The tutor answered ${status}`);
     this.name = 'LearnError';
@@ -35,19 +37,24 @@ function learnFetch(path: string, signedIn: boolean, init?: RequestInit): Promis
  * The words the API gave for refusing, if any: `{detail}` from the tutor and
  * the proxy, or a serializer's `{field: [message]}`.
  */
-async function refusal(response: Response): Promise<string> {
+async function refusal(response: Response): Promise<{ detail: string; code: string }> {
+  const none = { detail: '', code: '' };
   try {
     const body: unknown = await response.json();
-    if (!body || typeof body !== 'object') return '';
-    if ('detail' in body && typeof body.detail === 'string') return body.detail;
+    if (!body || typeof body !== 'object') return none;
+    if ('detail' in body && typeof body.detail === 'string') {
+      return { detail: body.detail, code: refusalCode(body) };
+    }
     for (const value of Object.values(body)) {
-      if (typeof value === 'string') return value;
-      if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+      if (typeof value === 'string') return { ...none, detail: value };
+      if (Array.isArray(value) && typeof value[0] === 'string') {
+        return { ...none, detail: value[0] };
+      }
     }
   } catch {
     // A gateway's error page is HTML; the status is all there is.
   }
-  return '';
+  return none;
 }
 
 async function send(path: string, signedIn: boolean, init?: RequestInit): Promise<Response> {
@@ -57,7 +64,10 @@ async function send(path: string, signedIn: boolean, init?: RequestInit): Promis
   } catch {
     throw new LearnError(0, '');
   }
-  if (!response.ok) throw new LearnError(response.status, await refusal(response));
+  if (!response.ok) {
+    const { detail, code } = await refusal(response);
+    throw new LearnError(response.status, detail, code);
+  }
   return response;
 }
 

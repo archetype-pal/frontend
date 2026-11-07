@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { RelativeTime } from '@/components/backoffice/relative-time';
 import { useAuth } from '@/contexts/auth-context';
+import { refusalCode, useRefusalWords } from '@/lib/refusal';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 import { getMLJobSummary } from '@/services/backoffice/ml-jobs';
 import {
@@ -136,6 +137,7 @@ export function PageLettersSection({
   lettersOn: boolean | undefined;
 }) {
   const t = useTranslations('backoffice.pageLetters');
+  const refusalWords = useRefusalWords();
   const follow = useFollowLetters();
   const { data: latest } = useQuery({
     queryKey: backofficeKeys.pageLetters.page(pageId),
@@ -156,8 +158,11 @@ export function PageLettersSection({
         toast.info(t('toastAlready', { id: pageId }));
         return;
       }
-      const detail = typeof body.detail === 'string' ? body.detail : undefined;
-      toast.error(t('toastAskFailed', { id: pageId }), { description: detail });
+      const detail = refusalWords(
+        refusalCode(body),
+        typeof body.detail === 'string' ? body.detail : ''
+      );
+      toast.error(t('toastAskFailed', { id: pageId }), { description: detail || undefined });
     },
   });
 

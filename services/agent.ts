@@ -8,13 +8,15 @@
  */
 
 import { apiFetch } from '@/lib/api-fetch';
+import { refusalCode } from '@/lib/refusal';
 import type { AgentRun, AgentTools } from '@/types/agent';
 
 /** A question the service would not take. `status` is 0 when it was never reached. */
 export class AskError extends Error {
   constructor(
     readonly status: number,
-    readonly detail: string
+    readonly detail: string,
+    readonly code: string = ''
   ) {
     super(detail || `Ask Archetype answered ${status}`);
     this.name = 'AskError';
@@ -44,15 +46,17 @@ export async function askArchetype(question: string): Promise<AgentRun> {
   }
   if (!response.ok) {
     let detail = '';
+    let code = '';
     try {
       const body: unknown = await response.json();
+      code = refusalCode(body);
       if (body && typeof body === 'object' && 'detail' in body && typeof body.detail === 'string') {
         detail = body.detail;
       }
     } catch {
       // A proxy's error page is HTML; the status is all there is.
     }
-    throw new AskError(response.status, detail);
+    throw new AskError(response.status, detail, code);
   }
   return response.json();
 }

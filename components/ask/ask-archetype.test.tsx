@@ -282,7 +282,7 @@ describe('<AskArchetype>', () => {
     await ask();
 
     expect(await screen.findByRole('alert')).not.toBeNull();
-    expect(screen.getByText(/a lot of questions in a short time/)).not.toBeNull();
+    expect(screen.getByText(/reached the limit for now/)).not.toBeNull();
     expect((box() as HTMLTextAreaElement).value).toBe('Which charters are dated?');
   });
 

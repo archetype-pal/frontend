@@ -4,6 +4,7 @@
  */
 
 import { proxyFetch } from '@/lib/api-fetch';
+import { refusalCode } from '@/lib/refusal';
 import type { AnnotationExplanationData, ShapeSuggestion } from '@/types/glyph-assist';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
@@ -12,7 +13,8 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' };
 export class GlyphAssistError extends Error {
   constructor(
     readonly status: number,
-    readonly detail: string
+    readonly detail: string,
+    readonly code: string = ''
   ) {
     super(detail || `The model's route answered ${status}`);
     this.name = 'GlyphAssistError';
@@ -36,7 +38,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
       reply && typeof reply === 'object' && 'detail' in reply && typeof reply.detail === 'string'
         ? reply.detail
         : '';
-    throw new GlyphAssistError(response.status, detail);
+    throw new GlyphAssistError(response.status, detail, refusalCode(reply));
   }
   return response.json() as Promise<T>;
 }
@@ -57,6 +59,18 @@ export function suggestShape(
 
 export function rejectSuggestion(id: number): Promise<{ status: string }> {
   return post(`/api/v1/vision/suggestions/${id}/reject/`, {});
+}
+
+/** The answer already paid for, if what it rests on has not changed. Asks no model. */
+export async function getStoredExplanation(
+  graphId: number,
+  language: string
+): Promise<AnnotationExplanationData | null> {
+  const response = await proxyFetch(
+    `/api/v1/vision/graphs/${graphId}/explain/?language=${encodeURIComponent(language)}`,
+    { cache: 'no-store' }
+  );
+  return response.ok ? (response.json() as Promise<AnnotationExplanationData>) : null;
 }
 
 export function explainAnnotation(

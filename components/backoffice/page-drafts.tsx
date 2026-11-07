@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { IiifImage } from '@/components/ui/iiif-image';
 import { useAuth } from '@/contexts/auth-context';
+import { refusalCode, useRefusalWords } from '@/lib/refusal';
 import { BackofficeApiError } from '@/services/backoffice/api-client';
 import { getMLJobSummary } from '@/services/backoffice/ml-jobs';
 import {
@@ -182,6 +183,7 @@ export function PageDraftDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations('backoffice.pageDraft');
+  const refusalWords = useRefusalWords();
   const router = useRouter();
   const follow = useFollowDraft();
 
@@ -195,7 +197,10 @@ export function PageDraftDialog({
     onError: (err) => {
       onOpenChange(false);
       const body = err instanceof BackofficeApiError ? err.body : {};
-      const detail = typeof body.detail === 'string' ? body.detail : undefined;
+      const detail = refusalWords(
+        refusalCode(body),
+        typeof body.detail === 'string' ? body.detail : ''
+      );
       if (body.draft && typeof body.draft === 'object') {
         // Someone asked first: follow theirs.
         follow(body.draft as PageDraft);
@@ -212,7 +217,7 @@ export function PageDraftDialog({
         });
         return;
       }
-      toast.error(t('toastAskFailed', { id: page.id }), { description: detail });
+      toast.error(t('toastAskFailed', { id: page.id }), { description: detail || undefined });
     },
   });
 

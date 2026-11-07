@@ -640,6 +640,11 @@
         "aiNotice": "Written by {model}, a language model. Check it against the page before you rely on it.",
         "suggestAgainConfirm": "This replaces your changes. Ask again?",
         "suggestEdited": "You have changed the suggestion. Accepting saves your version under your name."
+      },
+      "title": {
+        "editorial": "Editorial annotation",
+        "draft": "New annotation",
+        "saved": "Annotation"
       }
     }
   },
@@ -1310,7 +1315,9 @@
       "descScribes": "Scribes and their hands",
       "titlePalaeography": "Palaeography",
       "titlePublications": "Posts",
-      "titleScribes": "Scribes"
+      "titleScribes": "Scribes",
+      "letterProposals": "{count, plural, =1 {1 letter proposal waits for review} other {# letter proposals wait for review}}",
+      "charterProposals": "{count, plural, =1 {1 charter proposal waits for review} other {# charter proposals wait for review}}"
     },
     "scribes": {
       "title": "Scribes",
@@ -2280,7 +2287,7 @@
       "sourceGone": "Its text has been deleted, so there is nothing to record this against. Reject it instead.",
       "openViewer": "Open the page in the viewer",
       "opensInNewTab": "(opens in a new tab)",
-      "openText": "Edit the text",
+      "openText": "Edit the source text",
       "proposedBy": "Proposed by {model}",
       "proposedByUnknown": "Proposed by a model",
       "confidence": "{value}% confidence",
@@ -2317,7 +2324,7 @@
       "notInText": "Not in the text",
       "normalisedAs": "normalised as",
       "publishedType": "Published type: {type}",
-      "unpublishedType": "Not in the published typology",
+      "unpublishedType": "No published type",
       "translationNotes": "Noted uncertainties",
       "catalogueDate": "Catalogue date: {date}",
       "catalogueUndated": "The catalogue gives no date",
@@ -2364,7 +2371,8 @@
       "noneChosen": "Nothing is ticked. Tick what the charter supports, or reject the proposal.",
       "leavesOut": "{count, plural, =1 {The unticked item is} other {The # unticked items are}} left out, and the proposal keeps a note of {count, plural, =1 {it} other {them}}.",
       "leftOutCount": "{count, plural, =1 {1 item left out} other {# items left out}}",
-      "thisCharter": "this charter"
+      "thisCharter": "this charter",
+      "toastOpenNewText": "Open the new text"
     },
     "mlJobs": {
       "title": "Model runs",
@@ -3475,11 +3483,11 @@
     },
     "pageLetters": {
       "title": "Letters",
-      "intro": "The letter models find this page's letters and file the likeliest few of each allograph in the review queue, none already marked or proposed here. They run on this server: the page is sent nowhere else, and nothing is billed.",
+      "intro": "The letter models find this page's letters and file the ones they are surest of in the review queue, none already marked or proposed here. A busy page can yield over a hundred. They run on this server: the page is sent nowhere else, and nothing is billed.",
       "button": "Propose letters",
       "off": "Proposing letters with a model is switched off on this server.",
       "working": "Proposing letters…",
-      "workingTitle": "The letter models are reading this page. It takes under a minute.",
+      "workingTitle": "The letter models are reading this page. It takes a minute or two.",
       "thumbnailWorking": "Proposing letters",
       "toastQueued": "Page #{id}'s letters are being proposed. You will be told when they are in the queue.",
       "toastAlready": "Page #{id}'s letters are already being proposed.",
@@ -3630,7 +3638,7 @@
     "off": "An administrator has to switch it on before questions can be asked here.",
     "toolsError": "Could not load what Ask Archetype can do.",
     "failure": {
-      "throttled": "That is a lot of questions in a short time. Please try again in an hour.",
+      "throttled": "You have reached the limit for now.",
       "unavailable": "Ask Archetype cannot take a question right now.",
       "invalid": "The question could not be sent.",
       "unreachable": "Could not reach Ask Archetype. Please try again in a moment.",
@@ -3665,7 +3673,8 @@
       "cite_record": "Check each citation against the record before it is used",
       "fetch_witnesses": "Look up witnesses a scholar has approved",
       "fetch_relations": "Look up who granted, witnessed or wrote a charter, as a scholar has approved",
-      "compare_hands": "Compare the scribal hands of two charters"
+      "compare_hands": "Compare the scribal hands of two charters",
+      "find_hands": "Find the scribal hands recorded for a scribe or on a page"
     },
     "reasons": {
       "fetch_witnesses": "No witnesses have been extracted and approved yet.",
@@ -3684,7 +3693,7 @@
     "searchPlaceholder": "Search, e.g. sigilli",
     "count": "{count, plural, one {# formula} other {# formulae}}",
     "publishedType": "Published type: {type}",
-    "unpublishedType": "Not in the published typology",
+    "unpublishedType": "No published type",
     "exemplarLabel": "Typical wording",
     "foundIn": "{count, plural, one {Found in # charter} other {Found in # charters}}",
     "showAll": "Show all {count}",
@@ -3973,5 +3982,20 @@
     "startFromLink": "Start a lesson on {label}? It takes a few minutes.",
     "startFromLinkUnnamed": "Start a lesson on page {id}? It takes a few minutes.",
     "startFromLinkButton": "Start the lesson"
+  },
+  "refusal": {
+    "switched_off": "The model is switched off on this server.",
+    "limit": "The model has reached its spending limit for now. Please try again later.",
+    "throttled": "That is a lot of requests in a short time. Please try again later.",
+    "question_quota": "You have reached the number of questions allowed in a day. Please try again later.",
+    "lesson_quota": "You have reached the number of lessons allowed in a day. Please try again later.",
+    "lesson_questions": "This lesson has taken all its questions. Start another to ask more.",
+    "tutor_unavailable": "Please try again later.",
+    "too_large": "That box covers too much of the page. Draw it around one shape.",
+    "no_allograph": "Only an annotation with an allograph can be explained.",
+    "no_place": "This annotation has no place on the page to look at.",
+    "no_picture": "The page's image could not be fetched for the model.",
+    "no_models": "The reader on this server has no letter models installed.",
+    "failed": "The model could not answer. Please try again."
   }
 }
