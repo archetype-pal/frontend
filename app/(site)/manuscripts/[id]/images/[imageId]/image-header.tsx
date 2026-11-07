@@ -4,6 +4,7 @@ import { ManuscriptTabs } from '@/components/manuscript/manuscript-tabs';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchManuscript } from '@/services/manuscripts';
+import { getServerAuthToken } from '@/lib/auth-token-server';
 import { fetchImageTextsForImage } from '@/services/image-texts';
 import { fetchOtherImages } from '@/services/manuscript-image-tabs';
 import { renderPublicDescription } from '@/lib/description-public';
@@ -33,7 +34,9 @@ export async function ImageHeader({ id, imageId, image }: ImageHeaderProps) {
     await Promise.all([
       fetchManuscript(image.item_part).catch(() => null),
       fetchOtherImages(image.item_part, image.id).catch(() => []),
-      fetchImageTextsForImage(imageId).catch(() => []),
+      getServerAuthToken()
+        .then((token) => fetchImageTextsForImage(imageId, token))
+        .catch(() => []),
       readSiteFeatures(),
       getLocale(),
       readModelLabels(),

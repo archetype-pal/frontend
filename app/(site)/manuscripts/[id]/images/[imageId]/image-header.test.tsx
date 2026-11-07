@@ -21,6 +21,7 @@ vi.mock('@/components/common/backoffice-link', () => ({ BackofficeLink: () => nu
 vi.mock('@/services/manuscripts', () => ({ fetchManuscript: async () => null }));
 vi.mock('@/services/manuscript-image-tabs', () => ({ fetchOtherImages: async () => [{}, {}] }));
 vi.mock('@/services/image-texts', () => ({ fetchImageTextsForImage: async () => [{}] }));
+vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken: async () => 'abc' }));
 vi.mock('@/services/annotations', () => ({ fetchAnnotationsForImage: fetchAnnotationsMock }));
 
 import { ImageHeader } from './image-header';

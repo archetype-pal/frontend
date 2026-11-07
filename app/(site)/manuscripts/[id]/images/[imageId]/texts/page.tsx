@@ -1,3 +1,4 @@
+import { getServerAuthToken } from '@/lib/auth-token-server';
 import { fetchImageTextsForImage } from '@/services/image-texts';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { StaffEditLink } from '@/components/text/staff-edit-link';
@@ -9,7 +10,7 @@ interface PageProps {
 
 export default async function TextsTabPage({ params }: PageProps) {
   const { imageId } = await params;
-  const texts = await fetchImageTextsForImage(imageId);
+  const texts = await fetchImageTextsForImage(imageId, await getServerAuthToken());
 
   if (texts.length === 0) {
     return (
