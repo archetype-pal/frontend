@@ -6,7 +6,8 @@ export type AnnotationPopupEditorMode =
   | 'standard_draft'
   | 'standard_existing'
   | 'editorial_draft'
-  | 'editorial_existing';
+  | 'editorial_existing'
+  | 'editorial_read_only';
 
 export type A9sFeatureDetail = {
   id: number;
@@ -134,6 +135,8 @@ export interface ViewerCapabilities {
    * The settings panel remains shared; its contents differ by capability.
    */
   canUseEditorSettings: boolean;
+
+  canEditTexts: boolean;
 }
 
 export type AnnotationEditorSource = 'persisted' | 'draft';
@@ -156,6 +159,7 @@ export interface AnnotationPopupCapabilities {
   canEditDraft: boolean;
   canPersistDraft: boolean;
   canViewEditorMeta: boolean;
+  canEditEditorial: boolean;
 }
 
 export interface AnnotationPopupMetaSummary {

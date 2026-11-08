@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Allograph } from '@/types/allographs';
 import type { BackendGraph } from '@/services/annotations';
+import type { ImageTextDetail } from '@/services/image-texts';
+import type { ViewerCapabilities } from '@/types/annotation-viewer';
 
 // The OpenSeadragon viewer is loaded via next/dynamic(ssr:false); stub it so the
 // test doesn't pull in the real (canvas-heavy) annotorious module — but capture
@@ -106,9 +108,12 @@ vi.mock('@/services/image-texts', () => ({
   linkRegionToElement: vi.fn(),
 }));
 
+import { Toaster, toast } from 'sonner';
+
 import ManuscriptViewer from './manuscript-viewer';
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
-import { EDITING_CAPS } from '@/test/annotation-fixtures';
+import { fetchImageTextsForImage } from '@/services/image-texts';
+import { EDITING_CAPS, makeCaps } from '@/test/annotation-fixtures';
 
 // Full editing capabilities so the create/save/delete paths are active in tests.
 
@@ -580,5 +585,225 @@ describe('ManuscriptViewer smoke test', () => {
       await screen.findByRole('img', { name: 'Annotation thumbnail: db:image-1' })
     ).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Annotation thumbnail: db:text-1' })).toBeNull();
+  });
+
+  describe('text panel', () => {
+    const transcription: ImageTextDetail = {
+      id: 7,
+      item_image: fakeImage.id,
+      type: 'Transcription',
+      content: '<p>Willelmus rex</p>',
+      status: 'Live',
+      language: 'la',
+      created: '2026-01-01T00:00:00Z',
+      modified: '2026-01-01T00:00:00Z',
+    };
+
+    const renderWithText = (capabilities?: ViewerCapabilities) => {
+      localStorage.setItem('annotationViewerSettings', JSON.stringify({ viewMode: 'text' }));
+      vi.mocked(fetchImageTextsForImage).mockResolvedValue([transcription]);
+      render(
+        <ManuscriptViewer
+          imageId="4432"
+          mode={capabilities ? 'editor' : 'public'}
+          capabilities={capabilities}
+        />
+      );
+    };
+
+    const pressKeysWithSpyApi = async (keys: string[], spies: Record<string, () => void>) => {
+      const exposeApi = annotoriousPropsRef.current?.exposeApi;
+      expect(exposeApi).toBeDefined();
+      const enablePan = vi.fn();
+      const api = new Proxy<Record<string, () => void>>(
+        { ...spies, enablePan },
+        { get: (target, prop) => (typeof prop === 'string' && target[prop]) || (() => undefined) }
+      );
+      act(() => {
+        exposeApi!(api);
+      });
+      const panCalls = enablePan.mock.calls.length;
+
+      keys.forEach((key) => fireEvent.keyDown(window, { key }));
+      fireEvent.keyDown(window, { key: 'g' });
+      await waitFor(() => expect(enablePan.mock.calls.length).toBeGreaterThan(panCalls));
+    };
+
+    afterEach(() => {
+      localStorage.clear();
+      vi.mocked(fetchImageTextsForImage).mockResolvedValue([]);
+    });
+
+    it('shows the text read only to a user who may annotate but not manage', async () => {
+      renderWithText(makeCaps({ canEditTexts: false }));
+
+      expect(await screen.findByText('Willelmus rex')).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Download Transcription as TEI' })).toBeTruthy();
+      expect(screen.queryByRole('link', { name: 'Open in the full editor' })).toBeNull();
+    });
+
+    it('offers the full editor and region drawing to a user who may manage', async () => {
+      renderWithText(EDITING_CAPS);
+
+      expect(await screen.findByRole('link', { name: 'Open in the full editor' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Draw region to link (d / space)' })).toBeTruthy();
+    });
+
+    it('offers no region drawing to a user who may annotate but not manage', async () => {
+      renderWithText(makeCaps({ canEditTexts: false }));
+      await screen.findByText('Willelmus rex');
+
+      expect(screen.queryByRole('button', { name: 'Draw region to link (d / space)' })).toBeNull();
+
+      const enableDraw = vi.fn();
+      await pressKeysWithSpyApi(['d', ' '], { enableDraw });
+      expect(enableDraw).not.toHaveBeenCalled();
+    });
+
+    it('drops a Draw armed before the texts load once the view turns to Text', async () => {
+      localStorage.setItem('annotationViewerSettings', JSON.stringify({ viewMode: 'text' }));
+      let showTexts: (texts: ImageTextDetail[]) => void = () => undefined;
+      vi.mocked(fetchImageTextsForImage).mockReturnValue(
+        new Promise((resolve) => {
+          showTexts = resolve;
+        })
+      );
+      render(
+        <ManuscriptViewer
+          imageId="4432"
+          mode="editor"
+          capabilities={makeCaps({ canEditTexts: false })}
+        />
+      );
+      await screen.findByRole('button', { name: 'Draw (d / space)' });
+
+      const enablePan = vi.fn();
+      const enableDraw = vi.fn();
+      const api = new Proxy<Record<string, () => void>>(
+        { enablePan, enableDraw },
+        { get: (target, prop) => (typeof prop === 'string' && target[prop]) || (() => undefined) }
+      );
+      act(() => {
+        annotoriousPropsRef.current!.exposeApi!(api);
+      });
+      fireEvent.keyDown(window, { key: 'd' });
+      await waitFor(() => expect(enableDraw).toHaveBeenCalledTimes(1));
+      const panCalls = enablePan.mock.calls.length;
+
+      act(() => showTexts([transcription]));
+      await screen.findByText('Willelmus rex');
+
+      await waitFor(() => expect(enablePan.mock.calls.length).toBeGreaterThan(panCalls));
+    });
+
+    it('offers no region reshaping to a visitor', async () => {
+      renderWithText();
+      await screen.findByText('Willelmus rex');
+
+      expect(screen.queryByRole('button', { name: 'Reshape region (m)' })).toBeNull();
+
+      const enableModify = vi.fn();
+      await pressKeysWithSpyApi(['m'], { enableModify });
+      expect(enableModify).not.toHaveBeenCalled();
+    });
+
+    it('offers region reshaping to a user who may annotate', async () => {
+      renderWithText(makeCaps({ canEditTexts: false }));
+
+      expect(await screen.findByRole('button', { name: 'Reshape region (m)' })).toBeTruthy();
+    });
+  });
+
+  it('keeps Modify outside Text view for a visitor', async () => {
+    render(<ManuscriptViewer imageId="4432" mode="public" />);
+
+    expect(await screen.findByRole('button', { name: 'Modify (m)' })).toBeTruthy();
+  });
+
+  it('keeps drawing outside Text view for a user who may annotate but not manage', async () => {
+    render(
+      <ManuscriptViewer
+        imageId="4432"
+        mode="editor"
+        capabilities={makeCaps({ canEditTexts: false })}
+      />
+    );
+
+    expect(await screen.findByRole('button', { name: 'Draw (d / space)' })).toBeTruthy();
+  });
+
+  it('lets Modify change only what the user may save', async () => {
+    const saved = { ...draftAnnotation('db:1'), _meta: { annotationType: 'public' } };
+    const editorial = { ...draftAnnotation('db:2'), _meta: { annotationType: 'editorial' } };
+    const draft = draftAnnotation('local-1');
+    const canModifyFor = async (capabilities?: ViewerCapabilities) => {
+      const { unmount } = render(
+        <ManuscriptViewer
+          imageId="4432"
+          mode={capabilities ? 'editor' : 'public'}
+          capabilities={capabilities}
+        />
+      );
+      await screen.findByRole('button', { name: 'Modify (m)' });
+      const canModify = annotoriousPropsRef.current?.canModifyAnnotation;
+      const result = [draft, saved, editorial].map((annotation) => canModify?.(annotation));
+      unmount();
+      return result;
+    };
+
+    expect(await canModifyFor()).toEqual([true, false, false]);
+    expect(
+      await canModifyFor(
+        makeCaps({ canCreateEditorialAnnotations: false, canPersistEditorialAnnotations: false })
+      )
+    ).toEqual([true, true, false]);
+    expect(await canModifyFor(EDITING_CAPS)).toEqual([true, true, true]);
+  });
+
+  it('warns when Modify meets a shape the user may not change', async () => {
+    const saved = { ...draftAnnotation('db:1'), _meta: { annotationType: 'public' } };
+    const editorial = { ...draftAnnotation('db:2'), _meta: { annotationType: 'editorial' } };
+    const annotator = makeCaps({
+      canCreateEditorialAnnotations: false,
+      canPersistEditorialAnnotations: false,
+    });
+    const modifyThenSelect = async (
+      annotation: typeof saved,
+      capabilities?: ViewerCapabilities
+    ) => {
+      const view = render(
+        <>
+          <Toaster />
+          <ManuscriptViewer
+            imageId="4432"
+            mode={capabilities ? 'editor' : 'public'}
+            capabilities={capabilities}
+          />
+        </>
+      );
+      fireEvent.click(await screen.findByRole('button', { name: 'Modify (m)' }));
+      act(() => {
+        annotoriousPropsRef.current!.onSelect?.(annotation);
+      });
+      return view;
+    };
+
+    const visitor = await modifyThenSelect(saved);
+    expect(await screen.findByText('Sign in to edit saved annotations.')).toBeTruthy();
+    visitor.unmount();
+    act(() => {
+      toast.dismiss();
+    });
+
+    const editorialRefused = await modifyThenSelect(editorial, annotator);
+    expect(await screen.findByText('Only an admin can edit editorial annotations.')).toBeTruthy();
+    editorialRefused.unmount();
+    act(() => {
+      toast.dismiss();
+    });
+
+    await modifyThenSelect(saved, annotator);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByText('Cannot edit this annotation')).toBeNull();
   });
 });

@@ -475,6 +475,8 @@
     "delete": {
       "draftConfirm": "{kind, select, editorial {Diesen editorischen Entwurf löschen?} other {Diesen öffentlichen Entwurf löschen?}}\n\nEr wird lokal verworfen.",
       "savedConfirm": "{kind, select, editorial {Diese gespeicherte editorische Annotation löschen?} other {Diese gespeicherte öffentliche Annotation löschen?}}\n\nDrücken Sie Speichern, um sie in den Papierkorb zu verschieben, wo ein Administrator sie wiederherstellen kann.",
+      "editorialDeniedTitle": "Diese Annotation kann nicht gelöscht werden",
+      "editorialDeniedDescription": "Nur ein Administrator kann editorische Annotationen löschen.",
       "bulkDrafts": "{total} ausgewählte Annotationen löschen?\n\nDadurch werden {draftCount, plural, =1 {# Entwurfsannotation} other {# Entwurfsannotationen}} lokal verworfen.",
       "regionConfirm": "Diese verknüpfte Region löschen?\n\nSie wird in den Papierkorb verschoben und verschwindet aus dem Bild. Ihre Verknüpfung mit der Transkription bleibt erhalten, sodass ein Administrator beides wiederherstellen kann.",
       "removeRegion": "Region entfernen",
@@ -482,6 +484,11 @@
       "regionTrashedDescription": "Ein Administrator kann sie mit ihrer Verknüpfung zur Transkription wiederherstellen.",
       "regionFailedTitle": "Löschen fehlgeschlagen",
       "regionFailedDescription": "Die Region konnte nicht gelöscht werden."
+    },
+    "modify": {
+      "deniedTitle": "Diese Annotation kann nicht bearbeitet werden",
+      "editorialDeniedDescription": "Nur ein Administrator kann editorische Annotationen bearbeiten.",
+      "signInDescription": "Melden Sie sich an, um gespeicherte Annotationen zu bearbeiten."
     },
     "entityCard": {
       "person": "Person",

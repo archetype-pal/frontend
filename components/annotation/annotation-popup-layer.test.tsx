@@ -28,6 +28,9 @@ vi.mock('./annotation-popup-card', () => ({
       data-can-use-collection={String(
         (props.popupCapabilities as { canUseCollection?: boolean }).canUseCollection
       )}
+      data-editor-mode={String(props.popupEditorMode)}
+      data-can-save={String(props.canSaveAnnotationShortcut)}
+      data-can-delete={String(props.canDeleteAnnotationShortcut)}
     >
       {/* Buttons exposing the wiring we want to test. */}
       <button
@@ -327,6 +330,35 @@ describe('AnnotationPopupLayer', () => {
     expect(screen.getByTestId('popup-card').dataset.canUseCollection).toBe('true');
     fireEvent.click(screen.getByTestId('toggle-collection'));
     expect(props.onToggleAnnotationCollection).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a saved editorial annotation read only, with no save or delete, to a user who may not edit it', () => {
+    render(
+      <AnnotationPopupLayer
+        {...defaults()}
+        viewerCapabilities={makeCaps({
+          canCreateEditorialAnnotations: false,
+          canPersistEditorialAnnotations: false,
+        })}
+        visiblePopupRecords={[
+          makePopup({
+            id: 'db:99',
+            annotation: {
+              id: 'db:99',
+              type: 'Annotation',
+              target: {},
+              _meta: { annotationType: 'editorial' },
+            },
+          }),
+        ]}
+        activePopupId="db:99"
+      />
+    );
+
+    const card = screen.getByTestId('popup-card');
+    expect(card.dataset.editorMode).toBe('editorial_read_only');
+    expect(card.dataset.canSave).toBe('false');
+    expect(card.dataset.canDelete).toBe('false');
   });
 
   it('toggle-collection is a no-op when the annotation has no collection item', () => {

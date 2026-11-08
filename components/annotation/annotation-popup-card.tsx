@@ -145,6 +145,7 @@ export function AnnotationPopupCard({
   const isStandardExisting = popupEditorMode === 'standard_existing';
   const isEditorialDraft = popupEditorMode === 'editorial_draft';
   const isEditorialExisting = popupEditorMode === 'editorial_existing';
+  const isEditorialReadOnly = popupEditorMode === 'editorial_read_only';
 
   const annotationKindLabel =
     isStandardDraft || isStandardExisting
@@ -222,9 +223,10 @@ export function AnnotationPopupCard({
           popupTab={popupTab}
           onPopupTabChange={onPopupTabChange}
         />
-      ) : isEditorialDraft || isEditorialExisting ? (
+      ) : isEditorialDraft || isEditorialExisting || isEditorialReadOnly ? (
         <EditorialAnnotationEditor
-          isExisting={isEditorialExisting}
+          isExisting={isEditorialExisting || isEditorialReadOnly}
+          readOnly={isEditorialReadOnly}
           hasLocalChanges={hasLocalChanges}
           metaSummary={metaSummary}
           popupTab={popupTab}
