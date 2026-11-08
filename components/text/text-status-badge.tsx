@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ImageTextDetail } from '@/services/image-texts';
 
 const STATUS_PALETTE: Record<ImageTextDetail['status'], string> = {
@@ -8,9 +9,10 @@ const STATUS_PALETTE: Record<ImageTextDetail['status'], string> = {
 };
 
 export function TextStatusBadge({ status }: { status: ImageTextDetail['status'] }) {
+  const t = useTranslations('manuscript.text.status');
   return (
     <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_PALETTE[status]}`}>
-      {status}
+      {t(status)}
     </span>
   );
 }

@@ -356,7 +356,13 @@
       "openInEditor": "Im vollständigen Editor öffnen",
       "downloadTei": "{type} als TEI herunterladen",
       "hidePanel": "Textbereich ausblenden",
-      "loadingEditor": "Editor wird geladen…"
+      "loadingEditor": "Editor wird geladen…",
+      "status": {
+        "Draft": "Entwurf",
+        "Review": "In Prüfung",
+        "Reviewed": "Geprüft",
+        "Live": "Veröffentlicht"
+      }
     },
     "sections": {
       "msDesc": "Handschriftenbeschreibung",

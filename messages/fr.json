@@ -356,7 +356,13 @@
       "openInEditor": "Ouvrir dans l'éditeur complet",
       "downloadTei": "Télécharger {type} en TEI",
       "hidePanel": "Masquer le panneau de texte",
-      "loadingEditor": "Chargement de l'éditeur…"
+      "loadingEditor": "Chargement de l'éditeur…",
+      "status": {
+        "Draft": "Brouillon",
+        "Review": "En relecture",
+        "Reviewed": "Relu",
+        "Live": "Publié"
+      }
     },
     "sections": {
       "msDesc": "Description du manuscrit",
