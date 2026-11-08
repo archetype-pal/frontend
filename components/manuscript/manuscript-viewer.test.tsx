@@ -108,6 +108,8 @@ vi.mock('@/services/image-texts', () => ({
   linkRegionToElement: vi.fn(),
 }));
 
+import { Toaster, toast } from 'sonner';
+
 import ManuscriptViewer from './manuscript-viewer';
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 import { fetchImageTextsForImage } from '@/services/image-texts';
@@ -756,5 +758,52 @@ describe('ManuscriptViewer smoke test', () => {
       )
     ).toEqual([true, true, false]);
     expect(await canModifyFor(EDITING_CAPS)).toEqual([true, true, true]);
+  });
+
+  it('warns when Modify meets a shape the user may not change', async () => {
+    const saved = { ...draftAnnotation('db:1'), _meta: { annotationType: 'public' } };
+    const editorial = { ...draftAnnotation('db:2'), _meta: { annotationType: 'editorial' } };
+    const annotator = makeCaps({
+      canCreateEditorialAnnotations: false,
+      canPersistEditorialAnnotations: false,
+    });
+    const modifyThenSelect = async (
+      annotation: typeof saved,
+      capabilities?: ViewerCapabilities
+    ) => {
+      const view = render(
+        <>
+          <Toaster />
+          <ManuscriptViewer
+            imageId="4432"
+            mode={capabilities ? 'editor' : 'public'}
+            capabilities={capabilities}
+          />
+        </>
+      );
+      fireEvent.click(await screen.findByRole('button', { name: 'Modify (m)' }));
+      act(() => {
+        annotoriousPropsRef.current!.onSelect?.(annotation);
+      });
+      return view;
+    };
+
+    const visitor = await modifyThenSelect(saved);
+    expect(await screen.findByText('Sign in to edit saved annotations.')).toBeTruthy();
+    visitor.unmount();
+    act(() => {
+      toast.dismiss();
+    });
+
+    const editorialRefused = await modifyThenSelect(editorial, annotator);
+    expect(await screen.findByText('Only an admin can edit editorial annotations.')).toBeTruthy();
+    editorialRefused.unmount();
+    act(() => {
+      toast.dismiss();
+    });
+
+    await modifyThenSelect(saved, annotator);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByText('Cannot edit this annotation')).toBeNull();
   });
 });
