@@ -485,6 +485,11 @@
       "regionFailedTitle": "Échec de la suppression",
       "regionFailedDescription": "Impossible de supprimer la région."
     },
+    "modify": {
+      "deniedTitle": "Impossible de modifier cette annotation",
+      "editorialDeniedDescription": "Seul un administrateur peut modifier les annotations éditoriales.",
+      "signInDescription": "Connectez-vous pour modifier les annotations enregistrées."
+    },
     "entityCard": {
       "person": "Personne",
       "loading": "Chargement…",

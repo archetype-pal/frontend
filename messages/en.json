@@ -485,6 +485,11 @@
       "regionFailedTitle": "Delete failed",
       "regionFailedDescription": "Could not delete region."
     },
+    "modify": {
+      "deniedTitle": "Cannot edit this annotation",
+      "editorialDeniedDescription": "Only an admin can edit editorial annotations.",
+      "signInDescription": "Sign in to edit saved annotations."
+    },
     "entityCard": {
       "person": "Person",
       "loading": "Loading…",

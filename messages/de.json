@@ -485,6 +485,11 @@
       "regionFailedTitle": "Löschen fehlgeschlagen",
       "regionFailedDescription": "Die Region konnte nicht gelöscht werden."
     },
+    "modify": {
+      "deniedTitle": "Diese Annotation kann nicht bearbeitet werden",
+      "editorialDeniedDescription": "Nur ein Administrator kann editorische Annotationen bearbeiten.",
+      "signInDescription": "Melden Sie sich an, um gespeicherte Annotationen zu bearbeiten."
+    },
     "entityCard": {
       "person": "Person",
       "loading": "Wird geladen…",

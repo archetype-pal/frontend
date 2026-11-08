@@ -545,6 +545,8 @@ export default function ManuscriptViewer({
     isAllographMode: effectiveViewMode === 'allograph',
     startPendingLink,
     isPendingLinkRegionId,
+    canModifyAnnotation,
+    getAnnotationKind,
   });
 
   const { handleHideShareUrl, handleShareSelectedAnnotation, handleCopyShareUrl } = useShareTarget({

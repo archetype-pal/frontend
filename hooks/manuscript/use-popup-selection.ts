@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import { dismissActionNotification, showActionNotification } from '@/components/ui/action-toast';
 import { dbIdFromA9s } from '@/lib/anno-mapping';
@@ -70,6 +71,8 @@ interface UsePopupSelectionArgs {
    *  type, which can be lost across the Annotorious round-trip) is what keeps
    *  re-selecting it from misfiring the glyph popup. */
   isPendingLinkRegionId: (id: string) => boolean;
+  canModifyAnnotation: (annotation: A9sAnnotation) => boolean;
+  getAnnotationKind: (annotation: A9sAnnotation) => AnnotationCreationKind;
 }
 
 /**
@@ -108,7 +111,10 @@ export function usePopupSelection({
   isAllographMode,
   startPendingLink,
   isPendingLinkRegionId,
+  canModifyAnnotation,
+  getAnnotationKind,
 }: UsePopupSelectionArgs) {
+  const t = useTranslations('manuscript');
   const handleSelectionIdsChange = React.useCallback(
     (ids: string[]) => {
       setSelectedAnnotationIds(ids);
@@ -358,6 +364,17 @@ export function usePopupSelection({
 
         if (activeTool === 'modify') {
           dismissActionNotification(ANNOTATION_SELECTION_TOAST_ID);
+          if (!canModifyAnnotation(selected)) {
+            showActionNotification({
+              id: ANNOTATION_DENIED_TOAST_ID,
+              kind: 'error',
+              title: t('modify.deniedTitle'),
+              description:
+                getAnnotationKind(selected) === 'editorial'
+                  ? t('modify.editorialDeniedDescription')
+                  : t('modify.signInDescription'),
+            });
+          }
           return;
         }
 
@@ -394,6 +411,9 @@ export function usePopupSelection({
       textLinkingActive,
       startPendingLink,
       isPendingLinkRegionId,
+      canModifyAnnotation,
+      getAnnotationKind,
+      t,
     ]
   );
 
