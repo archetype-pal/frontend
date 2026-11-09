@@ -1,14 +1,31 @@
 /** @vitest-environment jsdom */
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { ImageTextDetail } from '@/services/image-texts';
 
-const { loadTextsMock, loadTextMock, tokenMock } = vi.hoisted(() => ({
+const { loadTextsMock, loadTextMock, tokenMock, intl } = vi.hoisted(() => ({
   loadTextsMock: vi.fn(),
   loadTextMock: vi.fn(),
   tokenMock: vi.fn(async (): Promise<string | null> => 'abc'),
+  intl: { locale: 'en' as 'en' | 'fr' },
 }));
+
+vi.mock('next-intl/server', async () => {
+  const { createTranslator } = await import('next-intl');
+  const catalogues = {
+    en: (await import('@/messages/en.json')).default,
+    fr: (await import('@/messages/fr.json')).default,
+  };
+  return {
+    getTranslations: async (namespace: string) =>
+      createTranslator({
+        locale: intl.locale,
+        messages: catalogues[intl.locale],
+        namespace: namespace as never,
+      }),
+  };
+});
 
 vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken: tokenMock }));
 vi.mock('../image-texts', () => ({
@@ -35,6 +52,10 @@ const draft: ImageTextDetail = {
 };
 
 const params = { id: '1351', imageId: '56', textId: '59' };
+
+afterEach(() => {
+  intl.locale = 'en';
+});
 
 describe('image Texts tab', () => {
   it("lists the texts the reader's login may see, drafts labelled", async () => {
@@ -81,5 +102,24 @@ describe('image Texts tab', () => {
 
     expect(screen.getByText('Willelmus rex')).toBeTruthy();
     expect(screen.queryByText(status)).toBeNull();
+  });
+
+  it("says in the reader's language that an image has no texts", async () => {
+    intl.locale = 'fr';
+    loadTextsMock.mockResolvedValue([]);
+
+    render(await TextsTabPage({ params: Promise.resolve(params) }));
+
+    expect(screen.getByText("Aucun texte n'a été enregistré pour cette image.")).toBeTruthy();
+  });
+
+  it("says in the reader's language that a text is not found", async () => {
+    intl.locale = 'fr';
+    loadTextMock.mockResolvedValue(null);
+
+    render(await ImageTextDetailPage({ params: Promise.resolve(params) }));
+
+    expect(screen.getByText('Texte introuvable.')).toBeTruthy();
+    expect(screen.getByText('Retour aux textes')).toBeTruthy();
   });
 });
