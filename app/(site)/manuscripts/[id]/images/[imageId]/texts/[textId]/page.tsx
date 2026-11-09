@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { getServerAuthToken } from '@/lib/auth-token-server';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
+import { TextStatusBadge } from '@/components/text/text-status-badge';
+import { PUBLIC_STATUSES } from '@/types/image-text';
 import { loadImageText } from '../../image-texts';
 
 interface PageProps {
@@ -39,6 +41,7 @@ export default async function ImageTextDetailPage({ params }: PageProps) {
           <h2 className="mt-2 text-lg font-semibold">{text.type}</h2>
           {text.language && <p className="text-sm text-muted-foreground">{text.language}</p>}
         </div>
+        {PUBLIC_STATUSES.has(text.status) ? null : <TextStatusBadge status={text.status} />}
       </div>
 
       <article className="rounded-md border bg-card p-6">
