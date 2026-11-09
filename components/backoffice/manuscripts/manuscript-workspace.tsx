@@ -203,9 +203,10 @@ export function ManuscriptWorkspace({ itemId }: ManuscriptWorkspaceProps) {
     return `${historicalItemLabel} #${item.id}`;
   })();
 
-  // The public manuscript route is per-part; link the first part (the corpus is
-  // effectively 1:1) and omit the link entirely when the item has no parts yet.
-  const publicPartId = item.item_parts[0]?.id;
+  const publicPartId =
+    item.item_parts.length === 1 && item.item_parts[0].current_item !== null
+      ? item.item_parts[0].id
+      : undefined;
 
   return (
     <div className="space-y-6">
