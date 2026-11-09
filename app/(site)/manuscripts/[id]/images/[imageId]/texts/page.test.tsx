@@ -65,4 +65,21 @@ describe('image Texts tab', () => {
     expect(loadTextMock).toHaveBeenCalledWith('59', 'abc');
     expect(screen.getByText('Willelmus rex')).toBeTruthy();
   });
+
+  it('marks a draft on its own page', async () => {
+    loadTextMock.mockResolvedValue(draft);
+
+    render(await ImageTextDetailPage({ params: Promise.resolve(params) }));
+
+    expect(screen.getByText('Draft')).toBeTruthy();
+  });
+
+  it.each(['Live', 'Reviewed'] as const)('shows no status on a text page in %s', async (status) => {
+    loadTextMock.mockResolvedValue({ ...draft, status });
+
+    render(await ImageTextDetailPage({ params: Promise.resolve(params) }));
+
+    expect(screen.getByText('Willelmus rex')).toBeTruthy();
+    expect(screen.queryByText(status)).toBeNull();
+  });
 });
