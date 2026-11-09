@@ -4,8 +4,9 @@ import { ManuscriptTabs } from '@/components/manuscript/manuscript-tabs';
 import { BackofficeLink } from '@/components/common/backoffice-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchManuscript } from '@/services/manuscripts';
-import { fetchImageTextsForImage } from '@/services/image-texts';
+import { getServerAuthToken } from '@/lib/auth-token-server';
 import { fetchOtherImages } from '@/services/manuscript-image-tabs';
+import { loadImageTexts } from './image-texts';
 import { renderPublicDescription } from '@/lib/description-public';
 import { readSiteFeatures } from '@/lib/site-features-server';
 import { isSearchCategoryEnabled } from '@/lib/site-features';
@@ -29,11 +30,12 @@ interface ImageHeaderProps {
 
 /** The breadcrumb, title, description and tabs above every image tab. */
 export async function ImageHeader({ id, imageId, image }: ImageHeaderProps) {
+  const token = await getServerAuthToken();
   const [manuscript, otherImages, visibleTexts, siteFeatures, locale, modelLabels] =
     await Promise.all([
       fetchManuscript(image.item_part).catch(() => null),
       fetchOtherImages(image.item_part, image.id).catch(() => []),
-      fetchImageTextsForImage(imageId).catch(() => []),
+      loadImageTexts(imageId, token).catch(() => []),
       readSiteFeatures(),
       getLocale(),
       readModelLabels(),

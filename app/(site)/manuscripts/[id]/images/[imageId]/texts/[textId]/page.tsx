@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { fetchImageText } from '@/services/image-texts';
+import { getServerAuthToken } from '@/lib/auth-token-server';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
+import { loadImageText } from '../../image-texts';
 
 interface PageProps {
   params: Promise<{ id: string; imageId: string; textId: string }>;
@@ -9,7 +10,7 @@ interface PageProps {
 
 export default async function ImageTextDetailPage({ params }: PageProps) {
   const { id, imageId, textId } = await params;
-  const text = await fetchImageText(textId);
+  const text = await loadImageText(textId, await getServerAuthToken());
 
   if (!text) {
     return (
