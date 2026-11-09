@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { fetchImageText } from '@/services/image-texts';
+import { getTranslations } from 'next-intl/server';
+import { getServerAuthToken } from '@/lib/auth-token-server';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
+import { TextStatusBadge } from '@/components/text/text-status-badge';
+import { PUBLIC_STATUSES } from '@/types/image-text';
+import { loadImageText } from '../../image-texts';
 
 interface PageProps {
   params: Promise<{ id: string; imageId: string; textId: string }>;
@@ -9,17 +13,18 @@ interface PageProps {
 
 export default async function ImageTextDetailPage({ params }: PageProps) {
   const { id, imageId, textId } = await params;
-  const text = await fetchImageText(textId);
+  const text = await loadImageText(textId, await getServerAuthToken());
+  const t = await getTranslations('manuscript.text');
 
   if (!text) {
     return (
       <div className="px-4 py-6">
-        <p className="text-muted-foreground">Text not found.</p>
+        <p className="text-muted-foreground">{t('notFound')}</p>
         <Link
           href={`/manuscripts/${id}/images/${imageId}/texts`}
           className="mt-3 inline-flex items-center gap-1 text-sm text-primary hover:underline"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to texts
+          <ArrowLeft className="h-4 w-4" /> {t('backToTexts')}
         </Link>
       </div>
     );
@@ -33,11 +38,12 @@ export default async function ImageTextDetailPage({ params }: PageProps) {
             href={`/manuscripts/${id}/images/${imageId}/texts`}
             className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to texts
+            <ArrowLeft className="h-4 w-4" /> {t('backToTexts')}
           </Link>
           <h2 className="mt-2 text-lg font-semibold">{text.type}</h2>
           {text.language && <p className="text-sm text-muted-foreground">{text.language}</p>}
         </div>
+        {PUBLIC_STATUSES.has(text.status) ? null : <TextStatusBadge status={text.status} />}
       </div>
 
       <article className="rounded-md border bg-card p-6">

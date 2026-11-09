@@ -6,9 +6,10 @@ import { getDefaultConfig } from '@/lib/site-features';
 import { getDefaultModelLabelsConfig } from '@/lib/model-labels';
 import type { ManuscriptImage } from '@/types/manuscript-image';
 
-const { tabsMock, fetchAnnotationsMock } = vi.hoisted(() => ({
+const { tabsMock, fetchAnnotationsMock, loadTextsMock } = vi.hoisted(() => ({
   tabsMock: vi.fn((_props: { counts: Record<string, number> }) => null),
   fetchAnnotationsMock: vi.fn(),
+  loadTextsMock: vi.fn(async (_imageId: string, _token: string | null) => [{}]),
 }));
 
 vi.mock('next-intl/server', () => ({ getLocale: async () => 'en' }));
@@ -20,7 +21,8 @@ vi.mock('@/components/manuscript/manuscript-tabs', () => ({ ManuscriptTabs: tabs
 vi.mock('@/components/common/backoffice-link', () => ({ BackofficeLink: () => null }));
 vi.mock('@/services/manuscripts', () => ({ fetchManuscript: async () => null }));
 vi.mock('@/services/manuscript-image-tabs', () => ({ fetchOtherImages: async () => [{}, {}] }));
-vi.mock('@/services/image-texts', () => ({ fetchImageTextsForImage: async () => [{}] }));
+vi.mock('./image-texts', () => ({ loadImageTexts: loadTextsMock }));
+vi.mock('@/lib/auth-token-server', () => ({ getServerAuthToken: async () => 'abc' }));
 vi.mock('@/services/annotations', () => ({ fetchAnnotationsForImage: fetchAnnotationsMock }));
 
 import { ImageHeader } from './image-header';
@@ -42,5 +44,13 @@ describe('manuscript image header', () => {
       otherImages: 2,
     });
     expect(fetchAnnotationsMock).not.toHaveBeenCalled();
+  });
+
+  it("counts the Texts tab with the reader's login, so staff count drafts", async () => {
+    const image = { id: 9, item_part: 5, locus: 'fol. 1r' } as ManuscriptImage;
+
+    render(await ImageHeader({ id: '5', imageId: '9', image }));
+
+    expect(loadTextsMock).toHaveBeenCalledWith('9', 'abc');
   });
 });

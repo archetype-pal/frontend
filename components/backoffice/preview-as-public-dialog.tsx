@@ -18,10 +18,7 @@ import { Button } from '@/components/ui/button';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { fetchImageText, type ImageTextStatus } from '@/services/image-texts';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-
-// Mirrors the backend's public visibility rule (ImageTextViewSet.get_queryset):
-// anonymous visitors only ever see Live/Reviewed texts.
-const PUBLIC_STATUSES: ReadonlySet<ImageTextStatus> = new Set(['Live', 'Reviewed']);
+import { PUBLIC_STATUSES } from '@/types/image-text';
 
 interface PreviewAsPublicDialogProps {
   textId: number;
