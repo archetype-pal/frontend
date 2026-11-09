@@ -26,4 +26,14 @@ describe('buildFormattedCsv', () => {
 
     expect(csv).toBe('Repository,Shelfmark\n"\'=HYPERLINK(""http://x"")","MS 1, f. 2"');
   });
+
+  it('exports every description of a manuscript', () => {
+    const csv = buildFormattedCsv(
+      'manuscripts',
+      [{ description: ['Psalter and prayers', 'Gospels'] }],
+      ['Description']
+    );
+
+    expect(csv).toBe('Description\nPsalter and prayers; Gospels');
+  });
 });
