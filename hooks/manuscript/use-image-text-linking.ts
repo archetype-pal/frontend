@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 
 import { showActionNotification } from '@/components/ui/action-toast';
-import { a9sToBackendFeature, dbIdFromA9s } from '@/lib/anno-mapping';
+import { a9sToBackendFeature, dbIdFromA9s, type BackendFeature } from '@/lib/anno-mapping';
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
 import { deleteViewerAnnotation, updateViewerAnnotation } from '@/services/annotations';
 import {
@@ -20,6 +20,27 @@ import type {
 import type { ManuscriptImage as ManuscriptImageType } from '@/types/manuscript-image';
 import type { A9sWithMeta } from '@/types/annotation-viewer';
 import { errorMessage } from '@/lib/error-message';
+
+const REGION_RESHAPE_SAVE_DELAY_MS = 300;
+
+function saveRegionGeometry(graphId: number, geometry: BackendFeature) {
+  void updateViewerAnnotation(graphId, { annotation: geometry })
+    .then(() =>
+      showActionNotification({
+        kind: 'updated',
+        title: 'Region reshaped',
+        description: 'Saved the region’s new shape.',
+        duration: 1600,
+      })
+    )
+    .catch((error) =>
+      showActionNotification({
+        kind: 'error',
+        title: 'Reshape failed',
+        description: errorMessage(error, 'Could not save the region.').slice(0, 160),
+      })
+    );
+}
 
 interface UseImageTextLinkingArgs {
   imageId: string;
@@ -268,6 +289,21 @@ export function useImageTextLinking({
     [isAuthenticated, reloadTextsAndAnnotations]
   );
 
+  const pendingReshapesRef = React.useRef(
+    new Map<number, { geometry: BackendFeature; timer: number }>()
+  );
+
+  React.useEffect(() => {
+    const pending = pendingReshapesRef.current;
+    return () => {
+      pending.forEach(({ geometry, timer }, graphId) => {
+        window.clearTimeout(timer);
+        saveRegionGeometry(graphId, geometry);
+      });
+      pending.clear();
+    };
+  }, []);
+
   // Trash a selected linked region — the plain annotation DELETE, NOT unlink-region
   // (which strips the corresp and hard-deletes). A soft delete is a save(), so the
   // pre_delete corresp-strip never fires and the text keeps its ref, which is what
@@ -275,6 +311,8 @@ export function useImageTextLinking({
   const trashSelectedRegion = React.useCallback(
     (graphId: number) => {
       if (!isAuthenticated) return;
+      window.clearTimeout(pendingReshapesRef.current.get(graphId)?.timer);
+      pendingReshapesRef.current.delete(graphId);
       // Drop the box from the canvas up front. removeAnnotationById → the lib's
       // removeAnnotation deselects a selected shape synchronously before dropping
       // it, so a region deleted while it is the live selection (the panel
@@ -344,22 +382,13 @@ export function useImageTextLinking({
       const graphId = dbIdFromA9s(annotation);
       if (!(graphId && isAuthenticated && imageHeight)) return;
       const geometry = a9sToBackendFeature(annotation, imageHeight);
-      void updateViewerAnnotation(graphId, { annotation: geometry })
-        .then(() =>
-          showActionNotification({
-            kind: 'updated',
-            title: 'Region reshaped',
-            description: 'Saved the region’s new shape.',
-            duration: 1600,
-          })
-        )
-        .catch((error) =>
-          showActionNotification({
-            kind: 'error',
-            title: 'Reshape failed',
-            description: errorMessage(error, 'Could not save the region.').slice(0, 160),
-          })
-        );
+      const pending = pendingReshapesRef.current;
+      window.clearTimeout(pending.get(graphId)?.timer);
+      const timer = window.setTimeout(() => {
+        pending.delete(graphId);
+        saveRegionGeometry(graphId, geometry);
+      }, REGION_RESHAPE_SAVE_DELAY_MS);
+      pending.set(graphId, { geometry, timer });
     },
     [isAuthenticated, imageHeight]
   );
