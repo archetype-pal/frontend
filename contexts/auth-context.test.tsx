@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+const refresh = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh }) }));
 
 import { AuthProvider, useAuth } from './auth-context';
 import { getAuthSessionId } from '@/lib/auth-session';
@@ -75,5 +76,30 @@ describe('AuthProvider', () => {
     );
     expect(sessionDuringRevoke).toBeNull();
     expect(push).toHaveBeenCalledWith('/login');
+  });
+
+  it('forgets the pages kept from the session once the sign out is done', async () => {
+    let finishLogout: () => void = () => {};
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === '/api/auth/me') return new Response(JSON.stringify({ user: PROFILE }));
+      await new Promise<void>((resolve) => (finishLogout = resolve));
+      return new Response(null, { status: 204 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>
+    );
+    await screen.findByText('true:ed');
+
+    fireEvent.click(screen.getByText('sign out'));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('/api/auth/logout', { method: 'POST' })
+    );
+    expect(refresh).not.toHaveBeenCalled();
+
+    finishLogout();
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
   });
 });
