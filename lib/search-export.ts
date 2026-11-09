@@ -16,6 +16,7 @@ export const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     Images: 'number_of_images',
     Format: 'format',
     'Display Label': 'display_label',
+    Description: 'description',
   },
   images: {
     'Repository City': 'repository_city',

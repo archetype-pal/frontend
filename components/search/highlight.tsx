@@ -45,11 +45,31 @@ const SNIPPET_RADIUS = 110;
 
 function truncateAroundFirstHighlight(formatted: string, maxLen = 220): string {
   const idx = formatted.indexOf(HIGHLIGHT_START_TOKEN);
-  if (idx === -1) return formatted.slice(0, maxLen);
-  const start = Math.max(0, idx - SNIPPET_RADIUS);
-  let slice = formatted.slice(start, start + maxLen);
+  const start = idx === -1 ? 0 : Math.max(0, idx - SNIPPET_RADIUS);
+  let slice = '';
+  let visible = 0;
+  let open = false;
+  let i = start;
+  while (i < formatted.length) {
+    if (formatted.startsWith(HIGHLIGHT_END_TOKEN, i)) {
+      slice += HIGHLIGHT_END_TOKEN;
+      open = false;
+      i += HIGHLIGHT_END_TOKEN.length;
+    } else if (visible === maxLen) {
+      break;
+    } else if (formatted.startsWith(HIGHLIGHT_START_TOKEN, i)) {
+      slice += HIGHLIGHT_START_TOKEN;
+      open = true;
+      i += HIGHLIGHT_START_TOKEN.length;
+    } else {
+      slice += formatted[i];
+      visible += 1;
+      i += 1;
+    }
+  }
+  if (open) slice += HIGHLIGHT_END_TOKEN;
   if (start > 0) slice = `…${slice}`;
-  if (start + maxLen < formatted.length) slice = `${slice}…`;
+  if (i < formatted.length) slice = `${slice}…`;
   return slice;
 }
 
