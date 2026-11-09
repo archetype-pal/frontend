@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { getServerAuthToken } from '@/lib/auth-token-server';
 import { ImageTextViewer } from '@/components/text/image-text-viewer';
 import { StaffEditLink } from '@/components/text/staff-edit-link';
@@ -13,10 +14,11 @@ export default async function TextsTabPage({ params }: PageProps) {
   const texts = await loadImageTexts(imageId, await getServerAuthToken());
 
   if (texts.length === 0) {
+    const t = await getTranslations('manuscript.text');
     return (
       <div className="px-4 py-6">
         <div className="rounded-md border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
-          No texts have been recorded for this image.
+          {t('noTexts')}
         </div>
       </div>
     );

@@ -357,6 +357,9 @@
       "downloadTei": "{type} als TEI herunterladen",
       "hidePanel": "Textbereich ausblenden",
       "loadingEditor": "Editor wird geladen…",
+      "noTexts": "Für dieses Bild wurden keine Texte erfasst.",
+      "notFound": "Text nicht gefunden.",
+      "backToTexts": "Zurück zu den Texten",
       "status": {
         "Draft": "Entwurf",
         "Review": "In Prüfung",

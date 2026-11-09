@@ -357,6 +357,9 @@
       "downloadTei": "Download {type} as TEI",
       "hidePanel": "Hide text panel",
       "loadingEditor": "Loading editor…",
+      "noTexts": "No texts have been recorded for this image.",
+      "notFound": "Text not found.",
+      "backToTexts": "Back to texts",
       "status": {
         "Draft": "Draft",
         "Review": "Review",

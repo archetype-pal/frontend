@@ -357,6 +357,9 @@
       "downloadTei": "Télécharger {type} en TEI",
       "hidePanel": "Masquer le panneau de texte",
       "loadingEditor": "Chargement de l'éditeur…",
+      "noTexts": "Aucun texte n'a été enregistré pour cette image.",
+      "notFound": "Texte introuvable.",
+      "backToTexts": "Retour aux textes",
       "status": {
         "Draft": "Brouillon",
         "Review": "En relecture",
