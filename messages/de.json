@@ -2778,6 +2778,7 @@
       "partUpdateFailed": "Teil konnte nicht aktualisiert werden",
       "partRemoved": "Teil entfernt",
       "partRemoveFailed": "Teil konnte nicht entfernt werden",
+      "viewPartPublicPage": "Öffentliche Seite von {label} ansehen",
       "partsHeading": "Teile ({count})",
       "addPart": "Teil hinzufügen",
       "noPartsYet": "Noch keine Teile vorhanden. Fügen Sie einen Teil hinzu, um dieses Manuskript mit einem Element zu verknüpfen.",

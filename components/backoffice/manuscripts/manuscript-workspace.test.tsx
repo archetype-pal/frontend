@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
 import { renderWithQueryClient } from '@/test/render';
+import type { ItemPartNested } from '@/types/backoffice';
 
 const getHistoricalItem = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -41,6 +42,22 @@ const ITEM = {
   origins: [],
 };
 
+function part(id: number, currentItem: number | null): ItemPartNested {
+  return {
+    id,
+    custom_label: '',
+    current_item: currentItem,
+    current_item_display: null,
+    current_item_locus: '',
+    display_label: `Part ${id}`,
+    repository: null,
+    repository_name: null,
+    shelfmark: null,
+    images: [],
+    msdesc_areas: [],
+  };
+}
+
 beforeEach(() => {
   getHistoricalItem.mockReset();
   getHistoricalItem.mockResolvedValue(ITEM);
@@ -60,5 +77,18 @@ describe('<ManuscriptWorkspace>', () => {
     await waitFor(() => expect(getHistoricalItem).toHaveBeenCalledTimes(2));
 
     expect(language.value).toBe('Scots');
+  });
+
+  it.each([
+    ['links the title to the public page of the only part', [part(7, 9)], '/manuscripts/7'],
+    ['shows no title link when the item has several parts', [part(7, 9), part(8, 9)], null],
+    ['shows no title link when the only part has no item', [part(7, null)], null],
+  ])('%s', async (_, item_parts, href) => {
+    getHistoricalItem.mockResolvedValue({ ...ITEM, item_parts });
+    renderWithQueryClient(<ManuscriptWorkspace itemId={3} />, { modelLabels: true, tooltip: true });
+
+    await screen.findByRole('heading', { name: 'Part 7' });
+    const link = screen.queryByRole('link', { name: 'View public page' });
+    expect(link?.getAttribute('href') ?? null).toBe(href);
   });
 });

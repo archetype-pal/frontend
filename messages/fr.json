@@ -2778,6 +2778,7 @@
       "partUpdateFailed": "Échec de la mise à jour de la partie",
       "partRemoved": "Partie supprimée",
       "partRemoveFailed": "Échec de la suppression de la partie",
+      "viewPartPublicPage": "Voir la page publique de {label}",
       "partsHeading": "Parties ({count})",
       "addPart": "Ajouter une partie",
       "noPartsYet": "Aucune partie pour l'instant. Ajoutez une partie pour associer ce manuscrit à un élément.",

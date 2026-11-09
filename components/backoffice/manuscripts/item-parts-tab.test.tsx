@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { CurrentItemOption, ItemPartNested } from '@/types/backoffice';
 import { createTestQueryClient } from '@/test/query-client';
+import { renderWithQueryClient } from '@/test/render';
 
 vi.mock('@/contexts/auth-context', () => import('@/test/mocks/auth-context'));
 
@@ -80,6 +81,50 @@ describe('ItemPartsTab', () => {
 
     const shelfmark = await screen.findByLabelText(/Shelfmark/);
     expect((shelfmark as HTMLInputElement).value).toBe('12093');
+  });
+
+  it('links each part card to its own public page', () => {
+    renderWithQueryClient(
+      <ItemPartsTab
+        historicalItemId={3}
+        itemParts={[part(5, 'Part A', 7, '12092'), part(6, 'Part B', 8, '12093')]}
+      />,
+      { tooltip: true }
+    );
+
+    const hrefOf = (name: string) => screen.getByRole('link', { name }).getAttribute('href');
+    expect(hrefOf('View the public page of Part A')).toBe('/manuscripts/5');
+    expect(hrefOf('View the public page of Part B')).toBe('/manuscripts/6');
+  });
+
+  it('opens the public page in a new tab without toggling the card', () => {
+    renderWithQueryClient(
+      <ItemPartsTab historicalItemId={3} itemParts={[part(5, 'Part A', 7, '12092')]} />,
+      { tooltip: true }
+    );
+
+    const link = screen.getByRole('link', { name: 'View the public page of Part A' });
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.closest('button')).toBeNull();
+    fireEvent.click(link);
+    expect(screen.queryByText('Images (0)')).toBeNull();
+    fireEvent.click(screen.getByText('Part A'));
+    expect(screen.getByText('Images (0)')).toBeDefined();
+  });
+
+  it('shows no public link for a part with no item, whose public page cannot open', () => {
+    const noItem = {
+      ...part(6, 'Part B', 8, '12093'),
+      current_item: null,
+      current_item_display: null,
+    };
+    renderWithQueryClient(
+      <ItemPartsTab historicalItemId={3} itemParts={[part(5, 'Part A', 7, '12092'), noItem]} />,
+      { tooltip: true }
+    );
+
+    expect(screen.getByRole('link', { name: 'View the public page of Part A' })).toBeDefined();
+    expect(screen.queryByRole('link', { name: 'View the public page of Part B' })).toBeNull();
   });
 
   it('keeps an unsaved pick when another part renames the shared item', async () => {

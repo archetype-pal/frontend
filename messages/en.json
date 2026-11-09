@@ -2778,6 +2778,7 @@
       "partUpdateFailed": "Failed to update part",
       "partRemoved": "Part removed",
       "partRemoveFailed": "Failed to remove part",
+      "viewPartPublicPage": "View the public page of {label}",
       "partsHeading": "Parts ({count})",
       "addPart": "Add Part",
       "noPartsYet": "No parts yet. Add a part to link this manuscript to an item.",
