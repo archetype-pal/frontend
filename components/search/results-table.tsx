@@ -96,6 +96,20 @@ function handDescriptionPreview(description: string | undefined): string {
   return preview || '—';
 }
 
+function ManuscriptDescriptionCell({ manuscript }: { manuscript: ManuscriptListItem }) {
+  const description = manuscript.description?.[0];
+  if (!description) return '—';
+  const formatted: unknown = getFormattedFields(manuscript)?.description;
+  const text =
+    Array.isArray(formatted) && typeof formatted[0] === 'string' ? formatted[0] : description;
+  return (
+    <>
+      <MatchSnippet formatted={text} />
+      {manuscript.description_source && ` (${manuscript.description_source})`}
+    </>
+  );
+}
+
 const documentTypeColumn = <T extends { type: string }>(): Column<T> =>
   makeColumn('Document Type', (item) => item.type, 'type_exact');
 
@@ -220,6 +234,9 @@ const COLUMNS = {
     },
     makeColumn('Format', (m: ManuscriptListItem) => m.format ?? '—', 'format_exact'),
     makeColumn('Display Label', (m: ManuscriptListItem) => m.display_label ?? '—'),
+    makeColumn('Description', (m: ManuscriptListItem) => (
+      <ManuscriptDescriptionCell manuscript={m} />
+    )),
   ],
 
   images: [

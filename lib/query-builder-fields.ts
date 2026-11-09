@@ -12,6 +12,7 @@ export const SEARCHABLE_FIELDS_BY_TYPE: Record<ResultType, string[]> = {
     'shelfmark',
     'catalogue_numbers',
     'type',
+    'description',
   ],
   images: ['locus', 'repository_name', 'shelfmark', 'components', 'features'],
   scribes: ['name', 'scriptorium'],
@@ -54,6 +55,7 @@ const FILTERABLE_FIELDS_BY_TYPE: Record<ResultType, string[]> = {
     'format',
     'number_of_images',
     'image_availability',
+    'description',
   ],
   images: [
     'id',
