@@ -4,6 +4,7 @@ export interface ManuscriptListItem {
   repository_name: string;
   repository_city: string;
   shelfmark: string;
+  locus?: string;
   catalogue_numbers: string[];
   date: string;
   type: string;

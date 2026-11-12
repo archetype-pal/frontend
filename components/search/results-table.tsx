@@ -201,6 +201,7 @@ const COLUMNS = {
     repositoryCityColumn<ManuscriptListItem>(),
     repositoryColumn<ManuscriptListItem>(),
     shelfmarkColumn<ManuscriptListItem>(),
+    makeColumn('Locus', (m: ManuscriptListItem) => m.locus ?? '—', 'locus_exact'),
     makeColumn(
       'Catalogue Num.',
       (m: ManuscriptListItem) => m.catalogue_numbers,

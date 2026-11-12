@@ -10,6 +10,7 @@ export const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     'Repository City': 'repository_city',
     Repository: 'repository_name',
     Shelfmark: 'shelfmark',
+    Locus: 'locus',
     'Catalogue Num.': 'catalogue_numbers',
     'Text Date': 'date',
     'Doc. Type': 'type',
