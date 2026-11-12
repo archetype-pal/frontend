@@ -201,6 +201,7 @@ const COLUMNS = {
     repositoryCityColumn<ManuscriptListItem>(),
     repositoryColumn<ManuscriptListItem>(),
     shelfmarkColumn<ManuscriptListItem>(),
+    makeColumn('Locus', (m: ManuscriptListItem) => m.locus ?? '—', 'locus_exact'),
     makeColumn(
       'Catalogue Num.',
       (m: ManuscriptListItem) => m.catalogue_numbers,
@@ -597,7 +598,7 @@ function ResultsTableComponent<K extends ResultType>({
               (() => {
                 const manuscript = row as ManuscriptListItem;
                 const label =
-                  manuscript.shelfmark || manuscript.display_label || `#${manuscript.id}`;
+                  manuscript.display_label || manuscript.shelfmark || `#${manuscript.id}`;
                 return (
                   <TableCell className="w-10 py-1.5">
                     <Checkbox

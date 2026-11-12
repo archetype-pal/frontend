@@ -26,4 +26,14 @@ describe('buildFormattedCsv', () => {
 
     expect(csv).toBe('Repository,Shelfmark\n"\'=HYPERLINK(""http://x"")","MS 1, f. 2"');
   });
+
+  it('exports the manuscripts Locus column', () => {
+    const csv = buildFormattedCsv(
+      'manuscripts',
+      [{ shelfmark: 'Cotton Tiberius A.xiii', locus: 'fols. 1–118' }],
+      ['Shelfmark', 'Locus']
+    );
+
+    expect(csv).toBe('Shelfmark,Locus\nCotton Tiberius A.xiii,fols. 1–118');
+  });
 });
