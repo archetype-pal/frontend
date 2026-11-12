@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ResultsTable } from './results-table';
+import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-compare-selection';
 import type { ManuscriptListItem } from '@/types/search';
 
 vi.mock('@/contexts/model-labels-context', () => import('@/test/mocks/model-labels-context'));
@@ -70,5 +71,38 @@ describe('ResultsTable manuscripts locus column', () => {
 
     const [, row] = screen.getAllByRole('row');
     expect(within(row).getByText('—')).toBeTruthy();
+  });
+
+  it('names each part’s compare checkbox by its display label', () => {
+    const selection: ManuscriptCompareSelection = {
+      selectedIds: new Set<number>(),
+      isSelected: () => false,
+      isDisabled: () => false,
+      toggle: vi.fn(),
+      clear: vi.fn(),
+      count: 0,
+    };
+    render(
+      <ResultsTable
+        results={[
+          { ...part(1, 'fols. 1–118'), display_label: 'BL Cotton Tiberius A.xiii fols. 1–118' },
+          { ...part(2, 'fols. 119–200'), display_label: 'BL Cotton Tiberius A.xiii fols. 119–200' },
+        ]}
+        resultType="manuscripts"
+        visibleColumns={['Shelfmark', 'Locus']}
+        manuscriptSelection={selection}
+      />
+    );
+
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Select BL Cotton Tiberius A.xiii fols. 1–118 to compare',
+      })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Select BL Cotton Tiberius A.xiii fols. 119–200 to compare',
+      })
+    ).toBeTruthy();
   });
 });
