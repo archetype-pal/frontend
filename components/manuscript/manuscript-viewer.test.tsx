@@ -108,6 +108,8 @@ vi.mock('@/services/image-texts', () => ({
 
 import ManuscriptViewer from './manuscript-viewer';
 import { buildInitialViewerAnnotations } from '@/lib/manuscript-viewer-annotations';
+import { a9sToBackendFeature } from '@/lib/anno-mapping';
+import type { Annotation as A9sAnnotation } from './manuscript-annotorious';
 import { EDITING_CAPS } from '@/test/annotation-fixtures';
 
 // Full editing capabilities so the create/save/delete paths are active in tests.
@@ -142,6 +144,13 @@ const savedImageAnnotation = (id: string, allographId?: number, x = 0) => ({
   _meta: { annotationType: 'image', allographId },
 });
 
+const reshapedTextRegion = (x: number) => ({
+  id: 'db:42',
+  type: 'Annotation',
+  target: { selector: { type: 'FragmentSelector', value: `xywh=pixel:${x},0,10,10` } },
+  _meta: { annotationType: 'text' },
+});
+
 function backendGraph(id: number, allographId: number): BackendGraph {
   return {
     id,
@@ -174,6 +183,7 @@ function backendGraph(id: number, allographId: number): BackendGraph {
 
 describe('ManuscriptViewer smoke test', () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
     authRef.current = false;
     annotationServiceMocks.fetchAnnotationsForImage.mockResolvedValue([]);
@@ -267,6 +277,71 @@ describe('ManuscriptViewer smoke test', () => {
 
     const saveAfter = await screen.findByRole('button', { name: 'Save (s)' });
     expect(saveAfter).toHaveProperty('disabled', false);
+  });
+
+  it('saves a reshaped text region once, after the reshape stops', async () => {
+    authRef.current = true;
+    render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    vi.useFakeTimers();
+
+    const props = annotoriousPropsRef.current;
+    act(() => {
+      for (let x = 1; x <= 30; x += 1) props!.onUpdate?.(reshapedTextRegion(x));
+    });
+    act(() => {
+      vi.advanceTimersByTime(299);
+    });
+
+    expect(annotationServiceMocks.updateViewerAnnotation).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(annotationServiceMocks.updateViewerAnnotation).toHaveBeenCalledTimes(1);
+    expect(annotationServiceMocks.updateViewerAnnotation).toHaveBeenCalledWith(42, {
+      annotation: a9sToBackendFeature(reshapedTextRegion(30) as A9sAnnotation, 2000),
+    });
+  });
+
+  it('saves a waiting region reshape when the viewer unmounts', async () => {
+    authRef.current = true;
+    const { unmount } = render(
+      <ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />
+    );
+    await screen.findByRole('button', { name: 'Image tools' });
+
+    act(() => {
+      annotoriousPropsRef.current!.onUpdate?.(reshapedTextRegion(5));
+    });
+    expect(annotationServiceMocks.updateViewerAnnotation).not.toHaveBeenCalled();
+    unmount();
+
+    expect(annotationServiceMocks.updateViewerAnnotation).toHaveBeenCalledTimes(1);
+    expect(annotationServiceMocks.updateViewerAnnotation).toHaveBeenCalledWith(42, {
+      annotation: a9sToBackendFeature(reshapedTextRegion(5) as A9sAnnotation, 2000),
+    });
+  });
+
+  it('drops a waiting region reshape when the region is trashed', async () => {
+    authRef.current = true;
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<ManuscriptViewer imageId="4432" mode="editor" capabilities={EDITING_CAPS} />);
+    await screen.findByRole('button', { name: 'Image tools' });
+    vi.useFakeTimers();
+
+    const props = annotoriousPropsRef.current;
+    act(() => {
+      props!.onUpdate?.(reshapedTextRegion(5));
+      props!.onDeleteTextRegion?.(reshapedTextRegion(5));
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(annotationServiceMocks.deleteViewerAnnotation).toHaveBeenCalledWith(42);
+    expect(annotationServiceMocks.updateViewerAnnotation).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
   });
 
   it('toggles between select/drag and public draw tools when Space is pressed', async () => {
