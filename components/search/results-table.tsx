@@ -100,7 +100,7 @@ const documentTypeColumn = <T extends { type: string }>(): Column<T> =>
   makeColumn('Document Type', (item) => item.type, 'type_exact');
 
 const textDateColumn = <T extends { date?: string | null }>(): Column<T> =>
-  makeColumn('Text Date', (item) => item.date ?? '—');
+  makeColumn('Text Date', (item) => item.date ?? '—', 'date_min', undefined, 'date');
 
 const textTypeColumn = <T extends { text_type: string }>(): Column<T> =>
   makeColumn('Text Type', (item) => item.text_type);
@@ -209,7 +209,7 @@ const COLUMNS = {
       undefined,
       'catalogueNumber'
     ),
-    makeColumn('Text Date', (m: ManuscriptListItem) => m.date),
+    makeColumn('Text Date', (m: ManuscriptListItem) => m.date, 'date_min', undefined, 'date'),
     makeColumn('Doc. Type', (m: ManuscriptListItem) => m.type, 'type_exact'),
     {
       header: 'Images',
@@ -259,7 +259,7 @@ const COLUMNS = {
       className: 'text-center',
       sortKey: 'number_of_annotations_exact',
     },
-    makeColumn('Date', (i: ImageListItem) => i.date ?? '—'),
+    makeColumn('Date', (i: ImageListItem) => i.date ?? '—', 'date_min', undefined, 'date'),
     makeColumn('Locus', (i: ImageListItem) => i.locus ?? '—'),
     makeColumn('Tags', (i: ImageListItem) => i.tags?.join(', ') ?? '—'),
   ],
@@ -276,7 +276,7 @@ const COLUMNS = {
     repositoryColumn<HandListItem>(),
     shelfmarkColumn<HandListItem>(),
     makeColumn('Place', (h: HandListItem) => h.place, 'place_exact'),
-    makeColumn('Date', (h: HandListItem) => h.date ?? '—'),
+    makeColumn('Date', (h: HandListItem) => h.date ?? '—', 'date_min', undefined, 'date'),
     {
       header: 'Catalogue Num.',
       labelKey: 'catalogueNumber' as ModelLabelKey,
@@ -319,7 +319,7 @@ const COLUMNS = {
     repositoryColumn<TextListItem>(),
     shelfmarkColumn<TextListItem>(),
     makeColumn('Text Type', (t: TextListItem) => t.text_type, 'text_type_exact'),
-    makeColumn('MS Date', (t: TextListItem) => t.date ?? '—'),
+    makeColumn('MS Date', (t: TextListItem) => t.date ?? '—', 'date_min', undefined, 'date'),
     makeColumn('Locus', (t: TextListItem) => t.locus ?? '—'),
     makeColumn('Status', (t: TextListItem) => t.status ?? '—', 'status_exact'),
     makeColumn('Language', (t: TextListItem) => t.language ?? '—', 'language_exact'),
