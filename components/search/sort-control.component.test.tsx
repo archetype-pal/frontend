@@ -26,4 +26,33 @@ describe('<SortControl>', () => {
     }) as HTMLButtonElement;
     expect(directionButton.disabled).toBe(true);
   });
+
+  it('names a date sort after the date it sorts on', () => {
+    const graphs: SearchOrdering = {
+      current: 'hand_date_min',
+      options: [
+        {
+          name: 'hand_date_min',
+          text: 'hand_date_min',
+          url: '/search/graphs?ordering=hand_date_min',
+        },
+        {
+          name: '-hand_date_min',
+          text: 'hand_date_min',
+          url: '/search/graphs?ordering=-hand_date_min',
+        },
+      ],
+    };
+
+    render(
+      <SortControl
+        ordering={graphs}
+        value="hand_date_min"
+        onChange={vi.fn()}
+        dateNames={{ hand_date_min: 'Hand Date', hand_date_max: 'Hand Date' }}
+      />
+    );
+
+    expect(screen.getByText('Hand Date (earliest)')).toBeTruthy();
+  });
 });

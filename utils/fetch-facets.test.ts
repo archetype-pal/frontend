@@ -73,6 +73,33 @@ describe('fetchDateBounds', () => {
     );
   });
 
+  it('reads the extent of each date a tab can filter on', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          facetStats: {
+            date_min: { min: 680, max: 1180 },
+            date_max: { min: 720, max: 1220 },
+            manuscript_date_min: { min: 1093, max: 1308 },
+            manuscript_date_max: { min: 1094, max: 1309 },
+          },
+        })
+      )
+    );
+
+    await expect(fetchDateBounds('hands')).resolves.toEqual({
+      text_date: [680, 1220],
+      manuscript_date: [1093, 1309],
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'facets=date_min%2Cdate_max%2Cmanuscript_date_min%2Cmanuscript_date_max'
+      ),
+      expect.anything()
+    );
+  });
+
   it('has no bounds for an index without dates', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ facetStats: {} })));
 
@@ -99,6 +126,20 @@ describe('withFixedDateBounds', () => {
     expect(
       withFixedDateBounds({}, { text_date: [1093, 1309] }, ['text_date']).text_date
     ).toBeDefined();
+  });
+
+  it('adds a facet for every date the index holds', () => {
+    const fixed = withFixedDateBounds(
+      narrowed,
+      { text_date: [1093, 1309], hand_date: [780, 1200] },
+      ['text_date', 'hand_date']
+    );
+
+    expect(fixed.hand_date).toEqual({
+      kind: 'range',
+      range: [780, 1200],
+      defaultValue: [780, 1200],
+    });
   });
 
   it('adds no facet for a date the tab does not show', () => {

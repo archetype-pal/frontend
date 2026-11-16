@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createRoot } from 'react-dom/client';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { act } from 'react';
 import { DynamicFacets } from './dynamic-facets';
 import { ModelLabelsProvider } from '@/contexts/model-labels-context';
@@ -448,6 +448,52 @@ describe('DynamicFacets', () => {
         type: 'mergeDateParams',
         field: 'date',
       });
+    });
+
+    it('filters a second date under its own parameters', () => {
+      const onFacetClick = vi.fn();
+      render(
+        withProviders(
+          <DynamicFacets
+            facets={{
+              text_date: { kind: 'range', range: [1093, 1309], defaultValue: [1093, 1309] },
+              hand_date: { kind: 'range', range: [780, 1200], defaultValue: [780, 1200] },
+            }}
+            searchType="graphs"
+            keyword=""
+            activeTags={[]}
+            onKeywordChange={() => {}}
+            onKeywordSubmit={() => {}}
+            selectedFacets={[]}
+            dateParams={{
+              min_date: '1150',
+              hand_date__min_date: '900',
+              hand_date__max_date: '1000',
+            }}
+            onFacetClick={onFacetClick}
+            onClearAllFilters={() => {}}
+            baseFacetURL={BASE_URL}
+          />
+        )
+      );
+      const handDate = within(
+        screen.getByRole('heading', { name: 'Hand Date' }).closest('div[id]')!
+      );
+      fireEvent.click(handDate.getByRole('button', { name: 'Hand Date' }));
+
+      expect(
+        handDate.getAllByRole('slider').map((thumb) => thumb.getAttribute('aria-valuenow'))
+      ).toEqual(['900', '1000']);
+
+      fireEvent.change(handDate.getByLabelText('Hand Date range (min x max)'), {
+        target: { value: '950x1000' },
+      });
+      fireEvent.click(handDate.getByRole('button', { name: 'Apply' }));
+
+      expect(onFacetClick).toHaveBeenCalledWith(
+        `${BASE_URL}?hand_date__min_date=950&hand_date__max_date=1000`,
+        { type: 'mergeDateParams', field: 'hand_date' }
+      );
     });
   });
 });

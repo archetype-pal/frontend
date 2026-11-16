@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getColumnLabel,
+  getDateFacets,
+  getDateSortNames,
+  getDefaultVisibleFacets,
   getFacetOrder,
   getFacetRenderMap,
   SEARCH_RESULT_CONFIG,
@@ -51,5 +55,64 @@ describe('search type metadata', () => {
         Object.fromEntries(facets.map((facet) => [facet.key, facet.render]))
       );
     }
+  });
+});
+
+const DATE_NAMES = { manuscript: 'Manuscript Date', hand: 'Hand Date' };
+
+describe('getColumnLabel', () => {
+  it.each([
+    ['manuscripts', 'Text Date'],
+    ['images', 'Date'],
+    ['graphs', 'Document Date'],
+    ['texts', 'MS Date'],
+    ['hands', 'Text Date'],
+  ] as const)('names the %s manuscript date column after the site', (type, column) => {
+    expect(getColumnLabel(type, column, DATE_NAMES)).toBe('Manuscript Date');
+  });
+
+  it('names the hand date the same on Hands and Graphs', () => {
+    expect(getColumnLabel('hands', 'Date', DATE_NAMES)).toBe('Hand Date');
+    expect(getColumnLabel('graphs', 'Hand Date', DATE_NAMES)).toBe('Hand Date');
+  });
+
+  it('names the scribe date after the scribe', () => {
+    expect(getColumnLabel('scribes', 'Date', DATE_NAMES)).toBe('Scribe Date');
+  });
+
+  it('shows every other column under its own name', () => {
+    expect(getColumnLabel('texts', 'Shelfmark', DATE_NAMES)).toBe('Shelfmark');
+  });
+});
+
+describe('getDateSortNames', () => {
+  it('names both bounds of each date a tab can sort on', () => {
+    expect(getDateSortNames('graphs', DATE_NAMES)).toEqual({
+      date_min: 'Manuscript Date',
+      date_max: 'Manuscript Date',
+      hand_date_min: 'Hand Date',
+      hand_date_max: 'Hand Date',
+    });
+    expect(getDateSortNames('hands', DATE_NAMES).date_min).toBe('Hand Date');
+  });
+});
+
+describe('date facets', () => {
+  it('gives hands and graphs a second date beside the first', () => {
+    expect(getDateFacets('hands')).toEqual([
+      { key: 'text_date', field: 'date', kind: 'hand' },
+      { key: 'manuscript_date', field: 'manuscript_date', kind: 'manuscript' },
+    ]);
+    expect(getDateFacets('graphs')).toEqual([
+      { key: 'text_date', field: 'date', kind: 'manuscript' },
+      { key: 'hand_date', field: 'hand_date', kind: 'hand' },
+    ]);
+  });
+
+  it('leaves the added date facets off until a site turns them on', () => {
+    expect(getDefaultVisibleFacets('hands')).not.toContain('manuscript_date');
+    expect(getDefaultVisibleFacets('graphs')).not.toContain('text_date');
+    expect(getDefaultVisibleFacets('graphs')).not.toContain('hand_date');
+    expect(getDefaultVisibleFacets('manuscripts')).toEqual([...getFacetOrder('manuscripts')]);
   });
 });

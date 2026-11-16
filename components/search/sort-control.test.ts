@@ -7,6 +7,7 @@ import {
   humanizeSortField,
   isOrderingUnsupported,
   parseOrdering,
+  withoutDateSorts,
   type SearchOrdering,
 } from '@/lib/search-sort';
 
@@ -161,5 +162,36 @@ describe('isOrderingUnsupported', () => {
     expect(isOrderingUnsupported(null, manuscripts)).toBe(false);
     expect(isOrderingUnsupported('', manuscripts)).toBe(false);
     expect(isOrderingUnsupported(undefined, manuscripts)).toBe(false);
+  });
+});
+
+describe('withoutDateSorts', () => {
+  const graphs = ordering([
+    'shelfmark',
+    '-shelfmark',
+    'date_min',
+    '-date_min',
+    'date_max',
+    '-date_max',
+    'hand_date_min',
+    '-hand_date_min',
+    'hand_date_max',
+    '-hand_date_max',
+  ]);
+
+  it('drops both bounds of a date the site has switched off', () => {
+    const fields = buildSortFields(withoutDateSorts(graphs, ['hand_date']), humanize);
+
+    expect(fields.map((f) => f.attribute)).toEqual(['shelfmark', 'date_min', 'date_max']);
+  });
+
+  it('leaves the list alone when every date is switched on', () => {
+    expect(withoutDateSorts(graphs, [])).toBe(graphs);
+  });
+
+  it('stops offering a sort the site has switched off', () => {
+    expect(isOrderingUnsupported('-hand_date_min', withoutDateSorts(graphs, ['hand_date']))).toBe(
+      true
+    );
   });
 });
