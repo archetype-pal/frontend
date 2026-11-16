@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { env } from '@/lib/env';
-import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import { SEARCH_RESULT_CONFIG, getDateFacets, type ResultType } from '@/lib/search-types';
 import {
   buildApiUrl,
   normalizeKeyword,
@@ -103,6 +103,8 @@ export const searchKeys = {
   resultType: (resultType: ResultType) => [...searchKeys.all, resultType] as const,
   facets: (resultType: ResultType, url: string) =>
     [...searchKeys.resultType(resultType), 'facets', url] as const,
+  dateBounds: (resultType: ResultType) =>
+    [...searchKeys.resultType(resultType), 'date-bounds'] as const,
   globalSuggestions: (resultType: ResultType) =>
     [...searchKeys.all, 'global-suggestions', resultType] as const,
   suggestions: (path: string) => [...searchKeys.all, 'suggestions', path] as const,
@@ -202,6 +204,47 @@ export async function fetchCount(
   } catch {
     return 0;
   }
+}
+
+export type DateBounds = [number, number];
+export type DateBoundsByFacet = Record<string, DateBounds>;
+
+export async function fetchDateBounds(
+  resultType: ResultType,
+  signal?: AbortSignal
+): Promise<DateBoundsByFacet> {
+  const dateFacets = getDateFacets(resultType);
+  const params = new URLSearchParams({
+    limit: '1',
+    facets: dateFacets.flatMap(({ field }) => [`${field}_min`, `${field}_max`]).join(','),
+    attributes_to_retrieve: 'id',
+  });
+  const res = await fetch(`${getSearchBaseFacetUrl(resultType)}?${params.toString()}`, {
+    cache: 'no-store',
+    signal,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = (await res.json()) as { facetStats?: Record<string, Record<string, number>> };
+  const bounds: DateBoundsByFacet = {};
+  for (const { key, field } of dateFacets) {
+    const min = data.facetStats?.[`${field}_min`]?.min;
+    const max = data.facetStats?.[`${field}_max`]?.max;
+    if (typeof min === 'number' && typeof max === 'number') bounds[key] = [min, max];
+  }
+  return bounds;
+}
+
+export function withFixedDateBounds(
+  facets: FacetData,
+  bounds: DateBoundsByFacet | null,
+  visibleFacets: readonly string[]
+): FacetData {
+  if (!bounds) return facets;
+  const fixed: FacetData = { ...facets };
+  for (const [key, range] of Object.entries(bounds)) {
+    if (visibleFacets.includes(key)) fixed[key] = { kind: 'range', range, defaultValue: range };
+  }
+  return fixed;
 }
 
 export async function fetchFacetsAndResults(

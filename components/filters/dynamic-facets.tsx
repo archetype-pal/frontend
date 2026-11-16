@@ -2,8 +2,18 @@
 
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getFacetOrder, getFacetRenderMap, type ResultType } from '@/lib/search-types';
-import { getSelectedForFacet, formatFacetTitle, type ActiveFacetTag } from '@/lib/search-query';
+import {
+  getDateFacets,
+  getFacetOrder,
+  getFacetRenderMap,
+  type ResultType,
+} from '@/lib/search-types';
+import {
+  dateParamKey,
+  getSelectedForFacet,
+  formatFacetTitle,
+  type ActiveFacetTag,
+} from '@/lib/search-query';
 import { useSearchContext } from '@/contexts/search-context';
 import {
   KeywordSearchInput,
@@ -22,6 +32,7 @@ import {
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { localizeMsDescFacetItems } from '@/lib/msdesc-facet-labels';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useDateNames } from '@/hooks/search/use-date-names';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
@@ -38,6 +49,7 @@ type DynamicFacetsProps = {
   activeTags: ActiveFacetTag[];
   onRemoveTag?: (item: ActiveFacetTag) => void;
   selectedFacets?: string[];
+  dateParams?: Record<string, string>;
   onClearAllFilters?: () => void;
   onFacetClick?: (arg: string, action?: FacetClickAction) => void;
   baseFacetURL: string;
@@ -61,6 +73,11 @@ type DynamicFacetsProps = {
   keywordInputId?: string;
 };
 
+function yearParam(raw: string | undefined): number | null {
+  const year = Number.parseInt(raw ?? '', 10);
+  return Number.isFinite(year) ? year : null;
+}
+
 export function DynamicFacets({
   facets,
   searchType,
@@ -72,6 +89,7 @@ export function DynamicFacets({
   activeTags,
   onRemoveTag,
   selectedFacets = [],
+  dateParams,
   onClearAllFilters,
   onFacetClick,
   baseFacetURL,
@@ -89,6 +107,7 @@ export function DynamicFacets({
   const tVocab = useTranslations('backoffice');
   const { suggestionsPool, getServerSuggestions } = useSearchContext();
   const { getLabel } = useModelLabels();
+  const dateNames = useDateNames();
   const [draftKeyword, setDraftKeyword] = React.useState(keyword);
   const [historyItems, setHistoryItems] = React.useState<SearchHistoryEntry[]>([]);
   const localSuggestions = useKeywordSuggestions(draftKeyword, suggestionsPool);
@@ -139,6 +158,10 @@ export function DynamicFacets({
 
   const allOrdered = React.useMemo<string[]>(() => [...getFacetOrder(searchType)], [searchType]);
   const renderConfig = React.useMemo(() => getFacetRenderMap(searchType), [searchType]);
+  const dateFieldByFacet = React.useMemo(
+    () => Object.fromEntries(getDateFacets(searchType).map(({ key, field }) => [key, field])),
+    [searchType]
+  );
   const ordered = React.useMemo(
     () => (visibleFacets ? visibleFacets.filter((k) => allOrdered.includes(k)) : allOrdered),
     [visibleFacets, allOrdered]
@@ -185,14 +208,24 @@ export function DynamicFacets({
       ) {
         return [];
       }
-      return [{ facetKey, facetValue, type, title: formatFacetTitle(facetKey, searchType) }];
+      return [
+        { facetKey, facetValue, type, title: formatFacetTitle(facetKey, searchType, dateNames) },
+      ];
     });
     // Pin the date (range) facet to the top — nearly every query in this corpus
     // is time-scoped. Array.sort is stable, so the rest keep their config order.
     return list.sort(
       (a, b) => (a.facetValue.kind === 'range' ? 0 : 1) - (b.facetValue.kind === 'range' ? 0 : 1)
     );
-  }, [ordered, facets, renderConfig, searchType, selectedValuesByFacet, excludedByFacet]);
+  }, [
+    ordered,
+    facets,
+    renderConfig,
+    searchType,
+    dateNames,
+    selectedValuesByFacet,
+    excludedByFacet,
+  ]);
 
   if (!facets || Object.keys(facets).length === 0) {
     return null;
@@ -255,6 +288,8 @@ export function DynamicFacets({
       <div key={searchType} className="space-y-4">
         {renderableFacets.map(({ facetKey, facetValue, type, title }) => {
           if (facetValue.kind === 'range') {
+            const [rangeMin, rangeMax] = facetValue.range;
+            const field = dateFieldByFacet[facetKey] ?? 'date';
             return (
               <FacetDateRangePanel
                 key={facetKey}
@@ -262,12 +297,28 @@ export function DynamicFacets({
                 title={title}
                 range={facetValue.range}
                 defaultValue={facetValue.defaultValue}
+                value={[
+                  yearParam(dateParams?.[dateParamKey(field, 'min_date')]) ?? rangeMin,
+                  yearParam(dateParams?.[dateParamKey(field, 'max_date')]) ?? rangeMax,
+                ]}
                 onSearch={({ min, max, precision, diff }) => {
-                  let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`;
-                  if (precision && diff > 0) {
-                    url += `&at_most_or_least=${encodeURIComponent(precision)}&date_diff=${diff}`;
+                  const hasPrecision = Boolean(precision) && diff > 0;
+                  if (min <= rangeMin && max >= rangeMax && !hasPrecision) {
+                    onFacetClick?.(baseFacetURL, { type: 'mergeDateParams', field });
+                    return;
                   }
-                  onFacetClick?.(url, { type: 'mergeDateParams' });
+                  const params = new URLSearchParams({
+                    [dateParamKey(field, 'min_date')]: String(min),
+                    [dateParamKey(field, 'max_date')]: String(max),
+                  });
+                  if (hasPrecision) {
+                    params.set(dateParamKey(field, 'at_most_or_least'), precision);
+                    params.set(dateParamKey(field, 'date_diff'), String(diff));
+                  }
+                  onFacetClick?.(`${baseFacetURL}?${params.toString()}`, {
+                    type: 'mergeDateParams',
+                    field,
+                  });
                 }}
               />
             );

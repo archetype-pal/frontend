@@ -4,6 +4,8 @@ import {
   buildAdvancedExtraParams,
   buildDateFilterTag,
   buildQueryString,
+  clearDateFilters,
+  dateTagField,
   formatFacetTitle,
   normalizeQueryState,
   parseQueryRootFromUrl,
@@ -49,7 +51,7 @@ describe('buildActiveQueryTags', () => {
 
     expect(tags.map((t) => t.label)).toEqual([
       'Keyword: DCD Misc',
-      'Date: 1100 - 1200',
+      'Text Date: 1100 - 1200',
       'Repository: Durham',
     ]);
   });
@@ -111,7 +113,79 @@ describe('search-query utilities', () => {
       at_most_or_least: 'at most',
       date_diff: '15',
     });
-    expect(tag?.label).toBe('Date: 1100 - 1200, at most 15');
+    expect(tag?.label).toBe('Text Date: 1100 - 1200, at most 15');
+  });
+
+  it('names the hands date tag after the hand date', () => {
+    const tag = buildDateFilterTag({ min_date: '1100', max_date: '1200' }, 'hands');
+    expect(tag?.label).toBe('Hand Date: 1100 - 1200');
+  });
+
+  it('tags each date window under its own name', () => {
+    const tags = buildActiveQueryTags({
+      submittedKeyword: '',
+      dateParams: {
+        min_date: '1100',
+        max_date: '1200',
+        hand_date__min_date: '900',
+        hand_date__max_date: '1000',
+      },
+      selectedFacets: [],
+      searchType: 'graphs',
+      dateNames: { manuscript: 'Manuscript Date', hand: 'Hand Date' },
+    });
+
+    expect(tags.map((tag) => [tag.facetKey, tag.label])).toEqual([
+      ['__date__', 'Manuscript Date: 1100 - 1200'],
+      ['__date__:hand_date', 'Hand Date: 900 - 1000'],
+    ]);
+  });
+
+  it('titles a date filter after the date it holds', () => {
+    const names = { manuscript: 'Manuscript Date', hand: 'Hand Date' };
+
+    expect(formatFacetTitle('text_date', 'manuscripts', names)).toBe('Manuscript Date');
+    expect(formatFacetTitle('text_date', 'hands', names)).toBe('Hand Date');
+    expect(formatFacetTitle('manuscript_date', 'hands', names)).toBe('Manuscript Date');
+    expect(formatFacetTitle('hand_date', 'graphs', names)).toBe('Hand Date');
+    expect(formatFacetTitle('repository_name', 'graphs', names)).toBe('Repository');
+  });
+
+  it('removes only the date window its tag names', () => {
+    const state: QueryState = {
+      limit: 20,
+      offset: 40,
+      ordering: null,
+      selected_facets: [],
+      dateParams: { min_date: '1100', hand_date__min_date: '900', hand_date__max_date: '1000' },
+    };
+
+    const field = dateTagField('__date__:hand_date');
+
+    expect(field).toBe('hand_date');
+    expect(clearDateFilters(state, field ?? undefined).dateParams).toEqual({ min_date: '1100' });
+    expect(clearDateFilters(state).dateParams).toEqual({
+      hand_date__min_date: '900',
+      hand_date__max_date: '1000',
+    });
+  });
+
+  it('carries a second date window through the URL as a date window', () => {
+    const dateParams = { manuscript_date__min_date: '1100', manuscript_date__max_date: '1200' };
+    const state = stateFromSearchParams(
+      new URLSearchParams(
+        buildQueryString({
+          limit: 20,
+          offset: 0,
+          ordering: null,
+          selected_facets: [],
+          dateParams,
+        })
+      )
+    );
+
+    expect(state.dateParams).toEqual(dateParams);
+    expect(state.extraParams).toEqual({});
   });
 });
 
@@ -172,6 +246,27 @@ describe('resolveFacetClick', () => {
     if (result.type !== 'query') return;
     expect(result.value.dateParams).toEqual({ min_date: '1100', max_date: '1200' });
     expect(result.value.offset).toBe(0);
+  });
+
+  it('changes one date window and keeps the other', () => {
+    const result = resolveFacetClick({
+      arg: 'http://localhost:8000/api/v1/search/graphs/facets?hand_date__min_date=900&hand_date__max_date=1000',
+      action: { type: 'mergeDateParams', field: 'hand_date' },
+      queryState: {
+        ...BASE_STATE,
+        dateParams: { min_date: '1100', max_date: '1200', hand_date__min_date: '800' },
+      },
+      baseFacetURL: 'http://localhost:8000/api/v1/search/graphs/facets',
+    });
+
+    expect(result.type).toBe('query');
+    if (result.type !== 'query') return;
+    expect(result.value.dateParams).toEqual({
+      min_date: '1100',
+      max_date: '1200',
+      hand_date__min_date: '900',
+      hand_date__max_date: '1000',
+    });
   });
 
   it('replaces previously selected value for the same facet key', () => {

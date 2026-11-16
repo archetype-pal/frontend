@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { toast } from 'sonner';
-import type { ResultType } from '@/lib/search-types';
+import type { DateNames, ResultType } from '@/lib/search-types';
 import { SEARCH_RESULT_CONFIG } from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { buildQueryString, type QueryState } from '@/lib/search-query';
@@ -17,8 +17,9 @@ export function useSearchExport(opts: {
   submittedKeyword: string;
   getLabel: (key: ModelLabelKey) => string;
   visibleColumns?: string[];
+  dateNames: DateNames;
 }) {
-  const { queryState, resultType, submittedKeyword, getLabel, visibleColumns } = opts;
+  const { queryState, resultType, submittedKeyword, getLabel, visibleColumns, dateNames } = opts;
 
   const [exportBusy, setExportBusy] = React.useState(false);
   const [shareFeedback, setShareFeedback] = React.useState<'idle' | 'copied' | 'error'>('idle');
@@ -77,8 +78,8 @@ export function useSearchExport(opts: {
         const rows = (await res.json()) as Record<string, unknown>[];
         const content =
           format === 'csv'
-            ? buildFormattedCsv(resultType, rows, visibleColumns)
-            : buildFormattedJson(resultType, rows, visibleColumns);
+            ? buildFormattedCsv(resultType, rows, visibleColumns, dateNames)
+            : buildFormattedJson(resultType, rows, visibleColumns, dateNames);
         const blob = new Blob([content], {
           type: format === 'json' ? 'application/json' : 'text/csv;charset=utf-8',
         });
@@ -92,7 +93,7 @@ export function useSearchExport(opts: {
         setExportBusy(false);
       }
     },
-    [queryState, resultType, submittedKeyword, getLabel, visibleColumns]
+    [queryState, resultType, submittedKeyword, getLabel, visibleColumns, dateNames]
   );
 
   const handleShareSearch = React.useCallback(async () => {

@@ -6,7 +6,7 @@ import { Table, TableHeader, TableRow, TableCell, TableHead } from '@/components
 import { IiifImage } from '@/components/ui/iiif-image';
 import Link from 'next/link';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import type { ResultType } from '@/lib/search-types';
+import { getColumnLabel, type ResultType } from '@/lib/search-types';
 import type {
   ClauseListItem,
   GraphListItem,
@@ -23,6 +23,7 @@ import { coordinatesFromGeoJson, getIiifImageUrl } from '@/utils/iiif';
 import { useIiifThumbnail, useIiifThumbnailUrl } from '@/hooks/use-iiif-thumbnail';
 import type { ThumbnailSize } from '@/components/search/thumbnail-size-control';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useDateNames } from '@/hooks/search/use-date-names';
 import type { ModelLabelKey } from '@/lib/model-labels';
 import { Highlight, MatchSnippet } from './highlight';
 import { CollectionStar } from '@/components/collection/collection-star';
@@ -100,7 +101,7 @@ const documentTypeColumn = <T extends { type: string }>(): Column<T> =>
   makeColumn('Document Type', (item) => item.type, 'type_exact');
 
 const textDateColumn = <T extends { date?: string | null }>(): Column<T> =>
-  makeColumn('Text Date', (item) => item.date ?? '—');
+  makeColumn('Text Date', (item) => item.date ?? '—', 'date_min', undefined, 'date');
 
 const textTypeColumn = <T extends { text_type: string }>(): Column<T> =>
   makeColumn('Text Type', (item) => item.text_type);
@@ -209,7 +210,7 @@ const COLUMNS = {
       undefined,
       'catalogueNumber'
     ),
-    makeColumn('Text Date', (m: ManuscriptListItem) => m.date),
+    makeColumn('Text Date', (m: ManuscriptListItem) => m.date, 'date_min', undefined, 'date'),
     makeColumn('Doc. Type', (m: ManuscriptListItem) => m.type, 'type_exact'),
     {
       header: 'Images',
@@ -259,7 +260,7 @@ const COLUMNS = {
       className: 'text-center',
       sortKey: 'number_of_annotations_exact',
     },
-    makeColumn('Date', (i: ImageListItem) => i.date ?? '—'),
+    makeColumn('Date', (i: ImageListItem) => i.date ?? '—', 'date_min', undefined, 'date'),
     makeColumn('Locus', (i: ImageListItem) => i.locus ?? '—'),
     makeColumn('Tags', (i: ImageListItem) => i.tags?.join(', ') ?? '—'),
   ],
@@ -276,13 +277,20 @@ const COLUMNS = {
     repositoryColumn<HandListItem>(),
     shelfmarkColumn<HandListItem>(),
     makeColumn('Place', (h: HandListItem) => h.place, 'place_exact'),
-    makeColumn('Date', (h: HandListItem) => h.date ?? '—'),
+    makeColumn('Date', (h: HandListItem) => h.date ?? '—', 'date_min', undefined, 'date'),
     {
       header: 'Catalogue Num.',
       labelKey: 'catalogueNumber' as ModelLabelKey,
       accessor: (h) => h.catalogue_numbers,
       sortKey: 'catalogue_numbers_exact',
     },
+    makeColumn(
+      'Text Date',
+      (h: HandListItem) => h.manuscript_date ?? '—',
+      'manuscript_date_min',
+      undefined,
+      'manuscript_date'
+    ),
     makeColumn('Description', (h: HandListItem) => handDescriptionPreview(h.description)),
   ],
 
@@ -304,6 +312,13 @@ const COLUMNS = {
     },
     // Opt-in columns (below the default-visible prefix).
     makeColumn(
+      'Hand Date',
+      (g: GraphListItem) => g.hand_date ?? '—',
+      'hand_date_min',
+      undefined,
+      'hand_date'
+    ),
+    makeColumn(
       'Character Type',
       (g: GraphListItem) => g.character_type ?? '—',
       'character_type_exact'
@@ -319,7 +334,7 @@ const COLUMNS = {
     repositoryColumn<TextListItem>(),
     shelfmarkColumn<TextListItem>(),
     makeColumn('Text Type', (t: TextListItem) => t.text_type, 'text_type_exact'),
-    makeColumn('MS Date', (t: TextListItem) => t.date ?? '—'),
+    makeColumn('MS Date', (t: TextListItem) => t.date ?? '—', 'date_min', undefined, 'date'),
     makeColumn('Locus', (t: TextListItem) => t.locus ?? '—'),
     makeColumn('Status', (t: TextListItem) => t.status ?? '—', 'status_exact'),
     makeColumn('Language', (t: TextListItem) => t.language ?? '—', 'language_exact'),
@@ -370,6 +385,21 @@ const COLUMNS = {
 export const COLUMN_HEADERS_BY_TYPE: Record<ResultType, string[]> = Object.fromEntries(
   SEARCH_RESULT_TYPES.map((type) => [type, COLUMNS[type].map((column) => column.header)])
 ) as Record<ResultType, string[]>;
+
+export const COLUMN_SORT_KEYS_BY_TYPE: Record<
+  ResultType,
+  Record<string, string>
+> = Object.fromEntries(
+  SEARCH_RESULT_TYPES.map((type) => {
+    const columns: readonly { header: string; sortKey?: string }[] = COLUMNS[type];
+    return [
+      type,
+      Object.fromEntries(
+        columns.flatMap((column) => (column.sortKey ? [[column.header, column.sortKey]] : []))
+      ),
+    ];
+  })
+) as Record<ResultType, Record<string, string>>;
 
 /* ---------- sub-row accessors (legacy two-row pattern) ---------- */
 
@@ -522,10 +552,12 @@ function ResultsTableComponent<K extends ResultType>({
   thumbnailSize?: ThumbnailSize;
 }) {
   const { getLabel } = useModelLabels();
+  const dateNames = useDateNames();
   const t = useTranslations('search');
   const resolveHeader = React.useCallback(
-    (col: Column<ResultMap[K]>) => (col.labelKey ? getLabel(col.labelKey) : col.header),
-    [getLabel]
+    (col: Column<ResultMap[K]>) =>
+      col.labelKey ? getLabel(col.labelKey) : getColumnLabel(resultType, col.header, dateNames),
+    [getLabel, resultType, dateNames]
   );
   const descriptor = React.useMemo(() => getDescriptor(resultType), [resultType]);
   const allCols = descriptor.columns;

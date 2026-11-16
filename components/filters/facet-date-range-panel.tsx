@@ -19,6 +19,7 @@ type FacetDateRangePanelProps = {
   title?: string;
   range?: [number, number];
   defaultValue?: [number, number];
+  value?: [number, number];
   precisionOptions?: { label: string; value: string }[];
   defaultExpanded?: boolean;
 
@@ -30,6 +31,7 @@ export function FacetDateRangePanel({
   title = 'Text Date',
   range,
   defaultValue = [1094, 1250],
+  value,
   precisionOptions = [
     { label: 'None', value: ' ' },
     { label: 'at most', value: 'at most' },
@@ -39,16 +41,19 @@ export function FacetDateRangePanel({
   onSearch,
 }: FacetDateRangePanelProps) {
   const normalizedDefaultValue = range ?? defaultValue;
+  const [endpointMin, endpointMax] = normalizedDefaultValue;
+  const clampToEndpoints = (year: number) => Math.min(Math.max(year, endpointMin), endpointMax);
+  const appliedMin = clampToEndpoints(value?.[0] ?? endpointMin);
+  const appliedMax = Math.max(appliedMin, clampToEndpoints(value?.[1] ?? endpointMax));
+  const appliedSignature = `${appliedMin}x${appliedMax}`;
   const [expanded, setExpanded] = React.useState<boolean>(defaultExpanded);
-  const [sliderValue, setSliderValue] = React.useState<[number, number]>(normalizedDefaultValue);
+  const [sliderValue, setSliderValue] = React.useState<[number, number]>([appliedMin, appliedMax]);
   const [precision, setPrecision] = React.useState<string>(precisionOptions[0].value);
   const [year, setYear] = React.useState<number | ''>('');
-  const [searchInput, setSearchInput] = React.useState<string>(
-    `${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`
-  );
+  const [searchInput, setSearchInput] = React.useState<string>(appliedSignature);
   const initialPrecision = precisionOptions[0].value;
-  const [endpointMin, endpointMax] = normalizedDefaultValue;
   const applySignatureRef = React.useRef<string>('');
+  const submittedSignatureRef = React.useRef<string | null>(null);
   const userInteractedRef = React.useRef(false);
 
   // Reset slider/search state when new range data arrives (e.g. result type
@@ -56,13 +61,17 @@ export function FacetDateRangePanel({
   // tracker — per the React "You Might Not Need an Effect" docs. We compare by
   // the [min, max] content (not array reference, which changes every render)
   // so this runs exactly once per genuine range change.
-  const rangeSignature = `${normalizedDefaultValue[0]}x${normalizedDefaultValue[1]}`;
-  const prevRangeSignatureRef = React.useRef(rangeSignature);
-  if (prevRangeSignatureRef.current !== rangeSignature) {
-    prevRangeSignatureRef.current = rangeSignature;
-    userInteractedRef.current = false;
-    setSliderValue(normalizedDefaultValue);
-    setSearchInput(rangeSignature);
+  const syncSignature = `${endpointMin}x${endpointMax}|${appliedSignature}`;
+  const prevSyncSignatureRef = React.useRef(syncSignature);
+  if (prevSyncSignatureRef.current !== syncSignature) {
+    prevSyncSignatureRef.current = syncSignature;
+    if (submittedSignatureRef.current !== appliedSignature) {
+      submittedSignatureRef.current = null;
+      applySignatureRef.current = '';
+      userInteractedRef.current = false;
+      setSliderValue([appliedMin, appliedMax]);
+      setSearchInput(appliedSignature);
+    }
   }
 
   const buildPayload = React.useCallback(() => {
@@ -110,6 +119,7 @@ export function FacetDateRangePanel({
     const signature = JSON.stringify(payload);
     if (applySignatureRef.current === signature) return;
     applySignatureRef.current = signature;
+    submittedSignatureRef.current = `${payload.min}x${payload.max}`;
     onSearch?.(payload);
   }, [buildPayload, onSearch]);
 
@@ -139,6 +149,7 @@ export function FacetDateRangePanel({
     setYear('');
     const payload = { min, max, precision: initialPrecision, diff: 0 };
     applySignatureRef.current = JSON.stringify(payload);
+    submittedSignatureRef.current = `${min}x${max}`;
     onSearch?.(payload);
   }, [initialPrecision, normalizedDefaultValue, onSearch]);
 
@@ -156,7 +167,6 @@ export function FacetDateRangePanel({
         <button
           type="button"
           aria-expanded={expanded}
-          aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
           onClick={() => setExpanded((prev) => !prev)}
           className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
         >
@@ -184,9 +194,9 @@ export function FacetDateRangePanel({
                   handleSearchSubmit();
                 }
               }}
-              placeholder="Search text date..."
+              placeholder={`Search ${title.toLowerCase()}...`}
               className="pl-8"
-              aria-label="Date range (min x max)"
+              aria-label={`${title} range (min x max)`}
             />
           </div>
 
@@ -229,7 +239,7 @@ export function FacetDateRangePanel({
                 value={year}
                 onChange={handleYearChange}
                 placeholder="0"
-                aria-label="Year difference"
+                aria-label={`${title} year difference`}
                 disabled={precision === precisionOptions[0].value}
               />
             </div>

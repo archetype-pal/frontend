@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
-import { useSearchVisibility } from './search-visibility';
+import { hiddenDateFields, useSearchVisibility } from './search-visibility';
 
 const mockState = vi.hoisted(() => ({
   isAuthenticated: false,
@@ -123,5 +123,28 @@ describe('useSearchVisibility', () => {
     expect(result.current.visibleColumns).toEqual(['Repository City']);
     expect(result.current.visibleFacets).toEqual(['text_date']);
     expect(window.localStorage.getItem(storageKey('manuscripts'))).toBeNull();
+  });
+});
+
+describe('hiddenDateFields', () => {
+  it('hides a date with neither its column nor its filter switched on', () => {
+    expect(
+      hiddenDateFields('graphs', {
+        visibleColumns: ['Shelfmark', 'Document Date'],
+        visibleFacets: ['allograph'],
+      })
+    ).toEqual(['hand_date']);
+  });
+
+  it('keeps a date whose filter alone is switched on', () => {
+    expect(
+      hiddenDateFields('graphs', { visibleColumns: ['Shelfmark'], visibleFacets: ['hand_date'] })
+    ).toEqual(['date']);
+  });
+
+  it('keeps a date whose column alone is switched on', () => {
+    expect(hiddenDateFields('hands', { visibleColumns: ['Text Date'], visibleFacets: [] })).toEqual(
+      ['date']
+    );
   });
 });

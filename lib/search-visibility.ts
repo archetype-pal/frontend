@@ -3,8 +3,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { getFacetOrder, type ResultType } from '@/lib/search-types';
-import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
+import { getDateFacets, getFacetOrder, type ResultType } from '@/lib/search-types';
+import {
+  COLUMN_HEADERS_BY_TYPE,
+  COLUMN_SORT_KEYS_BY_TYPE,
+} from '@/components/search/results-table';
 
 export type FieldVisibility = {
   visibleColumns: string[];
@@ -35,6 +38,17 @@ function normalizeConfigFields(type: ResultType, value: FieldVisibility): FieldV
     visibleColumns: filterAllowed(value.visibleColumns, all.visibleColumns),
     visibleFacets: filterAllowed(value.visibleFacets, all.visibleFacets),
   };
+}
+
+export function hiddenDateFields(type: ResultType, available: FieldVisibility): string[] {
+  const sortKeys = COLUMN_SORT_KEYS_BY_TYPE[type];
+  return getDateFacets(type)
+    .filter(
+      ({ key, field }) =>
+        !available.visibleFacets.includes(key) &&
+        !available.visibleColumns.some((column) => sortKeys[column] === `${field}_min`)
+    )
+    .map(({ field }) => field);
 }
 
 function constrainFields(value: FieldVisibility, allowed: FieldVisibility): FieldVisibility {

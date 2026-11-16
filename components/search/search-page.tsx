@@ -24,6 +24,7 @@ import type { ResultMap } from '@/types/search';
 import {
   clearAllFacetFilters,
   clearDateFilters,
+  dateTagField,
   removeExclusionFromExtraParams,
 } from '@/lib/search-query';
 const SearchTimelineView = React.lazy(() =>
@@ -307,6 +308,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 grid is where the sort was most missed (frontend#67). */}
             <SortControl
               ordering={s.sortOrdering}
+              dateNames={s.dateSortNames}
               value={s.queryState.ordering}
               onChange={s.handleSortChange}
               className="hidden sm:inline-flex"
@@ -359,7 +361,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 }}
               >
                 <DynamicFacets
-                  facets={s.awaitingResults ? {} : s.data.facets}
+                  facets={s.awaitingResults ? {} : s.facets}
                   searchType={s.resultType}
                   keyword={s.mobileKeywordDraft}
                   activeTags={s.mobileActiveTags}
@@ -372,8 +374,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       s.setMobileKeywordDraft('');
                       return;
                     }
-                    if (item.facetKey === '__date__') {
-                      s.setMobileQueryDraft((prev) => clearDateFilters(prev));
+                    const dateField = dateTagField(item.facetKey);
+                    if (dateField) {
+                      s.setMobileQueryDraft((prev) => clearDateFilters(prev, dateField));
                       return;
                     }
                     if (item.exclude) {
@@ -389,6 +392,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     });
                   }}
                   selectedFacets={s.mobileQueryDraft.selected_facets}
+                  dateParams={s.mobileQueryDraft.dateParams}
                   onClearAllFilters={() =>
                     s.setMobileQueryDraft((prev) => clearAllFacetFilters(prev))
                   }
@@ -447,6 +451,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               resultType={s.resultType}
               isResearcher={s.visibility.isResearcher}
               ordering={s.sortOrdering}
+              sortDateNames={s.dateSortNames}
               sortValue={s.queryState.ordering}
               onSortChange={s.handleSortChange}
             />
@@ -522,9 +527,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         >
           {s.awaitingResults ? (
             <SearchFacetsSkeleton />
-          ) : Object.keys(s.data.facets).length > 0 ? (
+          ) : Object.keys(s.facets).length > 0 ? (
             <DynamicFacets
-              facets={s.data.facets}
+              facets={s.facets}
               searchType={s.resultType}
               keyword={s.draftKeyword}
               activeTags={s.activeTags}
@@ -534,6 +539,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               onExactPhraseChange={s.setExactPhraseKeyword}
               onRemoveTag={s.handleRemoveTag}
               selectedFacets={s.queryState.selected_facets}
+              dateParams={s.queryState.dateParams}
               onClearAllFilters={s.handleClearAllFilters}
               onFacetClick={s.handleFacetClick}
               baseFacetURL={s.baseFacetURL}

@@ -37,6 +37,7 @@ function mountHook() {
       setDraftKeyword: noop,
       setSubmittedKeyword: noop,
       handleClearKeyword: noop,
+      dateNames: { manuscript: 'Text Date', hand: 'Hand Date' },
     });
     return null;
   }

@@ -1,5 +1,5 @@
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
-import type { ResultType } from '@/lib/search-types';
+import { getColumnLabel, type DateNames, type ResultType } from '@/lib/search-types';
 
 /**
  * Maps column display headers → raw Meilisearch field keys per result type.
@@ -39,6 +39,7 @@ export const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     Shelfmark: 'shelfmark',
     Place: 'place',
     Date: 'date',
+    'Text Date': 'manuscript_date',
     'Catalogue Num.': 'catalogue_numbers',
     Description: 'description',
   },
@@ -51,6 +52,7 @@ export const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     Character: 'character',
     'Character Type': 'character_type',
     'Hand Name': 'hand_name',
+    'Hand Date': 'hand_date',
     Scribe: 'scribe',
     Place: 'place',
     Locus: 'locus',
@@ -115,13 +117,16 @@ function formatCell(value: unknown): string {
 export function buildFormattedCsv(
   resultType: ResultType,
   rows: Record<string, unknown>[],
-  visibleColumns: string[]
+  visibleColumns: string[],
+  dateNames: DateNames
 ): string {
   const fieldMap = COLUMN_FIELD_MAP[resultType];
   const columns = visibleColumns.filter((col) => col in fieldMap);
   if (columns.length === 0) return '';
 
-  const headerLine = columns.map(escapeCsvField).join(',');
+  const headerLine = columns
+    .map((col) => escapeCsvField(getColumnLabel(resultType, col, dateNames)))
+    .join(',');
   const dataLines = rows.map((row) =>
     columns.map((col) => escapeCsvField(formatCell(row[fieldMap[col]]))).join(',')
   );
@@ -131,14 +136,15 @@ export function buildFormattedCsv(
 export function buildFormattedJson(
   resultType: ResultType,
   rows: Record<string, unknown>[],
-  visibleColumns: string[]
+  visibleColumns: string[],
+  dateNames: DateNames
 ): string {
   const fieldMap = COLUMN_FIELD_MAP[resultType];
   const columns = visibleColumns.filter((col) => col in fieldMap);
   const mapped = rows.map((row) => {
     const out: Record<string, unknown> = {};
     for (const col of columns) {
-      out[col] = row[fieldMap[col]] ?? null;
+      out[getColumnLabel(resultType, col, dateNames)] = row[fieldMap[col]] ?? null;
     }
     return out;
   });
