@@ -3,6 +3,12 @@
  */
 import type { FacetClickAction } from '@/types/facets';
 import { newId } from '@/lib/id';
+import {
+  SEARCH_RESULT_TYPES,
+  getDateFacets,
+  type DateFacet,
+  type DateNames,
+} from '@/lib/search-types';
 
 export type QueryState = {
   limit: number;
@@ -32,7 +38,36 @@ export const DEFAULT_QUERY: QueryState = {
   extraParams: {},
 };
 
-const DATE_PARAM_KEYS = ['min_date', 'max_date', 'at_most_or_least', 'date_diff'] as const;
+const DATE_PARAM_NAMES = ['min_date', 'max_date', 'at_most_or_least', 'date_diff'] as const;
+type DateParamName = (typeof DATE_PARAM_NAMES)[number];
+const DATE_TAG_KEY = '__date__';
+
+export function dateParamKey(field: string, name: DateParamName): string {
+  return field === 'date' ? name : `${field}__${name}`;
+}
+
+function dateParamKeys(field: string): string[] {
+  return DATE_PARAM_NAMES.map((name) => dateParamKey(field, name));
+}
+
+const DATE_PARAM_KEYS = [
+  ...new Set(
+    SEARCH_RESULT_TYPES.flatMap((type) => getDateFacets(type).map((facet) => facet.field))
+  ),
+].flatMap(dateParamKeys);
+
+function withoutDateField(
+  dateParams: Record<string, string>,
+  field: string
+): Record<string, string> {
+  const dropped = new Set(dateParamKeys(field));
+  return Object.fromEntries(Object.entries(dateParams).filter(([key]) => !dropped.has(key)));
+}
+
+export function dateTagField(facetKey: string): string | null {
+  if (facetKey === DATE_TAG_KEY) return 'date';
+  return facetKey.startsWith(`${DATE_TAG_KEY}:`) ? facetKey.slice(DATE_TAG_KEY.length + 1) : null;
+}
 const FACET_EXACT_SUFFIX = '_exact';
 const MULTI_SELECT_FACETS = new Set(['component_features']);
 
@@ -258,7 +293,10 @@ export function resolveFacetClick({
         type: 'query',
         value: {
           ...queryState,
-          dateParams: parseDateParamsFromUrl(arg, baseFacetURL),
+          dateParams: {
+            ...withoutDateField(queryState.dateParams, action.field ?? 'date'),
+            ...parseDateParamsFromUrl(arg, baseFacetURL),
+          },
           offset: 0,
         },
       };
@@ -389,22 +427,29 @@ function buildExclusionTagsFromExtraParams(
   return tags;
 }
 
-export function buildDateFilterTag(dateParams: Record<string, string>): ActiveFacetTag | null {
-  const min = dateParams.min_date?.trim();
-  const max = dateParams.max_date?.trim();
-  const precision = dateParams.at_most_or_least?.trim();
-  const diff = dateParams.date_diff?.trim();
+export function buildDateFilterTag(
+  dateParams: Record<string, string>,
+  searchType?: string,
+  facet: DateFacet = getDateFacets()[0],
+  dateNames?: DateNames
+): ActiveFacetTag | null {
+  const param = (name: DateParamName) => dateParams[dateParamKey(facet.field, name)]?.trim();
+  const min = param('min_date');
+  const max = param('max_date');
+  const precision = param('at_most_or_least');
+  const diff = param('date_diff');
   if (!min && !max && !precision && !diff) return null;
 
   const range = [min, max].filter(Boolean).join(' - ');
   const precisionPart = precision && diff ? `${precision} ${diff}` : '';
   const labelSuffix = [range, precisionPart].filter(Boolean).join(', ');
 
+  const tagKey = facet.field === 'date' ? DATE_TAG_KEY : `${DATE_TAG_KEY}:${facet.field}`;
   return {
-    id: '__date__',
-    facetKey: '__date__',
+    id: tagKey,
+    facetKey: tagKey,
     value: labelSuffix,
-    label: `Date: ${labelSuffix || 'Custom range'}`,
+    label: `${formatFacetTitle(facet.key, searchType, dateNames)}: ${labelSuffix || 'Custom range'}`,
   };
 }
 
@@ -414,12 +459,14 @@ export function buildActiveQueryTags({
   selectedFacets,
   searchType,
   extraParams,
+  dateNames,
 }: {
   submittedKeyword: string;
   dateParams: Record<string, string>;
   selectedFacets: string[];
   searchType?: string;
   extraParams?: Record<string, string | string[]>;
+  dateNames?: DateNames;
 }): ActiveFacetTag[] {
   const tags: ActiveFacetTag[] = [];
   const keywordValue = normalizeKeyword(submittedKeyword);
@@ -431,8 +478,10 @@ export function buildActiveQueryTags({
       label: `Keyword: ${keywordValue}`,
     });
   }
-  const dateTag = buildDateFilterTag(dateParams);
-  if (dateTag) tags.push(dateTag);
+  for (const facet of getDateFacets(searchType)) {
+    const dateTag = buildDateFilterTag(dateParams, searchType, facet, dateNames);
+    if (dateTag) tags.push(dateTag);
+  }
   tags.push(...buildExclusionTagsFromExtraParams(extraParams, searchType));
   return [...tags, ...buildActiveFacetTags(selectedFacets, searchType)];
 }
@@ -449,6 +498,10 @@ const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
   people: {
     person_type: 'Category',
   },
+  hands: {
+    text_date: 'Hand Date',
+    manuscript_date: 'Text Date',
+  },
   places: {
     place_type: 'Place Type',
   },
@@ -463,7 +516,15 @@ const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
   },
 };
 
-export function formatFacetTitle(facetKey: string, searchType?: string): string {
+export function formatFacetTitle(
+  facetKey: string,
+  searchType?: string,
+  dateNames?: DateNames
+): string {
+  if (dateNames) {
+    const dateFacet = getDateFacets(searchType).find((facet) => facet.key === facetKey);
+    if (dateFacet) return dateNames[dateFacet.kind];
+  }
   if (searchType) {
     const typeOverrides = FACET_LABEL_OVERRIDES[searchType];
     if (typeOverrides?.[facetKey]) return typeOverrides[facetKey];
@@ -518,10 +579,10 @@ export function resetQueryForTypeChange(queryState: QueryState): QueryState {
   return { ...clearAllFacetFilters(queryState), ordering: null };
 }
 
-export function clearDateFilters(queryState: QueryState): QueryState {
+export function clearDateFilters(queryState: QueryState, field = 'date'): QueryState {
   return {
     ...queryState,
-    dateParams: {},
+    dateParams: withoutDateField(queryState.dateParams, field),
     offset: 0,
   };
 }

@@ -48,6 +48,7 @@ export type SearchActionsMenuProps = {
   isResearcher: boolean;
   /** Sort field list from the facets response; drives the small-screen sort section. */
   ordering?: SearchOrdering;
+  sortDateNames?: Record<string, string>;
   /** The user's explicit sort choice (`queryState.ordering`), null when unset. */
   sortValue?: string | null;
   onSortChange?: (next: { attribute: string | null; descending: boolean }) => void;
@@ -73,6 +74,7 @@ export function SearchActionsMenu({
   resultType,
   isResearcher,
   ordering,
+  sortDateNames,
   sortValue,
   onSortChange,
 }: SearchActionsMenuProps) {
@@ -82,11 +84,17 @@ export function SearchActionsMenu({
 
   const labelForSortField = React.useCallback(
     (attribute: string) => {
+      const dateName = sortDateNames?.[attribute];
+      if (dateName) {
+        return t(attribute.endsWith('_min') ? 'sortFields.dateEarliest' : 'sortFields.dateLatest', {
+          date: dateName,
+        });
+      }
       const key = `sortFields.${attribute}`;
       const translated = t.has(key) ? t(key) : '';
       return translated || humanizeSortField(attribute);
     },
-    [t]
+    [t, sortDateNames]
   );
   const sortFields = React.useMemo(
     () => (onSortChange ? buildSortFields(ordering, labelForSortField) : []),

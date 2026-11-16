@@ -24,6 +24,7 @@ import type { ResultMap } from '@/types/search';
 import {
   clearAllFacetFilters,
   clearDateFilters,
+  dateTagField,
   removeExclusionFromExtraParams,
 } from '@/lib/search-query';
 const SearchTimelineView = React.lazy(() =>
@@ -307,6 +308,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 grid is where the sort was most missed (frontend#67). */}
             <SortControl
               ordering={s.sortOrdering}
+              dateNames={s.dateSortNames}
               value={s.queryState.ordering}
               onChange={s.handleSortChange}
               className="hidden sm:inline-flex"
@@ -372,8 +374,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       s.setMobileKeywordDraft('');
                       return;
                     }
-                    if (item.facetKey === '__date__') {
-                      s.setMobileQueryDraft((prev) => clearDateFilters(prev));
+                    const dateField = dateTagField(item.facetKey);
+                    if (dateField) {
+                      s.setMobileQueryDraft((prev) => clearDateFilters(prev, dateField));
                       return;
                     }
                     if (item.exclude) {
@@ -448,6 +451,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               resultType={s.resultType}
               isResearcher={s.visibility.isResearcher}
               ordering={s.sortOrdering}
+              sortDateNames={s.dateSortNames}
               sortValue={s.queryState.ordering}
               onSortChange={s.handleSortChange}
             />

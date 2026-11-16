@@ -6,6 +6,7 @@ export type ModelLabelKey =
   | 'appManuscripts'
   | 'fieldHairType'
   | 'fieldShelfmark'
+  | 'fieldManuscriptDate'
   | 'fieldDateMinWeight'
   | 'fieldDateMaxWeight'
   // Search result-category tab labels. The "Manuscripts" category reuses
@@ -63,6 +64,7 @@ export const DEFAULT_MODEL_LABELS: Record<ModelLabelKey, LocalizedLabel> = {
   appManuscripts: { en: 'Manuscripts', fr: 'Manuscrits', de: 'Manuskripte' },
   fieldHairType: { en: 'Hair Type', fr: 'Type de poil', de: 'Haartyp' },
   fieldShelfmark: { en: 'Shelfmark', fr: 'Cote', de: 'Signatur' },
+  fieldManuscriptDate: { en: 'Text Date', fr: 'Text Date', de: 'Text Date' },
   fieldDateMinWeight: { en: 'Minimum weight', fr: 'Poids minimum', de: 'Mindestgewicht' },
   fieldDateMaxWeight: { en: 'Maximum weight', fr: 'Poids maximum', de: 'Höchstgewicht' },
   searchCategoryImages: { en: 'Images', fr: 'Images', de: 'Bilder' },

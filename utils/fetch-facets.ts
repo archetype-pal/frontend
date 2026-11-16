@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { env } from '@/lib/env';
-import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import { SEARCH_RESULT_CONFIG, getDateFacets, type ResultType } from '@/lib/search-types';
 import {
   buildApiUrl,
   normalizeKeyword,
@@ -207,14 +207,16 @@ export async function fetchCount(
 }
 
 export type DateBounds = [number, number];
+export type DateBoundsByFacet = Record<string, DateBounds>;
 
 export async function fetchDateBounds(
   resultType: ResultType,
   signal?: AbortSignal
-): Promise<DateBounds | null> {
+): Promise<DateBoundsByFacet> {
+  const dateFacets = getDateFacets(resultType);
   const params = new URLSearchParams({
     limit: '1',
-    facets: 'date_min,date_max',
+    facets: dateFacets.flatMap(({ field }) => [`${field}_min`, `${field}_max`]).join(','),
     attributes_to_retrieve: 'id',
   });
   const res = await fetch(`${getSearchBaseFacetUrl(resultType)}?${params.toString()}`, {
@@ -223,18 +225,26 @@ export async function fetchDateBounds(
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { facetStats?: Record<string, Record<string, number>> };
-  const min = data.facetStats?.date_min?.min;
-  const max = data.facetStats?.date_max?.max;
-  return typeof min === 'number' && typeof max === 'number' ? [min, max] : null;
+  const bounds: DateBoundsByFacet = {};
+  for (const { key, field } of dateFacets) {
+    const min = data.facetStats?.[`${field}_min`]?.min;
+    const max = data.facetStats?.[`${field}_max`]?.max;
+    if (typeof min === 'number' && typeof max === 'number') bounds[key] = [min, max];
+  }
+  return bounds;
 }
 
 export function withFixedDateBounds(
   facets: FacetData,
-  bounds: DateBounds | null,
+  bounds: DateBoundsByFacet | null,
   visibleFacets: readonly string[]
 ): FacetData {
-  if (!bounds || !visibleFacets.includes('text_date')) return facets;
-  return { ...facets, text_date: { kind: 'range', range: bounds, defaultValue: bounds } };
+  if (!bounds) return facets;
+  const fixed: FacetData = { ...facets };
+  for (const [key, range] of Object.entries(bounds)) {
+    if (visibleFacets.includes(key)) fixed[key] = { kind: 'range', range, defaultValue: range };
+  }
+  return fixed;
 }
 
 export async function fetchFacetsAndResults(

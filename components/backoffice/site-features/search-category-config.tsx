@@ -7,13 +7,19 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { getFacetOrder, SEARCH_RESULT_TYPES, type ResultType } from '@/lib/search-types';
+import {
+  getColumnLabel,
+  getFacetOrder,
+  SEARCH_RESULT_TYPES,
+  type ResultType,
+} from '@/lib/search-types';
 import { resolveResultTypeLabel } from '@/lib/search-label-helpers';
 import { formatFacetTitle } from '@/lib/search-query';
 import { getEnabledSearchCategories, type SearchCategoryConfig } from '@/lib/site-features';
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import { SortableCheckboxList, type SortableItem } from './sortable-checkbox-list';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useDateNames } from '@/hooks/search/use-date-names';
 
 type Props = {
   categories: Record<ResultType, SearchCategoryConfig>;
@@ -21,17 +27,23 @@ type Props = {
 };
 
 function useColumnItems(type: ResultType): SortableItem[] {
+  const dateNames = useDateNames();
   return useMemo(
-    () => COLUMN_HEADERS_BY_TYPE[type].map((col) => ({ id: col, label: col })),
-    [type]
+    () =>
+      COLUMN_HEADERS_BY_TYPE[type].map((col) => ({
+        id: col,
+        label: getColumnLabel(type, col, dateNames),
+      })),
+    [type, dateNames]
   );
 }
 
 function useFacetItems(type: ResultType): SortableItem[] {
+  const dateNames = useDateNames();
   return useMemo(() => {
     const facets = getFacetOrder(type);
-    return facets.map((f) => ({ id: f, label: formatFacetTitle(f, type) }));
-  }, [type]);
+    return facets.map((f) => ({ id: f, label: formatFacetTitle(f, type, dateNames) }));
+  }, [type, dateNames]);
 }
 
 export function SearchCategoryConfigPanel({ categories, onChange }: Props) {

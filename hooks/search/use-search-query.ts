@@ -2,11 +2,12 @@
 
 import * as React from 'react';
 import type { FacetClickAction } from '@/types/facets';
-import type { ResultType } from '@/lib/search-types';
+import type { DateNames, ResultType } from '@/lib/search-types';
 import {
   buildActiveQueryTags,
   clearAllFacetFilters,
   clearDateFilters,
+  dateTagField,
   removeExclusionFromExtraParams,
   resolveFacetClick,
   stateFromUrl,
@@ -43,6 +44,7 @@ export function useSearchQuery(opts: {
   setDraftKeyword: (value: string) => void;
   setSubmittedKeyword: (value: string) => void;
   handleClearKeyword: () => void;
+  dateNames: DateNames;
 }) {
   const {
     initialQueryState,
@@ -53,6 +55,7 @@ export function useSearchQuery(opts: {
     setDraftKeyword,
     setSubmittedKeyword,
     handleClearKeyword,
+    dateNames,
   } = opts;
 
   const [queryState, setQueryState] = React.useState<QueryState>(initialQueryState);
@@ -102,6 +105,7 @@ export function useSearchQuery(opts: {
       selectedFacets: queryState.selected_facets,
       searchType: resultType,
       extraParams: queryState.extraParams,
+      dateNames,
     });
   }, [
     submittedKeyword,
@@ -109,6 +113,7 @@ export function useSearchQuery(opts: {
     queryState.selected_facets,
     queryState.extraParams,
     resultType,
+    dateNames,
   ]);
   const activeFilterCount = activeTags.length;
 
@@ -120,6 +125,11 @@ export function useSearchQuery(opts: {
       };
       const remove = specialRemovers[item.facetKey];
       if (remove) return remove();
+      const dateField = dateTagField(item.facetKey);
+      if (dateField) {
+        setQueryState((prev) => clearDateFilters(prev, dateField));
+        return;
+      }
       if (item.exclude) {
         setQueryState((prev) => removeExclusionFromExtraParams(prev, item.facetKey, item.value));
         return;

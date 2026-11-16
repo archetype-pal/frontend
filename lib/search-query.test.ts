@@ -49,7 +49,7 @@ describe('buildActiveQueryTags', () => {
 
     expect(tags.map((t) => t.label)).toEqual([
       'Keyword: DCD Misc',
-      'Date: 1100 - 1200',
+      'Text Date: 1100 - 1200',
       'Repository: Durham',
     ]);
   });
@@ -111,7 +111,7 @@ describe('search-query utilities', () => {
       at_most_or_least: 'at most',
       date_diff: '15',
     });
-    expect(tag?.label).toBe('Date: 1100 - 1200, at most 15');
+    expect(tag?.label).toBe('Text Date: 1100 - 1200, at most 15');
   });
 });
 

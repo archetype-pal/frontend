@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
-import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
+import { getColumnLabel, SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { toast } from 'sonner';
 import SiteFeaturesPage from './page';
 import { renderWithQueryClient } from '@/test/render';
@@ -41,6 +41,8 @@ beforeEach(() => {
 });
 
 const renderPage = () => renderWithQueryClient(<SiteFeaturesPage />);
+
+const DATE_NAMES = { manuscript: 'fieldManuscriptDate', hand: 'Hand Date' };
 
 describe('<SiteFeaturesPage>', () => {
   it('shows an error state instead of an editable form full of defaults', async () => {
@@ -102,7 +104,9 @@ describe('<SiteFeaturesPage>', () => {
     fireEvent.click(manuscriptsButton);
 
     for (const column of COLUMN_HEADERS_BY_TYPE.manuscripts) {
-      expect(screen.getAllByText(column).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(getColumnLabel('manuscripts', column, DATE_NAMES)).length
+      ).toBeGreaterThan(0);
     }
     expect(screen.getAllByText('Format').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Display Label').length).toBeGreaterThan(0);
@@ -110,9 +114,11 @@ describe('<SiteFeaturesPage>', () => {
     fireEvent.click(screen.getByRole('button', { name: /searchCategoryImages/ }));
 
     for (const column of COLUMN_HEADERS_BY_TYPE.images) {
-      expect(screen.getAllByText(column).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(getColumnLabel('images', column, DATE_NAMES)).length
+      ).toBeGreaterThan(0);
     }
-    expect(screen.getAllByText('Date').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('fieldManuscriptDate').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Locus').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Tags').length).toBeGreaterThan(0);
   });

@@ -107,6 +107,11 @@ const fieldMeta: LabelFieldMeta[] = [
     description: 'Display label for shelfmark fields and table columns across the site.',
   },
   {
+    key: 'fieldManuscriptDate',
+    title: 'Field: Manuscript Date',
+    description: 'Name of the manuscript date in search columns, filters and sorting.',
+  },
+  {
     key: 'fieldDateMinWeight',
     title: 'Field: Date Minimum Weight',
     description: 'Display label for date lower-bound weight fields.',

@@ -83,6 +83,20 @@ export function canonicalSortAttribute(name: string): string {
     .replace(/_exact$/, '');
 }
 
+export function withoutDateSorts(
+  ordering: SearchOrdering,
+  dateFields: readonly string[]
+): SearchOrdering {
+  if (!ordering || dateFields.length === 0) return ordering;
+  const dropped = new Set(dateFields.flatMap((field) => [`${field}_min`, `${field}_max`]));
+  return {
+    ...ordering,
+    options: ordering.options.filter(
+      (option) => !dropped.has(canonicalSortAttribute(option?.name ?? ''))
+    ),
+  };
+}
+
 /**
  * Collapse `ordering.options` (which lists each field twice, asc and desc) into
  * one entry per field, drop the hidden ones, and order for display.

@@ -10,7 +10,7 @@ function thumbValues() {
 }
 
 function typeWindow(value: string) {
-  fireEvent.change(screen.getByLabelText('Date range (min x max)'), { target: { value } });
+  fireEvent.change(screen.getByLabelText('Text Date range (min x max)'), { target: { value } });
 }
 
 function passDebounce() {

@@ -2,13 +2,14 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import type { ResultType } from '@/lib/search-types';
+import { getDateSortNames, type ResultType } from '@/lib/search-types';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { useSearchVisibility } from '@/lib/search-visibility';
+import { hiddenDateFields, useSearchVisibility } from '@/lib/search-visibility';
 import { useModelLabels } from '@/contexts/model-labels-context';
+import { useDateNames } from '@/hooks/search/use-date-names';
 import { useSearchResults } from '@/hooks/search/use-search-results';
 import { resetQueryForTypeChange, stateFromSearchParams } from '@/lib/search-query';
-import { isOrderingUnsupported } from '@/lib/search-sort';
+import { isOrderingUnsupported, withoutDateSorts } from '@/lib/search-sort';
 import {
   DEFAULT_ADVANCED_SEARCH_STATE,
   type AdvancedSearchState,
@@ -29,13 +30,14 @@ import { useSearchExport } from '@/hooks/search/use-search-export';
 import { useSearchUrlSync } from '@/hooks/search/use-search-url-sync';
 import { useSearchHotkeys } from '@/hooks/search/use-search-hotkeys';
 import { useSearchData } from '@/hooks/search/use-search-data';
-import { useResultsScroll } from '@/hooks/search/use-results-scroll';
 import { useSearchDateBounds } from '@/hooks/search/use-search-date-bounds';
+import { useResultsScroll } from '@/hooks/search/use-results-scroll';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 
 export function useSearchPageState(initialType?: ResultType) {
   const searchParams = useSearchParams();
   const { getLabel } = useModelLabels();
+  const dateNames = useDateNames();
   const { enabledCategories } = useSiteFeatures();
   const firstEnabledCategory = enabledCategories[0] ?? 'manuscripts';
   const initialResultType =
@@ -98,6 +100,7 @@ export function useSearchPageState(initialType?: ResultType) {
     setDraftKeyword,
     setSubmittedKeyword,
     handleClearKeyword,
+    dateNames,
   });
 
   const { data, dataResultType, isFetching, isLoading } = useSearchResults(
@@ -116,7 +119,23 @@ export function useSearchPageState(initialType?: ResultType) {
   // (Scribe, Allograph…) the incoming index has never heard of — and picking one
   // writes an attribute the backend silently drops. Withhold the block until the
   // response for the type actually being displayed arrives.
-  const sortOrdering = dataResultType === resultType ? data.ordering : undefined;
+  const hiddenDates = React.useMemo(
+    () =>
+      hiddenDateFields(resultType, {
+        visibleColumns: visibility.availableColumns,
+        visibleFacets: visibility.availableFacets,
+      }),
+    [resultType, visibility.availableColumns, visibility.availableFacets]
+  );
+  const dateSortNames = React.useMemo(
+    () => getDateSortNames(resultType, dateNames),
+    [resultType, dateNames]
+  );
+  const sortOrdering = React.useMemo(
+    () =>
+      dataResultType === resultType ? withoutDateSorts(data.ordering, hiddenDates) : undefined,
+    [dataResultType, resultType, data.ordering, hiddenDates]
+  );
 
   // Self-heal an `ordering` this index rejects: a bookmarked `?ordering=scribe`
   // opened on /search/manuscripts, or a field picked during the window above.
@@ -156,6 +175,7 @@ export function useSearchPageState(initialType?: ResultType) {
     submittedKeyword,
     getLabel,
     visibleColumns: visibility.visibleColumns,
+    dateNames,
   });
 
   const mobileHook = useSearchMobileFilters({
@@ -163,6 +183,7 @@ export function useSearchPageState(initialType?: ResultType) {
     draftKeyword,
     resultType,
     baseFacetURL,
+    dateNames,
   });
 
   const dataHook = useSearchData({
@@ -305,6 +326,7 @@ export function useSearchPageState(initialType?: ResultType) {
     data,
     facets,
     sortOrdering,
+    dateSortNames,
     isFetching,
     isLoading,
     awaitingResults,

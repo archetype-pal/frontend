@@ -27,6 +27,7 @@ type SortControlProps = {
   /** The user's explicit choice (`queryState.ordering`), null when unset. */
   value: string | null;
   onChange: (next: { attribute: string | null; descending: boolean }) => void;
+  dateNames?: Record<string, string>;
   className?: string;
 };
 
@@ -39,18 +40,24 @@ type SortControlProps = {
  * from the response, never a hardcoded per-type list, so the terms stay
  * customisable per site via the backend registry.
  */
-export function SortControl({ ordering, value, onChange, className }: SortControlProps) {
+export function SortControl({ ordering, value, onChange, dateNames, className }: SortControlProps) {
   const t = useTranslations('search');
 
   const labelFor = React.useCallback(
     (attribute: string) => {
       // A site can add a sortable attribute without shipping a translation for
       // it; fall back to a humanized name rather than rendering a raw key.
+      const dateName = dateNames?.[attribute];
+      if (dateName) {
+        return t(attribute.endsWith('_min') ? 'sortFields.dateEarliest' : 'sortFields.dateLatest', {
+          date: dateName,
+        });
+      }
       const key = `sortFields.${attribute}`;
       const translated = t.has(key) ? t(key) : '';
       return translated || humanizeSortField(attribute);
     },
-    [t]
+    [t, dateNames]
   );
 
   const fields = React.useMemo(() => buildSortFields(ordering, labelFor), [ordering, labelFor]);

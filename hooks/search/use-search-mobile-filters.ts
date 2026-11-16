@@ -8,15 +8,16 @@ import {
   type ActiveFacetTag,
   type QueryState,
 } from '@/lib/search-query';
-import type { ResultType } from '@/lib/search-types';
+import type { DateNames, ResultType } from '@/lib/search-types';
 
 export function useSearchMobileFilters(opts: {
   queryState: QueryState;
   draftKeyword: string;
   resultType: ResultType;
   baseFacetURL: string;
+  dateNames: DateNames;
 }) {
-  const { queryState, draftKeyword, resultType, baseFacetURL } = opts;
+  const { queryState, draftKeyword, resultType, baseFacetURL, dateNames } = opts;
 
   const [mobileQueryDraft, setMobileQueryDraft] = React.useState<QueryState>(queryState);
   const [mobileKeywordDraft, setMobileKeywordDraft] = React.useState(draftKeyword);
@@ -43,6 +44,7 @@ export function useSearchMobileFilters(opts: {
       selectedFacets: mobileQueryDraft.selected_facets,
       searchType: resultType,
       extraParams: mobileQueryDraft.extraParams,
+      dateNames,
     });
   }, [
     mobileKeywordDraft,
@@ -50,6 +52,7 @@ export function useSearchMobileFilters(opts: {
     mobileQueryDraft.selected_facets,
     mobileQueryDraft.extraParams,
     resultType,
+    dateNames,
   ]);
 
   const handleMobileFacetClick = React.useCallback(

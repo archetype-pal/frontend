@@ -64,7 +64,7 @@ describe('fetchDateBounds', () => {
       )
     );
 
-    await expect(fetchDateBounds('manuscripts')).resolves.toEqual([1093, 1309]);
+    await expect(fetchDateBounds('manuscripts')).resolves.toEqual({ text_date: [1093, 1309] });
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining(
         '/api/v1/search/item-parts/facets/?limit=1&facets=date_min%2Cdate_max&attributes_to_retrieve=id'
@@ -76,7 +76,7 @@ describe('fetchDateBounds', () => {
   it('has no bounds for an index without dates', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ facetStats: {} })));
 
-    await expect(fetchDateBounds('scribes')).resolves.toBeNull();
+    await expect(fetchDateBounds('scribes')).resolves.toEqual({});
   });
 });
 
@@ -86,7 +86,9 @@ describe('withFixedDateBounds', () => {
   };
 
   it('replaces the narrowed range with the index bounds', () => {
-    expect(withFixedDateBounds(narrowed, [1093, 1309], ['text_date']).text_date).toEqual({
+    expect(
+      withFixedDateBounds(narrowed, { text_date: [1093, 1309] }, ['text_date']).text_date
+    ).toEqual({
       kind: 'range',
       range: [1093, 1309],
       defaultValue: [1093, 1309],
@@ -94,11 +96,13 @@ describe('withFixedDateBounds', () => {
   });
 
   it('keeps the date facet when a date window leaves no results', () => {
-    expect(withFixedDateBounds({}, [1093, 1309], ['text_date']).text_date).toBeDefined();
+    expect(
+      withFixedDateBounds({}, { text_date: [1093, 1309] }, ['text_date']).text_date
+    ).toBeDefined();
   });
 
   it('adds no facet for a date the tab does not show', () => {
-    expect(withFixedDateBounds({}, [1093, 1309], [])).toEqual({});
+    expect(withFixedDateBounds({}, { hand_date: [780, 1200] }, [])).toEqual({});
   });
 
   it('leaves the facets as they are until the bounds are known', () => {

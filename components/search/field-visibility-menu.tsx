@@ -8,9 +8,10 @@ import {
   SortableCheckboxList,
   type SortableItem,
 } from '@/components/backoffice/site-features/sortable-checkbox-list';
-import { getFacetOrder, type ResultType } from '@/lib/search-types';
+import { getColumnLabel, getFacetOrder, type ResultType } from '@/lib/search-types';
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import { formatFacetTitle } from '@/lib/search-query';
+import { useDateNames } from '@/hooks/search/use-date-names';
 
 type Props = {
   resultType: ResultType;
@@ -33,21 +34,22 @@ export function FieldVisibilityMenu({
   onFacetsChange,
   onReset,
 }: Props) {
+  const dateNames = useDateNames();
   const columnItems = useMemo<SortableItem[]>(
     () =>
       (availableColumns ?? COLUMN_HEADERS_BY_TYPE[resultType]).map((col) => ({
         id: col,
-        label: col,
+        label: getColumnLabel(resultType, col, dateNames),
       })),
-    [availableColumns, resultType]
+    [availableColumns, resultType, dateNames]
   );
   const facetItems = useMemo<SortableItem[]>(
     () =>
       (availableFacets ?? getFacetOrder(resultType)).map((f) => ({
         id: f,
-        label: formatFacetTitle(f, resultType),
+        label: formatFacetTitle(f, resultType, dateNames),
       })),
-    [availableFacets, resultType]
+    [availableFacets, resultType, dateNames]
   );
 
   return (

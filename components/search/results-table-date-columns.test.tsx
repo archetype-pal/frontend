@@ -15,13 +15,13 @@ vi.mock('@/contexts/collection-context', () => ({
 
 describe('ResultsTable date columns', () => {
   it.each([
-    ['manuscripts', 'Text Date'],
-    ['images', 'Date'],
-    ['hands', 'Date'],
-    ['texts', 'MS Date'],
-    ['clauses', 'Text Date'],
-    ['people', 'Text Date'],
-    ['places', 'Text Date'],
+    ['manuscripts', 'fieldManuscriptDate'],
+    ['images', 'fieldManuscriptDate'],
+    ['hands', 'Hand Date'],
+    ['texts', 'fieldManuscriptDate'],
+    ['clauses', 'fieldManuscriptDate'],
+    ['people', 'fieldManuscriptDate'],
+    ['places', 'fieldManuscriptDate'],
   ] as const)('%s sorts by date from its %s heading', (resultType, heading) => {
     const onSort = vi.fn();
     render(<ResultsTable results={[]} resultType={resultType} onSort={onSort} />);
