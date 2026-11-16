@@ -12,6 +12,8 @@ export interface ManuscriptListItem {
   issuer_name: string;
   named_beneficiary: string;
   first_image_iiif?: string;
+  description?: string[];
+  description_source?: string;
 }
 
 export interface ImageListItem {

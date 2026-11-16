@@ -356,7 +356,16 @@
       "openInEditor": "Im vollständigen Editor öffnen",
       "downloadTei": "{type} als TEI herunterladen",
       "hidePanel": "Textbereich ausblenden",
-      "loadingEditor": "Editor wird geladen…"
+      "loadingEditor": "Editor wird geladen…",
+      "noTexts": "Für dieses Bild wurden keine Texte erfasst.",
+      "notFound": "Text nicht gefunden.",
+      "backToTexts": "Zurück zu den Texten",
+      "status": {
+        "Draft": "Entwurf",
+        "Review": "In Prüfung",
+        "Reviewed": "Geprüft",
+        "Live": "Veröffentlicht"
+      }
     },
     "sections": {
       "msDesc": "Handschriftenbeschreibung",
@@ -1091,6 +1100,7 @@
         "formats": "Formate",
         "sources": "Bibliografische Referenzen",
         "annotations": "Annotationen",
+        "texts": "Texte",
         "physicalVolumes": "Elemente",
         "users": "Benutzer",
         "searchEngine": "Indexierung",
@@ -2785,6 +2795,7 @@
       "partUpdateFailed": "Teil konnte nicht aktualisiert werden",
       "partRemoved": "Teil entfernt",
       "partRemoveFailed": "Teil konnte nicht entfernt werden",
+      "viewPartPublicPage": "Öffentliche Seite von {label} ansehen",
       "partsHeading": "Teile ({count})",
       "addPart": "Teil hinzufügen",
       "noPartsYet": "Noch keine Teile vorhanden. Fügen Sie einen Teil hinzu, um dieses Manuskript mit einem Element zu verknüpfen.",
