@@ -19,7 +19,7 @@ import {
   mergeAdvancedIntoExtraParams,
   stripAdvancedExtraParams,
 } from '@/lib/search-query';
-import { getSearchBaseFacetUrl } from '@/utils/fetch-facets';
+import { getSearchBaseFacetUrl, withFixedDateBounds } from '@/utils/fetch-facets';
 import { isTableOnlyType } from '@/hooks/search/use-search-view-mode';
 import { useSearchViewMode } from '@/hooks/search/use-search-view-mode';
 import { useSearchKeyword } from '@/hooks/search/use-search-keyword';
@@ -30,6 +30,7 @@ import { useSearchUrlSync } from '@/hooks/search/use-search-url-sync';
 import { useSearchHotkeys } from '@/hooks/search/use-search-hotkeys';
 import { useSearchData } from '@/hooks/search/use-search-data';
 import { useResultsScroll } from '@/hooks/search/use-results-scroll';
+import { useSearchDateBounds } from '@/hooks/search/use-search-date-bounds';
 import { useSelectionSet } from '@/hooks/use-selection-set';
 
 export function useSearchPageState(initialType?: ResultType) {
@@ -143,6 +144,11 @@ export function useSearchPageState(initialType?: ResultType) {
   // previous type's facets, and its totals.
   const awaitingResults = isLoading || dataResultType !== resultType;
   const timelineDistribution = data.facetDistribution?.date_min ?? {};
+  const dateBounds = useSearchDateBounds(resultType);
+  const facets = React.useMemo(
+    () => withFixedDateBounds(data.facets, dateBounds, visibility.visibleFacets),
+    [data.facets, dateBounds, visibility.visibleFacets]
+  );
 
   const exportHook = useSearchExport({
     queryState: queryHook.queryState,
@@ -297,6 +303,7 @@ export function useSearchPageState(initialType?: ResultType) {
     // Data
     baseFacetURL,
     data,
+    facets,
     sortOrdering,
     isFetching,
     isLoading,
