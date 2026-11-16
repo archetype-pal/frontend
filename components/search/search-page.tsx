@@ -359,7 +359,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                 }}
               >
                 <DynamicFacets
-                  facets={s.awaitingResults ? {} : s.data.facets}
+                  facets={s.awaitingResults ? {} : s.facets}
                   searchType={s.resultType}
                   keyword={s.mobileKeywordDraft}
                   activeTags={s.mobileActiveTags}
@@ -389,6 +389,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                     });
                   }}
                   selectedFacets={s.mobileQueryDraft.selected_facets}
+                  dateParams={s.mobileQueryDraft.dateParams}
                   onClearAllFilters={() =>
                     s.setMobileQueryDraft((prev) => clearAllFacetFilters(prev))
                   }
@@ -522,9 +523,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
         >
           {s.awaitingResults ? (
             <SearchFacetsSkeleton />
-          ) : Object.keys(s.data.facets).length > 0 ? (
+          ) : Object.keys(s.facets).length > 0 ? (
             <DynamicFacets
-              facets={s.data.facets}
+              facets={s.facets}
               searchType={s.resultType}
               keyword={s.draftKeyword}
               activeTags={s.activeTags}
@@ -534,6 +535,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               onExactPhraseChange={s.setExactPhraseKeyword}
               onRemoveTag={s.handleRemoveTag}
               selectedFacets={s.queryState.selected_facets}
+              dateParams={s.queryState.dateParams}
               onClearAllFilters={s.handleClearAllFilters}
               onFacetClick={s.handleFacetClick}
               baseFacetURL={s.baseFacetURL}
