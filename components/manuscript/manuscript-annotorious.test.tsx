@@ -76,6 +76,52 @@ describe('ManuscriptAnnotorious', () => {
     expect(onDelete).not.toHaveBeenCalled();
   });
 
+  it('gives Modify handles only to the annotations the user may change', async () => {
+    const saved: Annotation = { ...savedGlyph, id: 'db:1' };
+    const editorial: Annotation = {
+      ...savedGlyph,
+      id: 'db:2',
+      _meta: { annotationType: 'editorial' },
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify(iiifInfo)))
+    );
+    let api: ViewerApi | null = null;
+    render(
+      <ManuscriptAnnotorious
+        iiifImageUrl="http://iiif.test/img/info.json"
+        initialAnnotations={[saved, editorial]}
+        canModifyAnnotation={(annotation) => annotation._meta?.annotationType !== 'editorial'}
+        exposeApi={(exposed) => (api = exposed)}
+      />
+    );
+    await waitFor(() => expect(api?.getAnnotations()).toHaveLength(2));
+    const viewer = api as unknown as ViewerApi;
+
+    await act(async () => {
+      viewer.selectAnnotationById?.(editorial.id);
+      await settle();
+    });
+    await act(async () => {
+      viewer.enableModify();
+      await settle();
+    });
+    expect(document.querySelector('.a9s-annotation.editable')).toBeNull();
+
+    await act(async () => {
+      viewer.selectAnnotationById?.(editorial.id);
+      await settle();
+    });
+    expect(document.querySelector('.a9s-annotation.editable')).toBeNull();
+
+    await act(async () => {
+      viewer.selectAnnotationById?.(saved.id);
+      await settle();
+    });
+    expect(document.querySelector('.a9s-annotation.editable')).not.toBeNull();
+  });
+
   describe('re-seeding from initialAnnotations', () => {
     const saved: Annotation = { ...savedGlyph, id: 'db:1' };
     const glyphDraft: Annotation = { ...savedGlyph, id: '#glyph-draft' };

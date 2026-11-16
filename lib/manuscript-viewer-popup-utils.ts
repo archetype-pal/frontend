@@ -156,6 +156,7 @@ export function getPopupCapabilities(
     canEditDraft: isDraft,
     canPersistDraft,
     canViewEditorMeta: viewerCapabilities.canViewEditorialControls,
+    canEditEditorial: viewerCapabilities.canPersistEditorialAnnotations,
   };
 }
 
@@ -268,7 +269,9 @@ export function getPopupEditorMode(
   const isEditorial = popupRecord.annotation._meta?.annotationType === 'editorial';
 
   if (!isDraft) {
-    if (isEditorial) return 'editorial_existing';
+    if (isEditorial) {
+      return popupCapabilities.canEditEditorial ? 'editorial_existing' : 'editorial_read_only';
+    }
     return popupCapabilities.canViewEditorMeta ? 'standard_existing' : 'public_existing';
   }
 

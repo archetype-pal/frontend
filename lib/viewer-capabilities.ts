@@ -23,6 +23,7 @@ export function getViewerCapabilities(user?: UserCapabilities | null): ViewerCap
     canViewEditorialControls: annotate,
     canUseSettings: true,
     canUseEditorSettings: annotate,
+    canEditTexts: Boolean(user?.manage),
   };
 }
 

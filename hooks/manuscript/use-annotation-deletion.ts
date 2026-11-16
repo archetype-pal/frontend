@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 
+import { showActionNotification } from '@/components/ui/action-toast';
+import { ANNOTATION_DENIED_TOAST_ID } from '@/hooks/manuscript/use-popup-selection';
 import { isDbId } from '@/lib/annotation-popup-utils';
 import { isTextRegionAnnotation } from '@/lib/manuscript-viewer-annotation-types';
 import type {
@@ -14,6 +16,7 @@ import type { A9sWithMeta, AnnotationCreationKind, PopupRecord } from '@/types/a
 
 interface UseAnnotationDeletionArgs {
   canDeleteAnnotations: boolean;
+  canDeleteEditorialAnnotations: boolean;
   getCanonicalAnnotation: (annotation: A9sAnnotation) => A9sWithMeta;
   getAnnotationKind: (annotation: A9sAnnotation) => AnnotationCreationKind;
   getPopupById: (popupId: string) => PopupRecord | null;
@@ -32,6 +35,7 @@ interface UseAnnotationDeletionArgs {
  */
 export function useAnnotationDeletion({
   canDeleteAnnotations,
+  canDeleteEditorialAnnotations,
   getCanonicalAnnotation,
   getAnnotationKind,
   getPopupById,
@@ -52,13 +56,23 @@ export function useAnnotationDeletion({
       if (isTextRegionAnnotation(canonical)) return false;
 
       const kind = getAnnotationKind(canonical);
+      if (kind === 'editorial' && !canDeleteEditorialAnnotations) {
+        showActionNotification({
+          id: ANNOTATION_DENIED_TOAST_ID,
+          kind: 'error',
+          title: t('delete.editorialDeniedTitle'),
+          description: t('delete.editorialDeniedDescription'),
+        });
+        return false;
+      }
+
       const isDraft = !isDbId(canonical.id);
 
       return window.confirm(
         isDraft ? t('delete.draftConfirm', { kind }) : t('delete.savedConfirm', { kind })
       );
     },
-    [getCanonicalAnnotation, getAnnotationKind, t]
+    [canDeleteEditorialAnnotations, getCanonicalAnnotation, getAnnotationKind, t]
   );
 
   const handleConfirmDeleteMany = React.useCallback(

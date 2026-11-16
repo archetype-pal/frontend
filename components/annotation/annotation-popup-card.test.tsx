@@ -19,6 +19,7 @@ function renderCard(overrides: Partial<AnnotationPopupCardProps> = {}) {
       canEditDraft: true,
       canPersistDraft: true,
       canViewEditorMeta: true,
+      canEditEditorial: true,
     },
     popupTransform: 'translate3d(0, 0, 0)',
     hasLocalChanges: false,
@@ -148,6 +149,22 @@ describe('AnnotationPopupCard', () => {
     expect(screen.getByText('Stem')).toBeTruthy();
     expect(screen.getByText('Curved')).toBeTruthy();
     expect(screen.getByText('Long')).toBeTruthy();
+  });
+
+  it('shows a saved editorial annotation read only to a user who may not edit it', () => {
+    renderCard({
+      annotationKind: 'editorial',
+      popupEditorMode: 'editorial_read_only',
+      isDraftAnnotation: false,
+      popupTab: 'notes',
+      draftInternalNoteText: 'Check the witness list',
+    });
+
+    const note = screen.getByDisplayValue('Check the witness list');
+    expect(note.hasAttribute('readonly')).toBe(true);
+    expect(note.hasAttribute('disabled')).toBe(false);
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 
   it('includes saved editorial components and positions in the details overview', () => {
