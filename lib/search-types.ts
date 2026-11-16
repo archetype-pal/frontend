@@ -34,6 +34,7 @@ export const SEARCH_RESULT_CONFIG = {
       'Repository City',
       'Repository',
       'Shelfmark',
+      'Locus',
       'Catalogue Num.',
       'Text Date',
       'Doc. Type',
