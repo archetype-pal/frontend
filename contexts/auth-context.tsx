@@ -51,7 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // The upload runner checks the session id synchronously, so it must be gone
     // before the revoke round trip, not after.
     clearAuthSessionId();
-    void logoutUser().catch(() => {});
+    void logoutUser()
+      .catch(() => {})
+      .then(() => router.refresh());
     setUser(null);
     setIsReady(true);
     router.push('/login');

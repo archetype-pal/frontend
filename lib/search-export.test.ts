@@ -36,4 +36,14 @@ describe('buildFormattedCsv', () => {
 
     expect(csv).toBe('Shelfmark,Locus\nCotton Tiberius A.xiii,fols. 1–118');
   });
+
+  it('exports every description of a manuscript', () => {
+    const csv = buildFormattedCsv(
+      'manuscripts',
+      [{ description: ['Psalter and prayers', 'Gospels'] }],
+      ['Description']
+    );
+
+    expect(csv).toBe('Description\nPsalter and prayers; Gospels');
+  });
 });

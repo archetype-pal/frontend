@@ -356,7 +356,16 @@
       "openInEditor": "Ouvrir dans l'éditeur complet",
       "downloadTei": "Télécharger {type} en TEI",
       "hidePanel": "Masquer le panneau de texte",
-      "loadingEditor": "Chargement de l'éditeur…"
+      "loadingEditor": "Chargement de l'éditeur…",
+      "noTexts": "Aucun texte n'a été enregistré pour cette image.",
+      "notFound": "Texte introuvable.",
+      "backToTexts": "Retour aux textes",
+      "status": {
+        "Draft": "Brouillon",
+        "Review": "En relecture",
+        "Reviewed": "Relu",
+        "Live": "Publié"
+      }
     },
     "sections": {
       "msDesc": "Description du manuscrit",
@@ -1084,6 +1093,7 @@
         "formats": "Formats",
         "sources": "Références bibliographiques",
         "annotations": "Annotations",
+        "texts": "Textes",
         "physicalVolumes": "Éléments",
         "users": "Utilisateurs",
         "searchEngine": "Indexation",
@@ -2778,6 +2788,7 @@
       "partUpdateFailed": "Échec de la mise à jour de la partie",
       "partRemoved": "Partie supprimée",
       "partRemoveFailed": "Échec de la suppression de la partie",
+      "viewPartPublicPage": "Voir la page publique de {label}",
       "partsHeading": "Parties ({count})",
       "addPart": "Ajouter une partie",
       "noPartsYet": "Aucune partie pour l'instant. Ajoutez une partie pour associer ce manuscrit à un élément.",
