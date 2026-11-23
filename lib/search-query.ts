@@ -389,7 +389,10 @@ function buildExclusionTagsFromExtraParams(
   return tags;
 }
 
-export function buildDateFilterTag(dateParams: Record<string, string>): ActiveFacetTag | null {
+export function buildDateFilterTag(
+  dateParams: Record<string, string>,
+  searchType?: string
+): ActiveFacetTag | null {
   const min = dateParams.min_date?.trim();
   const max = dateParams.max_date?.trim();
   const precision = dateParams.at_most_or_least?.trim();
@@ -404,7 +407,7 @@ export function buildDateFilterTag(dateParams: Record<string, string>): ActiveFa
     id: '__date__',
     facetKey: '__date__',
     value: labelSuffix,
-    label: `Date: ${labelSuffix || 'Custom range'}`,
+    label: `${dateTagName('text_date', searchType)}: ${labelSuffix || 'Custom range'}`,
   };
 }
 
@@ -431,7 +434,7 @@ export function buildActiveQueryTags({
       label: `Keyword: ${keywordValue}`,
     });
   }
-  const dateTag = buildDateFilterTag(dateParams);
+  const dateTag = buildDateFilterTag(dateParams, searchType);
   if (dateTag) tags.push(dateTag);
   tags.push(...buildExclusionTagsFromExtraParams(extraParams, searchType));
   return [...tags, ...buildActiveFacetTags(selectedFacets, searchType)];
@@ -448,6 +451,9 @@ const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
   },
   people: {
     person_type: 'Category',
+  },
+  hands: {
+    text_date: 'Hand Date',
   },
   places: {
     place_type: 'Place Type',
@@ -471,6 +477,10 @@ export function formatFacetTitle(facetKey: string, searchType?: string): string 
   const globalOverrides = FACET_LABEL_OVERRIDES._global;
   if (globalOverrides?.[facetKey]) return globalOverrides[facetKey];
   return facetKey.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function dateTagName(facetKey: string, searchType?: string): string {
+  return FACET_LABEL_OVERRIDES[searchType ?? '']?.[facetKey] ?? 'Date';
 }
 
 export function getSuggestionsPool(results: unknown[]): string[] {

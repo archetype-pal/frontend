@@ -136,6 +136,8 @@
       "locus": "Locus",
       "date_min": "Date (earliest)",
       "date_max": "Date (latest)",
+      "hand_date_min": "Hand Date (earliest)",
+      "hand_date_max": "Hand Date (latest)",
       "type": "Document Type",
       "catalogue_numbers": "Catalogue Numbers",
       "name": "Name",

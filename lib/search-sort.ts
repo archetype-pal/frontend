@@ -56,6 +56,14 @@ const SORT_FIELD_ORDER: string[] = [
   'number_of_annotations',
 ];
 
+const SORT_LABEL_KEYS: Record<string, Record<string, string>> = {
+  hands: { date_min: 'hand_date_min', date_max: 'hand_date_max' },
+};
+
+export function sortLabelKey(attribute: string, resultType?: string): string {
+  return SORT_LABEL_KEYS[resultType ?? '']?.[attribute] ?? attribute;
+}
+
 /** `repository_city` → `Repository City`. Fallback when no translation exists. */
 export function humanizeSortField(attribute: string): string {
   return attribute

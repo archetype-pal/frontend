@@ -309,6 +309,7 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
               ordering={s.sortOrdering}
               value={s.queryState.ordering}
               onChange={s.handleSortChange}
+              resultType={s.resultType}
               className="hidden sm:inline-flex"
             />
             <ViewSwitcher

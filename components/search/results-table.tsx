@@ -31,7 +31,7 @@ import type { ManuscriptCompareSelection } from '@/hooks/search/use-manuscript-c
 import { clauseToGraphCollectionItem } from '@/lib/collection-item';
 import type { CollectionItem } from '@/lib/collection-storage';
 import { getAnnotatedHitDetailUrl, getImageDetailUrl, getGraphDetailUrl } from '@/lib/media-url';
-import { SEARCH_RESULT_TYPES } from '@/lib/search-types';
+import { getColumnLabel, SEARCH_RESULT_TYPES } from '@/lib/search-types';
 import { GraphDetailLink } from '@/components/search/graph-detail-link';
 import { stripHtmlToPlainText } from '@/lib/sanitize-html';
 
@@ -542,8 +542,9 @@ function ResultsTableComponent<K extends ResultType>({
   const { getLabel } = useModelLabels();
   const t = useTranslations('search');
   const resolveHeader = React.useCallback(
-    (col: Column<ResultMap[K]>) => (col.labelKey ? getLabel(col.labelKey) : col.header),
-    [getLabel]
+    (col: Column<ResultMap[K]>) =>
+      col.labelKey ? getLabel(col.labelKey) : getColumnLabel(resultType, col.header),
+    [getLabel, resultType]
   );
   const descriptor = React.useMemo(() => getDescriptor(resultType), [resultType]);
   const allCols = descriptor.columns;

@@ -233,6 +233,14 @@ export function getDefaultVisibleColumns(resultType: ResultType): readonly strin
   return SEARCH_RESULT_CONFIG[resultType].defaultVisibleColumns;
 }
 
+const COLUMN_LABELS: Partial<Record<ResultType, Record<string, string>>> = {
+  hands: { Date: 'Hand Date' },
+};
+
+export function getColumnLabel(resultType: ResultType, column: string): string {
+  return COLUMN_LABELS[resultType]?.[column] ?? column;
+}
+
 export const resultTypeItems = SEARCH_RESULT_TYPES.map((value) => ({
   label: SEARCH_RESULT_CONFIG[value].label,
   value,

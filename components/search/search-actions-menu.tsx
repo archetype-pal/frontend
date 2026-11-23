@@ -22,6 +22,7 @@ import {
   buildSortFields,
   humanizeSortField,
   parseOrdering,
+  sortLabelKey,
   type SearchOrdering,
 } from '@/lib/search-sort';
 
@@ -82,11 +83,11 @@ export function SearchActionsMenu({
 
   const labelForSortField = React.useCallback(
     (attribute: string) => {
-      const key = `sortFields.${attribute}`;
+      const key = `sortFields.${sortLabelKey(attribute, resultType)}`;
       const translated = t.has(key) ? t(key) : '';
       return translated || humanizeSortField(attribute);
     },
-    [t]
+    [t, resultType]
   );
   const sortFields = React.useMemo(
     () => (onSortChange ? buildSortFields(ordering, labelForSortField) : []),
