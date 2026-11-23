@@ -170,4 +170,6 @@ export const backofficeKeys = {
   qualityDashboard: () => [...backofficeKeys.all, 'quality-dashboard'] as const,
   sanityChecks: () => [...backofficeKeys.all, 'sanity-checks'] as const,
   commentEmailSetting: () => [...backofficeKeys.all, 'comment-email-setting'] as const,
+  userCommentEmailSetting: (userId: number) =>
+    [...backofficeKeys.commentEmailSetting(), userId] as const,
 } as const;

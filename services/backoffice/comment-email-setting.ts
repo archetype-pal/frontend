@@ -13,3 +13,16 @@ export function getCommentEmailSetting(): Promise<CommentEmailSetting> {
 export function setCommentEmailSetting(enabled: boolean): Promise<CommentEmailSetting> {
   return backofficePatch<CommentEmailSetting>(ENDPOINT, { email_enabled: enabled });
 }
+
+export function getUserCommentEmailSetting(userId: number): Promise<CommentEmailSetting> {
+  return backofficeGet<CommentEmailSetting>(`${ENDPOINT}?user=${userId}`, { cache: 'no-store' });
+}
+
+export function setUserCommentEmailSetting(
+  userId: number,
+  enabled: boolean
+): Promise<CommentEmailSetting> {
+  return backofficePatch<CommentEmailSetting>(`${ENDPOINT}?user=${userId}`, {
+    email_enabled: enabled,
+  });
+}

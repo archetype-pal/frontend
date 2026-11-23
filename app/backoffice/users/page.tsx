@@ -51,10 +51,14 @@ import {
   BackofficeLoadingState,
 } from '@/components/backoffice/common/query-state';
 import { createUser, updateUser, deleteUser } from '@/services/backoffice/users';
+import {
+  getUserCommentEmailSetting,
+  setUserCommentEmailSetting,
+} from '@/services/backoffice/comment-email-setting';
 import { walkPaginated } from '@/lib/backoffice/walk-paginated';
 import { usePageSize } from '@/hooks/backoffice/use-page-size';
 import { backofficeKeys } from '@/lib/backoffice/query-keys';
-import { toastApiError } from '@/lib/backoffice/format-api-error';
+import { formatApiError, toastApiError } from '@/lib/backoffice/format-api-error';
 import { runBulkAction } from '@/lib/backoffice/bulk-action';
 import { cn } from '@/lib/utils';
 import { useSelectionSet } from '@/hooks/use-selection-set';
@@ -180,6 +184,7 @@ export default function UsersPage() {
 
   const [createForm, setCreateForm] = useState<UserCreatePayload>({ ...emptyCreate });
   const [editForm, setEditForm] = useState<UserUpdatePayload>({});
+  const [commentEmails, setCommentEmails] = useState<boolean | null>(null);
 
   // Table view state
   const [search, setSearch] = useState('');
@@ -197,6 +202,14 @@ export default function UsersPage() {
     queryFn: () => walkPaginated<UserListItem>('/api/v1/auth/management/users/?limit=100'),
     enabled: isAuthenticated,
   });
+
+  const commentEmailSetting = useQuery({
+    queryKey: backofficeKeys.userCommentEmailSetting(editTarget?.id ?? 0),
+    queryFn: () => getUserCommentEmailSetting(editTarget!.id),
+    enabled: !!editTarget,
+    staleTime: 0,
+  });
+  const savedCommentEmails = commentEmailSetting.data?.email_enabled;
 
   const users = useMemo(() => data ?? [], [data]);
 
@@ -310,15 +323,22 @@ export default function UsersPage() {
   });
 
   const updateMut = useMutation({
-    mutationFn: (vars?: { id: number; data: UserUpdatePayload }) => {
+    mutationFn: async (vars?: { id: number; data: UserUpdatePayload }) => {
       if (vars) return updateUser(vars.id, vars.data);
       const payload: UserUpdatePayload = { ...editForm };
       if (!payload.password) delete payload.password;
-      return updateUser(editTarget!.id, payload);
+      const saved = await updateUser(editTarget!.id, payload);
+      if (editForm.is_superuser && commentEmails !== null && commentEmails !== savedCommentEmails) {
+        await setUserCommentEmailSetting(editTarget!.id, commentEmails).catch((err) =>
+          toastApiError(t('users.toastFailedCommentEmails'), err)
+        );
+      }
+      return saved;
     },
     onSuccess: () => {
       toast.success(t('users.toastUserUpdated'));
       invalidate();
+      queryClient.invalidateQueries({ queryKey: backofficeKeys.commentEmailSetting() });
       setEditTarget(null);
     },
     onError: (err) => {
@@ -358,6 +378,7 @@ export default function UsersPage() {
 
   function openEdit(user: UserListItem) {
     setEditTarget(user);
+    setCommentEmails(null);
     setEditForm({
       username: user.username,
       email: user.email,
@@ -988,6 +1009,34 @@ export default function UsersPage() {
                     onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_superuser: v }))}
                   />
                 </div>
+                {editForm.is_superuser && (
+                  <div className="flex items-center justify-between py-3 pl-8 pr-4">
+                    <div>
+                      <Label htmlFor="edit-comment-emails" className="cursor-pointer text-sm">
+                        {t('users.permCommentEmailsLabel')}
+                      </Label>
+                      <p
+                        id="edit-comment-emails-hint"
+                        className="text-[11px] text-muted-foreground"
+                      >
+                        {commentEmailSetting.error
+                          ? t('users.permCommentEmailsUnavailable', {
+                              reason: formatApiError(commentEmailSetting.error),
+                            })
+                          : editForm.email?.trim()
+                            ? t('users.permCommentEmailsTo', { email: editForm.email.trim() })
+                            : t('users.permCommentEmailsNoAddress')}
+                      </p>
+                    </div>
+                    <Switch
+                      id="edit-comment-emails"
+                      checked={commentEmails ?? savedCommentEmails ?? false}
+                      onCheckedChange={setCommentEmails}
+                      disabled={savedCommentEmails === undefined || !editForm.email?.trim()}
+                      aria-describedby="edit-comment-emails-hint"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between px-4 py-3">
                   <div>
                     <Label htmlFor="edit-is-active" className="cursor-pointer text-sm">
