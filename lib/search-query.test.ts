@@ -113,6 +113,21 @@ describe('search-query utilities', () => {
     });
     expect(tag?.label).toBe('Date: 1100 - 1200, at most 15');
   });
+
+  it('names the hands date tag and filter after the hand', () => {
+    const tags = buildActiveQueryTags({
+      submittedKeyword: '',
+      dateParams: { min_date: '1100', max_date: '1200' },
+      selectedFacets: [],
+      searchType: 'hands',
+    });
+
+    expect(tags.map((t) => [t.facetKey, t.label])).toEqual([
+      ['__date__', 'Hand Date: 1100 - 1200'],
+    ]);
+    expect(formatFacetTitle('text_date', 'hands')).toBe('Hand Date');
+    expect(formatFacetTitle('text_date', 'manuscripts')).toBe('Text Date');
+  });
 });
 
 describe('resetQueryForTypeChange', () => {

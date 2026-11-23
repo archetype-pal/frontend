@@ -17,7 +17,7 @@ describe('ResultsTable date columns', () => {
   it.each([
     ['manuscripts', 'Text Date'],
     ['images', 'Date'],
-    ['hands', 'Date'],
+    ['hands', 'Hand Date'],
     ['texts', 'MS Date'],
     ['clauses', 'Text Date'],
     ['people', 'Text Date'],
@@ -29,5 +29,12 @@ describe('ResultsTable date columns', () => {
     fireEvent.click(screen.getByRole('button', { name: heading }));
 
     expect(onSort).toHaveBeenCalledWith({ sortKey: 'date_min', sortUrl: undefined });
+  });
+
+  it('heads the stored hands Date column with Hand Date', () => {
+    render(<ResultsTable results={[]} resultType="hands" visibleColumns={['Date']} />);
+
+    expect(screen.getByRole('columnheader', { name: 'Hand Date' })).toBeTruthy();
+    expect(screen.queryByRole('columnheader', { name: 'Date' })).toBeNull();
   });
 });

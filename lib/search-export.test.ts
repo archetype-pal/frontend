@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLUMN_FIELD_MAP, buildFormattedCsv } from './search-export';
+import { COLUMN_FIELD_MAP, buildFormattedCsv, buildFormattedJson } from './search-export';
 import { SEARCH_RESULT_TYPES } from './search-types';
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 
@@ -25,6 +25,26 @@ describe('buildFormattedCsv', () => {
     );
 
     expect(csv).toBe('Repository,Shelfmark\n"\'=HYPERLINK(""http://x"")","MS 1, f. 2"');
+  });
+
+  it('heads the stored hands Date column with Hand Date', () => {
+    const csv = buildFormattedCsv(
+      'hands',
+      [{ name: 'Hand 1', date: 's. xii' }],
+      ['Hand Title', 'Date']
+    );
+
+    expect(csv).toBe('Hand Title,Hand Date\nHand 1,s. xii');
+  });
+
+  it('keys the stored hands Date column as Hand Date in JSON', () => {
+    const json = buildFormattedJson(
+      'hands',
+      [{ name: 'Hand 1', date: 's. xii' }],
+      ['Hand Title', 'Date']
+    );
+
+    expect(JSON.parse(json)).toEqual([{ 'Hand Title': 'Hand 1', 'Hand Date': 's. xii' }]);
   });
 
   it('exports the manuscripts Locus column', () => {

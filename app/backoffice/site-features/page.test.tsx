@@ -117,6 +117,14 @@ describe('<SiteFeaturesPage>', () => {
     expect(screen.getAllByText('Tags').length).toBeGreaterThan(0);
   });
 
+  it('names the hands date Hand Date among the columns and the filters', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /searchCategoryHands/ }));
+
+    expect(screen.getAllByText('Hand Date')).toHaveLength(2);
+    expect(screen.queryByText('Text Date')).toBeNull();
+  });
+
   it("reads Django's settings and saves the edited document back to it", async () => {
     renderPage();
     fireEvent.click(await screen.findByRole('switch', { name: 'searchCategoryImages' }));

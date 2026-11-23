@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import de from '@/messages/de.json';
+import fr from '@/messages/fr.json';
 import {
   HIDDEN_SORT_FIELDS,
   buildSortFields,
@@ -7,6 +9,7 @@ import {
   humanizeSortField,
   isOrderingUnsupported,
   parseOrdering,
+  sortLabelKey,
   type SearchOrdering,
 } from '@/lib/search-sort';
 
@@ -161,5 +164,19 @@ describe('isOrderingUnsupported', () => {
     expect(isOrderingUnsupported(null, manuscripts)).toBe(false);
     expect(isOrderingUnsupported('', manuscripts)).toBe(false);
     expect(isOrderingUnsupported(undefined, manuscripts)).toBe(false);
+  });
+});
+
+describe('hand date sort labels', () => {
+  it.each([
+    ['fr', fr.search.sortFields],
+    ['de', de.search.sortFields],
+  ])('names the hands date sorts apart from the plain date in %s', (_, labels) => {
+    const catalogue: Record<string, string> = labels;
+    for (const attribute of ['date_min', 'date_max']) {
+      const label = catalogue[sortLabelKey(attribute, 'hands')];
+      expect(label).toBeTruthy();
+      expect(label).not.toBe(catalogue[attribute]);
+    }
   });
 });
