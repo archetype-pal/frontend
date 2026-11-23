@@ -4,6 +4,8 @@ import {
   buildAdvancedExtraParams,
   buildDateFilterTag,
   buildQueryString,
+  clearDateFilters,
+  dateTagField,
   formatFacetTitle,
   normalizeQueryState,
   parseQueryRootFromUrl,
@@ -189,6 +191,27 @@ describe('resolveFacetClick', () => {
     expect(result.value.offset).toBe(0);
   });
 
+  it('sets the hand date window and keeps the plain one', () => {
+    const result = resolveFacetClick({
+      arg: 'http://localhost:8000/api/v1/search/graphs/facets?hand_date__min_date=900&hand_date__max_date=1000',
+      action: { type: 'mergeDateParams', field: 'hand_date' },
+      queryState: {
+        ...BASE_STATE,
+        dateParams: { min_date: '1100', max_date: '1200', hand_date__min_date: '800' },
+      },
+      baseFacetURL: 'http://localhost:8000/api/v1/search/graphs/facets',
+    });
+
+    expect(result.type).toBe('query');
+    if (result.type !== 'query') return;
+    expect(result.value.dateParams).toEqual({
+      min_date: '1100',
+      max_date: '1200',
+      hand_date__min_date: '900',
+      hand_date__max_date: '1000',
+    });
+  });
+
   it('replaces previously selected value for the same facet key', () => {
     const result = resolveFacetClick({
       arg: '/unused',
@@ -313,5 +336,68 @@ describe('resolveFacetClick', () => {
     });
 
     expect(result).toEqual({ type: 'keyword', value: 'DCD Misc. Ch. 624' });
+  });
+});
+
+describe('hand date window on Graphs', () => {
+  const dateParams = {
+    min_date: '1100',
+    max_date: '1200',
+    hand_date__min_date: '900',
+    hand_date__max_date: '1000',
+    hand_date__at_most_or_least: 'at most',
+    hand_date__date_diff: '20',
+  };
+
+  it('tags each date window under its own name', () => {
+    const tags = buildActiveQueryTags({
+      submittedKeyword: '',
+      dateParams,
+      selectedFacets: [],
+      searchType: 'graphs',
+    });
+
+    expect(tags.map((tag) => [tag.facetKey, tag.label])).toEqual([
+      ['__date__', 'Date: 1100 - 1200'],
+      ['__date__:hand_date', 'Hand Date: 900 - 1000, at most 20'],
+    ]);
+    expect(formatFacetTitle('hand_date', 'graphs')).toBe('Hand Date');
+  });
+
+  it('removes only the window its tag names', () => {
+    const state: QueryState = {
+      limit: 20,
+      offset: 40,
+      ordering: null,
+      selected_facets: [],
+      dateParams,
+    };
+
+    const handDate = clearDateFilters(state, dateTagField('__date__:hand_date') ?? undefined);
+    const plain = clearDateFilters(state, dateTagField('__date__') ?? undefined);
+
+    expect(handDate.dateParams).toEqual({ min_date: '1100', max_date: '1200' });
+    expect(handDate.offset).toBe(0);
+    expect(plain.dateParams).toEqual({
+      hand_date__min_date: '900',
+      hand_date__max_date: '1000',
+      hand_date__at_most_or_least: 'at most',
+      hand_date__date_diff: '20',
+    });
+  });
+
+  it('carries the hand date window through the URL as a date window', () => {
+    const query = buildQueryString({
+      limit: 20,
+      offset: 0,
+      ordering: null,
+      selected_facets: [],
+      dateParams,
+    });
+    const state = stateFromSearchParams(new URLSearchParams(query));
+
+    expect(query).toContain('hand_date__min_date=900');
+    expect(state.dateParams).toEqual(dateParams);
+    expect(state.extraParams).toEqual({});
   });
 });

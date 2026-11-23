@@ -22,7 +22,8 @@ import {
   type FeatureKey,
   type SectionKey,
 } from './site-features';
-import { SEARCH_RESULT_TYPES } from './search-types';
+import { getFacetOrder, SEARCH_RESULT_TYPES } from './search-types';
+import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 
 describe('normalizeSectionOrder', () => {
   it.each([undefined, []])('returns the canonical order when input is %s', (input) => {
@@ -106,6 +107,18 @@ describe('getDefaultConfig', () => {
       expect(Array.isArray(cat.visibleColumns)).toBe(true);
       expect(Array.isArray(cat.visibleFacets)).toBe(true);
     }
+  });
+
+  it('offers the graphs hand date column and filter but leaves them off', () => {
+    const graphs = getDefaultConfig().searchCategories.graphs;
+
+    expect(COLUMN_HEADERS_BY_TYPE.graphs).toContain('Hand Date');
+    expect(getFacetOrder('graphs')).toContain('hand_date');
+    expect(graphs.visibleColumns).not.toContain('Hand Date');
+    expect(graphs.visibleFacets).not.toContain('hand_date');
+    expect(getDefaultConfig().searchCategories.manuscripts.visibleFacets).toEqual([
+      ...getFacetOrder('manuscripts'),
+    ]);
   });
 
   it('enables every feature flag by default', () => {

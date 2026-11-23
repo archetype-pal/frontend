@@ -47,6 +47,16 @@ describe('buildFormattedCsv', () => {
     expect(JSON.parse(json)).toEqual([{ 'Hand Title': 'Hand 1', 'Hand Date': 's. xii' }]);
   });
 
+  it('exports the graphs Hand Date column', () => {
+    const csv = buildFormattedCsv(
+      'graphs',
+      [{ hand_name: 'Hand 1', hand_date: 's. xi' }],
+      ['Hand Name', 'Hand Date']
+    );
+
+    expect(csv).toBe('Hand Name,Hand Date\nHand 1,s. xi');
+  });
+
   it('exports the manuscripts Locus column', () => {
     const csv = buildFormattedCsv(
       'manuscripts',

@@ -10,6 +10,7 @@ import {
   isOrderingUnsupported,
   parseOrdering,
   sortLabelKey,
+  withoutDateSorts,
   type SearchOrdering,
 } from '@/lib/search-sort';
 
@@ -178,5 +179,37 @@ describe('hand date sort labels', () => {
       expect(label).toBeTruthy();
       expect(label).not.toBe(catalogue[attribute]);
     }
+  });
+});
+
+describe('withoutDateSorts', () => {
+  const graphs = ordering([
+    'hand_date_max',
+    '-hand_date_max',
+    'shelfmark',
+    '-shelfmark',
+    'hand_date_min',
+    '-hand_date_min',
+    'date_max',
+    '-date_max',
+    'date_min',
+    '-date_min',
+  ]);
+
+  it('lists the hand date sorts right after the plain date', () => {
+    expect(
+      buildSortFields(withoutDateSorts(graphs, null), humanize).map((f) => f.attribute)
+    ).toEqual(['shelfmark', 'date_min', 'date_max', 'hand_date_min', 'hand_date_max']);
+  });
+
+  it('drops both bounds of a date the site has not turned on', () => {
+    const hidden = withoutDateSorts(graphs, 'hand_date');
+
+    expect(buildSortFields(hidden, humanize).map((f) => f.attribute)).toEqual([
+      'shelfmark',
+      'date_min',
+      'date_max',
+    ]);
+    expect(isOrderingUnsupported('-hand_date_min', hidden)).toBe(true);
   });
 });

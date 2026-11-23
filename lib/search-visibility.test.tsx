@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDefaultConfig, type SiteFeaturesConfig } from '@/lib/site-features';
 import type { ResultType } from '@/lib/search-types';
-import { useSearchVisibility } from './search-visibility';
+import { hiddenDateSortField, useSearchVisibility } from './search-visibility';
 
 const mockState = vi.hoisted(() => ({
   isAuthenticated: false,
@@ -123,5 +123,32 @@ describe('useSearchVisibility', () => {
     expect(result.current.visibleColumns).toEqual(['Repository City']);
     expect(result.current.visibleFacets).toEqual(['text_date']);
     expect(window.localStorage.getItem(storageKey('manuscripts'))).toBeNull();
+  });
+});
+
+describe('hiddenDateSortField', () => {
+  it('hides the graphs hand date while neither its column nor its filter is on', () => {
+    expect(
+      hiddenDateSortField('graphs', {
+        visibleColumns: ['Shelfmark', 'Document Date'],
+        visibleFacets: ['allograph'],
+      })
+    ).toBe('hand_date');
+  });
+
+  it('shows it once its column is on', () => {
+    expect(
+      hiddenDateSortField('graphs', { visibleColumns: ['Hand Date'], visibleFacets: [] })
+    ).toBeNull();
+  });
+
+  it('shows it once its filter is on', () => {
+    expect(
+      hiddenDateSortField('graphs', { visibleColumns: [], visibleFacets: ['hand_date'] })
+    ).toBeNull();
+  });
+
+  it('never hides the date of a tab that always has it', () => {
+    expect(hiddenDateSortField('hands', { visibleColumns: [], visibleFacets: [] })).toBeNull();
   });
 });

@@ -73,6 +73,43 @@ describe('fetchDateBounds', () => {
     );
   });
 
+  it('reads the hand date extent on Graphs', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          facetStats: {
+            date_min: { min: 1093, max: 1308 },
+            date_max: { min: 1094, max: 1309 },
+            hand_date_min: { min: 780, max: 1180 },
+            hand_date_max: { min: 800, max: 1200 },
+          },
+        })
+      )
+    );
+
+    await expect(fetchDateBounds('graphs')).resolves.toEqual([780, 1200]);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/api/v1/search/graphs/facets/?limit=1&facets=hand_date_min%2Chand_date_max&attributes_to_retrieve=id'
+      ),
+      expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
+  it('has no hand date bounds when the graphs index lacks the hand date', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          facetStats: { date_min: { min: 1093, max: 1308 }, date_max: { min: 1094, max: 1309 } },
+        })
+      )
+    );
+
+    await expect(fetchDateBounds('graphs')).resolves.toBeNull();
+  });
+
   it('has no bounds for an index without dates', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ facetStats: {} })));
 
@@ -99,6 +136,13 @@ describe('withFixedDateBounds', () => {
 
   it('adds no facet for a date the tab does not show', () => {
     expect(withFixedDateBounds({}, [1093, 1309], [])).toEqual({});
+  });
+
+  it('fixes the range of the filter that holds the hand date', () => {
+    expect(withFixedDateBounds({}, [780, 1200], ['hand_date'], 'hand_date')).toEqual({
+      hand_date: { kind: 'range', range: [780, 1200], defaultValue: [780, 1200] },
+    });
+    expect(withFixedDateBounds({}, [780, 1200], ['allograph'], 'hand_date')).toEqual({});
   });
 
   it('leaves the facets as they are until the bounds are known', () => {
