@@ -55,4 +55,11 @@ describe('<UsersPage>', () => {
     expect(proxyFetch).toHaveBeenCalledTimes(2);
     expect(proxyFetch.mock.calls[1][0]).toContain('offset=100');
   });
+
+  it('shows no email addresses in the table', async () => {
+    renderPage();
+
+    expect(await screen.findByText('user001')).toBeTruthy();
+    expect(screen.queryByText('user1@example.test')).toBeNull();
+  });
 });
