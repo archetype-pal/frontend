@@ -10,7 +10,7 @@ function thumbValues() {
 }
 
 function typeWindow(value: string) {
-  fireEvent.change(screen.getByLabelText('Date range (min x max)'), { target: { value } });
+  fireEvent.change(screen.getByLabelText('Text Date range (min x max)'), { target: { value } });
 }
 
 function passDebounce() {
@@ -82,5 +82,13 @@ describe('<FacetDateRangePanel>', () => {
     passDebounce();
 
     expect(onSearch).toHaveBeenCalledTimes(2);
+  });
+
+  it('names its toggle and fields after its title', () => {
+    render(<FacetDateRangePanel title="Hand Date" range={RANGE} defaultExpanded />);
+
+    expect(screen.getByRole('button', { name: 'Hand Date' })).toBeTruthy();
+    expect(screen.getByLabelText('Hand Date range (min x max)')).toBeTruthy();
+    expect(screen.getByLabelText('Hand Date year difference')).toBeTruthy();
   });
 });

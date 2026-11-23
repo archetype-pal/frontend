@@ -412,7 +412,7 @@ describe('DynamicFacets', () => {
           />
         )
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Expand panel' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Text Date' }));
     }
 
     it('puts the thumbs on the window in the query', () => {
@@ -427,7 +427,7 @@ describe('DynamicFacets', () => {
       const onFacetClick = vi.fn();
       renderDateFacet({}, onFacetClick);
 
-      fireEvent.change(screen.getByLabelText('Date range (min x max)'), {
+      fireEvent.change(screen.getByLabelText('Text Date range (min x max)'), {
         target: { value: '1150x1200' },
       });
       fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
