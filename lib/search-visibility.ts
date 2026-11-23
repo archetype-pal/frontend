@@ -3,8 +3,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { getFacetOrder, type ResultType } from '@/lib/search-types';
-import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
+import { getDateFacet, getFacetOrder, type ResultType } from '@/lib/search-types';
+import { COLUMN_HEADERS_BY_TYPE, getColumnSortKey } from '@/components/search/results-table';
 
 export type FieldVisibility = {
   visibleColumns: string[];
@@ -35,6 +35,16 @@ function normalizeConfigFields(type: ResultType, value: FieldVisibility): FieldV
     visibleColumns: filterAllowed(value.visibleColumns, all.visibleColumns),
     visibleFacets: filterAllowed(value.visibleFacets, all.visibleFacets),
   };
+}
+
+export function hiddenDateSortField(type: ResultType, available: FieldVisibility): string | null {
+  const facet = getDateFacet(type);
+  if (!facet?.offByDefault || available.visibleFacets.includes(facet.key)) return null;
+  const sortKey = `${facet.field}_min`;
+  const columnOn = available.visibleColumns.some(
+    (column) => getColumnSortKey(type, column) === sortKey
+  );
+  return columnOn ? null : facet.field;
 }
 
 function constrainFields(value: FieldVisibility, allowed: FieldVisibility): FieldVisibility {

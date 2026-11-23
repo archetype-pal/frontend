@@ -51,6 +51,7 @@ export interface GraphListItem {
   character?: string;
   character_type?: string;
   hand_name?: string;
+  hand_date?: string;
   locus?: string;
   type?: string;
   scribe?: string;

@@ -2,8 +2,18 @@
 
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getFacetOrder, getFacetRenderMap, type ResultType } from '@/lib/search-types';
-import { getSelectedForFacet, formatFacetTitle, type ActiveFacetTag } from '@/lib/search-query';
+import {
+  getDateFacet,
+  getFacetOrder,
+  getFacetRenderMap,
+  type ResultType,
+} from '@/lib/search-types';
+import {
+  dateParamKey,
+  getSelectedForFacet,
+  formatFacetTitle,
+  type ActiveFacetTag,
+} from '@/lib/search-query';
 import { useSearchContext } from '@/contexts/search-context';
 import {
   KeywordSearchInput,
@@ -146,6 +156,7 @@ export function DynamicFacets({
 
   const allOrdered = React.useMemo<string[]>(() => [...getFacetOrder(searchType)], [searchType]);
   const renderConfig = React.useMemo(() => getFacetRenderMap(searchType), [searchType]);
+  const dateFacet = getDateFacet(searchType);
   const ordered = React.useMemo(
     () => (visibleFacets ? visibleFacets.filter((k) => allOrdered.includes(k)) : allOrdered),
     [visibleFacets, allOrdered]
@@ -263,6 +274,7 @@ export function DynamicFacets({
         {renderableFacets.map(({ facetKey, facetValue, type, title }) => {
           if (facetValue.kind === 'range') {
             const [rangeMin, rangeMax] = facetValue.range;
+            const field = dateFacet?.key === facetKey ? dateFacet.field : 'date';
             return (
               <FacetDateRangePanel
                 key={facetKey}
@@ -271,20 +283,27 @@ export function DynamicFacets({
                 range={facetValue.range}
                 defaultValue={facetValue.defaultValue}
                 value={[
-                  yearParam(dateParams?.min_date) ?? rangeMin,
-                  yearParam(dateParams?.max_date) ?? rangeMax,
+                  yearParam(dateParams?.[dateParamKey(field, 'min_date')]) ?? rangeMin,
+                  yearParam(dateParams?.[dateParamKey(field, 'max_date')]) ?? rangeMax,
                 ]}
                 onSearch={({ min, max, precision, diff }) => {
                   const hasPrecision = Boolean(precision) && diff > 0;
                   if (min <= rangeMin && max >= rangeMax && !hasPrecision) {
-                    onFacetClick?.(baseFacetURL, { type: 'mergeDateParams' });
+                    onFacetClick?.(baseFacetURL, { type: 'mergeDateParams', field });
                     return;
                   }
-                  let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`;
+                  const params = new URLSearchParams({
+                    [dateParamKey(field, 'min_date')]: String(min),
+                    [dateParamKey(field, 'max_date')]: String(max),
+                  });
                   if (hasPrecision) {
-                    url += `&at_most_or_least=${encodeURIComponent(precision)}&date_diff=${diff}`;
+                    params.set(dateParamKey(field, 'at_most_or_least'), precision);
+                    params.set(dateParamKey(field, 'date_diff'), String(diff));
                   }
-                  onFacetClick?.(url, { type: 'mergeDateParams' });
+                  onFacetClick?.(`${baseFacetURL}?${params.toString()}`, {
+                    type: 'mergeDateParams',
+                    field,
+                  });
                 }}
               />
             );

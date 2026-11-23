@@ -24,6 +24,7 @@ import type { ResultMap } from '@/types/search';
 import {
   clearAllFacetFilters,
   clearDateFilters,
+  dateTagField,
   removeExclusionFromExtraParams,
 } from '@/lib/search-query';
 const SearchTimelineView = React.lazy(() =>
@@ -373,8 +374,9 @@ export function SearchPage({ resultType: initialType }: { resultType?: ResultTyp
                       s.setMobileKeywordDraft('');
                       return;
                     }
-                    if (item.facetKey === '__date__') {
-                      s.setMobileQueryDraft((prev) => clearDateFilters(prev));
+                    const dateField = dateTagField(item.facetKey);
+                    if (dateField) {
+                      s.setMobileQueryDraft((prev) => clearDateFilters(prev, dateField));
                       return;
                     }
                     if (item.exclude) {

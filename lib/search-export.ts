@@ -53,6 +53,7 @@ export const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     Character: 'character',
     'Character Type': 'character_type',
     'Hand Name': 'hand_name',
+    'Hand Date': 'hand_date',
     Scribe: 'scribe',
     Place: 'place',
     Locus: 'locus',

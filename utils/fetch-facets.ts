@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '@/lib/api-fetch';
 import { env } from '@/lib/env';
-import { SEARCH_RESULT_CONFIG, type ResultType } from '@/lib/search-types';
+import { SEARCH_RESULT_CONFIG, getDateFacet, type ResultType } from '@/lib/search-types';
 import {
   buildApiUrl,
   normalizeKeyword,
@@ -212,9 +212,10 @@ export async function fetchDateBounds(
   resultType: ResultType,
   signal?: AbortSignal
 ): Promise<DateBounds | null> {
+  const field = getDateFacet(resultType)?.field ?? 'date';
   const params = new URLSearchParams({
     limit: '1',
-    facets: 'date_min,date_max',
+    facets: `${field}_min,${field}_max`,
     attributes_to_retrieve: 'id',
   });
   const res = await fetch(`${getSearchBaseFacetUrl(resultType)}?${params.toString()}`, {
@@ -223,18 +224,19 @@ export async function fetchDateBounds(
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { facetStats?: Record<string, Record<string, number>> };
-  const min = data.facetStats?.date_min?.min;
-  const max = data.facetStats?.date_max?.max;
+  const min = data.facetStats?.[`${field}_min`]?.min;
+  const max = data.facetStats?.[`${field}_max`]?.max;
   return typeof min === 'number' && typeof max === 'number' ? [min, max] : null;
 }
 
 export function withFixedDateBounds(
   facets: FacetData,
   bounds: DateBounds | null,
-  visibleFacets: readonly string[]
+  visibleFacets: readonly string[],
+  facetKey = 'text_date'
 ): FacetData {
-  if (!bounds || !visibleFacets.includes('text_date')) return facets;
-  return { ...facets, text_date: { kind: 'range', range: bounds, defaultValue: bounds } };
+  if (!bounds || !visibleFacets.includes(facetKey)) return facets;
+  return { ...facets, [facetKey]: { kind: 'range', range: bounds, defaultValue: bounds } };
 }
 
 export async function fetchFacetsAndResults(

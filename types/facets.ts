@@ -20,7 +20,7 @@ export type FacetValue = FacetListValue | FacetRangeValue;
 export type FacetData = Record<string, FacetValue>;
 
 export type FacetClickAction =
-  | { type: 'mergeDateParams' }
+  | { type: 'mergeDateParams'; field?: string }
   | { type: 'selectFacet'; facetKey: string; value: string }
   | { type: 'deselectFacet'; facetKey: string; value: string }
   | { type: 'excludeFacet'; facetKey: string; value: string }

@@ -7,6 +7,7 @@ import {
   buildActiveQueryTags,
   clearAllFacetFilters,
   clearDateFilters,
+  dateTagField,
   removeExclusionFromExtraParams,
   resolveFacetClick,
   stateFromUrl,
@@ -116,17 +117,21 @@ export function useSearchQuery(opts: {
     (item: ActiveFacetTag) => {
       const specialRemovers: Record<string, () => void> = {
         __keyword__: handleClearKeyword,
-        __date__: handleClearDateFiltersLocal,
       };
       const remove = specialRemovers[item.facetKey];
       if (remove) return remove();
+      const dateField = dateTagField(item.facetKey);
+      if (dateField) {
+        setQueryState((prev) => clearDateFilters(prev, dateField));
+        return;
+      }
       if (item.exclude) {
         setQueryState((prev) => removeExclusionFromExtraParams(prev, item.facetKey, item.value));
         return;
       }
       handleFacetClick('', { type: 'deselectFacet', facetKey: item.facetKey, value: item.value });
     },
-    [handleClearDateFiltersLocal, handleClearKeyword, handleFacetClick]
+    [handleClearKeyword, handleFacetClick]
   );
 
   const handleSort = React.useCallback(

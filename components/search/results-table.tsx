@@ -322,6 +322,13 @@ const COLUMNS = {
     },
     // Opt-in columns (below the default-visible prefix).
     makeColumn(
+      'Hand Date',
+      (g: GraphListItem) => g.hand_date ?? '—',
+      'hand_date_min',
+      undefined,
+      'hand_date'
+    ),
+    makeColumn(
       'Character Type',
       (g: GraphListItem) => g.character_type ?? '—',
       'character_type_exact'
@@ -388,6 +395,11 @@ const COLUMNS = {
 export const COLUMN_HEADERS_BY_TYPE: Record<ResultType, string[]> = Object.fromEntries(
   SEARCH_RESULT_TYPES.map((type) => [type, COLUMNS[type].map((column) => column.header)])
 ) as Record<ResultType, string[]>;
+
+export function getColumnSortKey(resultType: ResultType, header: string): string | undefined {
+  const columns: readonly { header: string; sortKey?: string }[] = COLUMNS[resultType];
+  return columns.find((column) => column.header === header)?.sortKey;
+}
 
 /* ---------- sub-row accessors (legacy two-row pattern) ---------- */
 

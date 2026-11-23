@@ -1,7 +1,7 @@
 import { isRecord } from './is-record';
 import {
   getDefaultVisibleColumns,
-  getFacetOrder,
+  getDefaultVisibleFacets,
   SEARCH_RESULT_TYPES,
   type ResultType,
 } from './search-types';
@@ -311,7 +311,7 @@ export function getDefaultConfig(): SiteFeaturesConfig {
       {
         enabled: true,
         visibleColumns: [...DEFAULT_COLUMNS[type]],
-        visibleFacets: [...getFacetOrder(type)],
+        visibleFacets: getDefaultVisibleFacets(type),
       },
     ])
   ) as Record<ResultType, SearchCategoryConfig>;

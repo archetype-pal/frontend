@@ -3,6 +3,7 @@
  */
 import type { FacetClickAction } from '@/types/facets';
 import { newId } from '@/lib/id';
+import { DATE_FIELDS, getDateFacet } from '@/lib/search-types';
 
 export type QueryState = {
   limit: number;
@@ -32,7 +33,33 @@ export const DEFAULT_QUERY: QueryState = {
   extraParams: {},
 };
 
-const DATE_PARAM_KEYS = ['min_date', 'max_date', 'at_most_or_least', 'date_diff'] as const;
+const DATE_PARAM_NAMES = ['min_date', 'max_date', 'at_most_or_least', 'date_diff'] as const;
+type DateParamName = (typeof DATE_PARAM_NAMES)[number];
+const DATE_TAG_KEY = '__date__';
+
+export function dateParamKey(field: string, name: DateParamName): string {
+  return field === 'date' ? name : `${field}__${name}`;
+}
+
+function dateParamKeys(field: string): string[] {
+  return DATE_PARAM_NAMES.map((name) => dateParamKey(field, name));
+}
+
+const DATE_PARAM_KEYS = DATE_FIELDS.flatMap(dateParamKeys);
+
+function withoutDateField(
+  dateParams: Record<string, string>,
+  field: string
+): Record<string, string> {
+  const dropped = new Set(dateParamKeys(field));
+  return Object.fromEntries(Object.entries(dateParams).filter(([key]) => !dropped.has(key)));
+}
+
+export function dateTagField(facetKey: string): string | null {
+  if (facetKey === DATE_TAG_KEY) return 'date';
+  return facetKey.startsWith(`${DATE_TAG_KEY}:`) ? facetKey.slice(DATE_TAG_KEY.length + 1) : null;
+}
+
 const FACET_EXACT_SUFFIX = '_exact';
 const MULTI_SELECT_FACETS = new Set(['component_features']);
 
@@ -258,7 +285,10 @@ export function resolveFacetClick({
         type: 'query',
         value: {
           ...queryState,
-          dateParams: parseDateParamsFromUrl(arg, baseFacetURL),
+          dateParams: {
+            ...withoutDateField(queryState.dateParams, action.field ?? 'date'),
+            ...parseDateParamsFromUrl(arg, baseFacetURL),
+          },
           offset: 0,
         },
       };
@@ -391,23 +421,28 @@ function buildExclusionTagsFromExtraParams(
 
 export function buildDateFilterTag(
   dateParams: Record<string, string>,
-  searchType?: string
+  searchType?: string,
+  field = 'date'
 ): ActiveFacetTag | null {
-  const min = dateParams.min_date?.trim();
-  const max = dateParams.max_date?.trim();
-  const precision = dateParams.at_most_or_least?.trim();
-  const diff = dateParams.date_diff?.trim();
+  const param = (name: DateParamName) => dateParams[dateParamKey(field, name)]?.trim();
+  const min = param('min_date');
+  const max = param('max_date');
+  const precision = param('at_most_or_least');
+  const diff = param('date_diff');
   if (!min && !max && !precision && !diff) return null;
 
   const range = [min, max].filter(Boolean).join(' - ');
   const precisionPart = precision && diff ? `${precision} ${diff}` : '';
   const labelSuffix = [range, precisionPart].filter(Boolean).join(', ');
 
+  const dateFacet = getDateFacet(searchType);
+  const facetKey = dateFacet?.field === field ? dateFacet.key : 'text_date';
+  const tagKey = field === 'date' ? DATE_TAG_KEY : `${DATE_TAG_KEY}:${field}`;
   return {
-    id: '__date__',
-    facetKey: '__date__',
+    id: tagKey,
+    facetKey: tagKey,
     value: labelSuffix,
-    label: `${dateTagName('text_date', searchType)}: ${labelSuffix || 'Custom range'}`,
+    label: `${dateTagName(facetKey, searchType)}: ${labelSuffix || 'Custom range'}`,
   };
 }
 
@@ -434,8 +469,11 @@ export function buildActiveQueryTags({
       label: `Keyword: ${keywordValue}`,
     });
   }
-  const dateTag = buildDateFilterTag(dateParams, searchType);
-  if (dateTag) tags.push(dateTag);
+  const tabField = getDateFacet(searchType)?.field ?? 'date';
+  for (const field of tabField === 'date' ? ['date'] : ['date', tabField]) {
+    const dateTag = buildDateFilterTag(dateParams, searchType, field);
+    if (dateTag) tags.push(dateTag);
+  }
   tags.push(...buildExclusionTagsFromExtraParams(extraParams, searchType));
   return [...tags, ...buildActiveFacetTags(selectedFacets, searchType)];
 }
@@ -454,6 +492,9 @@ const FACET_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
   },
   hands: {
     text_date: 'Hand Date',
+  },
+  graphs: {
+    hand_date: 'Hand Date',
   },
   places: {
     place_type: 'Place Type',
@@ -528,10 +569,10 @@ export function resetQueryForTypeChange(queryState: QueryState): QueryState {
   return { ...clearAllFacetFilters(queryState), ordering: null };
 }
 
-export function clearDateFilters(queryState: QueryState): QueryState {
+export function clearDateFilters(queryState: QueryState, field?: string): QueryState {
   return {
     ...queryState,
-    dateParams: {},
+    dateParams: field ? withoutDateField(queryState.dateParams, field) : {},
     offset: 0,
   };
 }
