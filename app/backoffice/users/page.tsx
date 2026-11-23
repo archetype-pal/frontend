@@ -215,7 +215,7 @@ export default function UsersPage() {
       if (preset === 'staff' && !u.is_staff) return false;
       if (preset === 'inactive' && u.is_active) return false;
       if (q) {
-        const haystack = `${u.username} ${u.email} ${fullName(u)}`.toLowerCase();
+        const haystack = `${u.username} ${fullName(u)}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -628,10 +628,7 @@ export default function UsersPage() {
                           >
                             {getInitials(u)}
                           </div>
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-sm">{u.username}</p>
-                            <p className="truncate text-xs text-muted-foreground">{u.email}</p>
-                          </div>
+                          <p className="min-w-0 truncate font-medium text-sm">{u.username}</p>
                         </div>
                       </TableCell>
                       <TableCell>
