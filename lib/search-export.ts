@@ -1,5 +1,5 @@
 import { escapeCsvField } from '@/lib/backoffice/csv-escape';
-import type { ResultType } from '@/lib/search-types';
+import { getColumnLabel, type ResultType } from '@/lib/search-types';
 
 /**
  * Maps column display headers → raw Meilisearch field keys per result type.
@@ -53,6 +53,7 @@ export const COLUMN_FIELD_MAP: Record<ResultType, Record<string, string>> = {
     Character: 'character',
     'Character Type': 'character_type',
     'Hand Name': 'hand_name',
+    'Hand Date': 'hand_date',
     Scribe: 'scribe',
     Place: 'place',
     Locus: 'locus',
@@ -123,7 +124,9 @@ export function buildFormattedCsv(
   const columns = visibleColumns.filter((col) => col in fieldMap);
   if (columns.length === 0) return '';
 
-  const headerLine = columns.map(escapeCsvField).join(',');
+  const headerLine = columns
+    .map((col) => escapeCsvField(getColumnLabel(resultType, col)))
+    .join(',');
   const dataLines = rows.map((row) =>
     columns.map((col) => escapeCsvField(formatCell(row[fieldMap[col]]))).join(',')
   );
@@ -140,7 +143,7 @@ export function buildFormattedJson(
   const mapped = rows.map((row) => {
     const out: Record<string, unknown> = {};
     for (const col of columns) {
-      out[col] = row[fieldMap[col]] ?? null;
+      out[getColumnLabel(resultType, col)] = row[fieldMap[col]] ?? null;
     }
     return out;
   });

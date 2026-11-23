@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import de from '@/messages/de.json';
+import fr from '@/messages/fr.json';
 import {
   HIDDEN_SORT_FIELDS,
   buildSortFields,
@@ -7,6 +9,8 @@ import {
   humanizeSortField,
   isOrderingUnsupported,
   parseOrdering,
+  sortLabelKey,
+  withoutDateSorts,
   type SearchOrdering,
 } from '@/lib/search-sort';
 
@@ -161,5 +165,51 @@ describe('isOrderingUnsupported', () => {
     expect(isOrderingUnsupported(null, manuscripts)).toBe(false);
     expect(isOrderingUnsupported('', manuscripts)).toBe(false);
     expect(isOrderingUnsupported(undefined, manuscripts)).toBe(false);
+  });
+});
+
+describe('hand date sort labels', () => {
+  it.each([
+    ['fr', fr.search.sortFields],
+    ['de', de.search.sortFields],
+  ])('names the hands date sorts apart from the plain date in %s', (_, labels) => {
+    const catalogue: Record<string, string> = labels;
+    for (const attribute of ['date_min', 'date_max']) {
+      const label = catalogue[sortLabelKey(attribute, 'hands')];
+      expect(label).toBeTruthy();
+      expect(label).not.toBe(catalogue[attribute]);
+    }
+  });
+});
+
+describe('withoutDateSorts', () => {
+  const graphs = ordering([
+    'hand_date_max',
+    '-hand_date_max',
+    'shelfmark',
+    '-shelfmark',
+    'hand_date_min',
+    '-hand_date_min',
+    'date_max',
+    '-date_max',
+    'date_min',
+    '-date_min',
+  ]);
+
+  it('lists the hand date sorts right after the plain date', () => {
+    expect(
+      buildSortFields(withoutDateSorts(graphs, null), humanize).map((f) => f.attribute)
+    ).toEqual(['shelfmark', 'date_min', 'date_max', 'hand_date_min', 'hand_date_max']);
+  });
+
+  it('drops both bounds of a date the site has not turned on', () => {
+    const hidden = withoutDateSorts(graphs, 'hand_date');
+
+    expect(buildSortFields(hidden, humanize).map((f) => f.attribute)).toEqual([
+      'shelfmark',
+      'date_min',
+      'date_max',
+    ]);
+    expect(isOrderingUnsupported('-hand_date_min', hidden)).toBe(true);
   });
 });

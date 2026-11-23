@@ -15,6 +15,7 @@ import {
   buildSortFields,
   humanizeSortField,
   parseOrdering,
+  sortLabelKey,
   type SearchOrdering,
 } from '@/lib/search-sort';
 
@@ -27,6 +28,7 @@ type SortControlProps = {
   /** The user's explicit choice (`queryState.ordering`), null when unset. */
   value: string | null;
   onChange: (next: { attribute: string | null; descending: boolean }) => void;
+  resultType?: string;
   className?: string;
 };
 
@@ -39,18 +41,24 @@ type SortControlProps = {
  * from the response, never a hardcoded per-type list, so the terms stay
  * customisable per site via the backend registry.
  */
-export function SortControl({ ordering, value, onChange, className }: SortControlProps) {
+export function SortControl({
+  ordering,
+  value,
+  onChange,
+  resultType,
+  className,
+}: SortControlProps) {
   const t = useTranslations('search');
 
   const labelFor = React.useCallback(
     (attribute: string) => {
       // A site can add a sortable attribute without shipping a translation for
       // it; fall back to a humanized name rather than rendering a raw key.
-      const key = `sortFields.${attribute}`;
+      const key = `sortFields.${sortLabelKey(attribute, resultType)}`;
       const translated = t.has(key) ? t(key) : '';
       return translated || humanizeSortField(attribute);
     },
-    [t]
+    [t, resultType]
   );
 
   const fields = React.useMemo(() => buildSortFields(ordering, labelFor), [ordering, labelFor]);

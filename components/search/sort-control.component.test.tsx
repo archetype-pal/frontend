@@ -26,4 +26,30 @@ describe('<SortControl>', () => {
     }) as HTMLButtonElement;
     expect(directionButton.disabled).toBe(true);
   });
+
+  const dateOrdering: SearchOrdering = {
+    current: '-id',
+    options: ['date_min', '-date_min', 'date_max', '-date_max'].map((name) => ({
+      name,
+      text: name,
+      url: `/search?ordering=${name}`,
+    })),
+  };
+
+  it.each([
+    ['hands', 'date_min', 'Hand Date (earliest)'],
+    ['hands', 'date_max', 'Hand Date (latest)'],
+    ['manuscripts', 'date_min', 'Date (earliest)'],
+  ])('names the %s %s sort %s', (resultType, value, label) => {
+    render(
+      <SortControl
+        ordering={dateOrdering}
+        value={value}
+        onChange={vi.fn()}
+        resultType={resultType}
+      />
+    );
+
+    expect(screen.getByText(label)).toBeTruthy();
+  });
 });

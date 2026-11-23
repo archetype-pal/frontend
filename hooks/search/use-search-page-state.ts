@@ -2,13 +2,13 @@
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import type { ResultType } from '@/lib/search-types';
+import { getDateFacet, type ResultType } from '@/lib/search-types';
 import { useSiteFeatures } from '@/contexts/site-features-context';
-import { useSearchVisibility } from '@/lib/search-visibility';
+import { hiddenDateSortField, useSearchVisibility } from '@/lib/search-visibility';
 import { useModelLabels } from '@/contexts/model-labels-context';
 import { useSearchResults } from '@/hooks/search/use-search-results';
 import { resetQueryForTypeChange, stateFromSearchParams } from '@/lib/search-query';
-import { isOrderingUnsupported } from '@/lib/search-sort';
+import { isOrderingUnsupported, withoutDateSorts } from '@/lib/search-sort';
 import {
   DEFAULT_ADVANCED_SEARCH_STATE,
   type AdvancedSearchState,
@@ -116,7 +116,15 @@ export function useSearchPageState(initialType?: ResultType) {
   // (Scribe, Allograph…) the incoming index has never heard of — and picking one
   // writes an attribute the backend silently drops. Withhold the block until the
   // response for the type actually being displayed arrives.
-  const sortOrdering = dataResultType === resultType ? data.ordering : undefined;
+  const hiddenDateSort = hiddenDateSortField(resultType, {
+    visibleColumns: visibility.availableColumns,
+    visibleFacets: visibility.availableFacets,
+  });
+  const sortOrdering = React.useMemo(
+    () =>
+      dataResultType === resultType ? withoutDateSorts(data.ordering, hiddenDateSort) : undefined,
+    [dataResultType, resultType, data.ordering, hiddenDateSort]
+  );
 
   // Self-heal an `ordering` this index rejects: a bookmarked `?ordering=scribe`
   // opened on /search/manuscripts, or a field picked during the window above.
@@ -144,10 +152,16 @@ export function useSearchPageState(initialType?: ResultType) {
   // previous type's facets, and its totals.
   const awaitingResults = isLoading || dataResultType !== resultType;
   const timelineDistribution = data.facetDistribution?.date_min ?? {};
-  const dateBounds = useSearchDateBounds(resultType);
+  const dateBounds = useSearchDateBounds(resultType, visibility.visibleFacets);
   const facets = React.useMemo(
-    () => withFixedDateBounds(data.facets, dateBounds, visibility.visibleFacets),
-    [data.facets, dateBounds, visibility.visibleFacets]
+    () =>
+      withFixedDateBounds(
+        data.facets,
+        dateBounds,
+        visibility.visibleFacets,
+        getDateFacet(resultType)?.key
+      ),
+    [data.facets, dateBounds, visibility.visibleFacets, resultType]
   );
 
   const exportHook = useSearchExport({

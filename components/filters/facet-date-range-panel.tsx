@@ -167,7 +167,6 @@ export function FacetDateRangePanel({
         <button
           type="button"
           aria-expanded={expanded}
-          aria-label={expanded ? 'Collapse panel' : 'Expand panel'}
           onClick={() => setExpanded((prev) => !prev)}
           className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
         >
@@ -197,7 +196,7 @@ export function FacetDateRangePanel({
               }}
               placeholder={`Search ${title.toLowerCase()}...`}
               className="pl-8"
-              aria-label="Date range (min x max)"
+              aria-label={`${title} range (min x max)`}
             />
           </div>
 
@@ -240,7 +239,7 @@ export function FacetDateRangePanel({
                 value={year}
                 onChange={handleYearChange}
                 placeholder="0"
-                aria-label="Year difference"
+                aria-label={`${title} year difference`}
                 disabled={precision === precisionOptions[0].value}
               />
             </div>

@@ -24,13 +24,16 @@ type Hook = ReturnType<typeof useSearchQuery>;
  * `handleSort` falls through to its local toggle branch instead of following a
  * server-supplied ordering URL.
  */
-function mountHook() {
+function mountHook(
+  initialQueryState: QueryState = INITIAL,
+  resultType: 'manuscripts' | 'graphs' = 'manuscripts'
+) {
   const ref: { current: Hook | null } = { current: null };
 
   function Harness() {
     ref.current = useSearchQuery({
-      initialQueryState: INITIAL,
-      resultType: 'manuscripts',
+      initialQueryState,
+      resultType,
       baseFacetURL: 'https://example.test/api/v1/search/manuscripts/facets/',
       submittedKeyword: '',
       ordering: undefined,
@@ -135,5 +138,30 @@ describe('useSearchQuery — sort key convention', () => {
     } finally {
       h.unmount();
     }
+  });
+});
+
+describe('useSearchQuery date tags on Graphs', () => {
+  it('removes the Hand Date tag and keeps the plain date window', () => {
+    const view = mountHook(
+      {
+        ...INITIAL,
+        dateParams: {
+          min_date: '1100',
+          max_date: '1200',
+          hand_date__min_date: '900',
+          hand_date__max_date: '1000',
+        },
+      },
+      'graphs'
+    );
+    const handDateTag = view.hook.activeTags.find((tag) => tag.label.startsWith('Hand Date'));
+    expect(handDateTag).toBeDefined();
+
+    act(() => view.hook.handleRemoveTag(handDateTag!));
+
+    expect(view.hook.queryState.dateParams).toEqual({ min_date: '1100', max_date: '1200' });
+    expect(view.hook.activeTags.map((tag) => tag.label)).toEqual(['Date: 1100 - 1200']);
+    view.unmount();
   });
 });

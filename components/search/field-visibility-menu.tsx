@@ -8,7 +8,7 @@ import {
   SortableCheckboxList,
   type SortableItem,
 } from '@/components/backoffice/site-features/sortable-checkbox-list';
-import { getFacetOrder, type ResultType } from '@/lib/search-types';
+import { getColumnLabel, getFacetOrder, type ResultType } from '@/lib/search-types';
 import { COLUMN_HEADERS_BY_TYPE } from '@/components/search/results-table';
 import { formatFacetTitle } from '@/lib/search-query';
 
@@ -37,7 +37,7 @@ export function FieldVisibilityMenu({
     () =>
       (availableColumns ?? COLUMN_HEADERS_BY_TYPE[resultType]).map((col) => ({
         id: col,
-        label: col,
+        label: getColumnLabel(resultType, col),
       })),
     [availableColumns, resultType]
   );

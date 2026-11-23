@@ -38,6 +38,8 @@ const SORT_FIELD_ORDER: string[] = [
   'locus',
   'date_min',
   'date_max',
+  'hand_date_min',
+  'hand_date_max',
   'type',
   'catalogue_numbers',
   'name',
@@ -55,6 +57,14 @@ const SORT_FIELD_ORDER: string[] = [
   'number_of_images',
   'number_of_annotations',
 ];
+
+const SORT_LABEL_KEYS: Record<string, Record<string, string>> = {
+  hands: { date_min: 'hand_date_min', date_max: 'hand_date_max' },
+};
+
+export function sortLabelKey(attribute: string, resultType?: string): string {
+  return SORT_LABEL_KEYS[resultType ?? '']?.[attribute] ?? attribute;
+}
 
 /** `repository_city` → `Repository City`. Fallback when no translation exists. */
 export function humanizeSortField(attribute: string): string {
@@ -81,6 +91,17 @@ export function canonicalSortAttribute(name: string): string {
     .trim()
     .replace(/^-/, '')
     .replace(/_exact$/, '');
+}
+
+export function withoutDateSorts(ordering: SearchOrdering, field: string | null): SearchOrdering {
+  if (!ordering || !field) return ordering;
+  const dropped = new Set([`${field}_min`, `${field}_max`]);
+  return {
+    ...ordering,
+    options: ordering.options.filter(
+      (option) => !dropped.has(canonicalSortAttribute(option?.name ?? ''))
+    ),
+  };
 }
 
 /**

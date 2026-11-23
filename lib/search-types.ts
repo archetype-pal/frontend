@@ -15,6 +15,8 @@ export type FacetRenderType = 'checkbox' | 'toggle' | 'range' | 'number-select' 
 type SearchFacetConfig = {
   key: string;
   render: FacetRenderType;
+  dateField?: string;
+  offByDefault?: boolean;
 };
 
 type SearchResultConfigSeed = {
@@ -120,6 +122,7 @@ export const SEARCH_RESULT_CONFIG = {
       'Thumbnail',
     ],
     facets: [
+      { key: 'hand_date', render: 'range', dateField: 'hand_date', offByDefault: true },
       { key: 'character', render: 'checkbox' },
       { key: 'character_type', render: 'checkbox' },
       { key: 'allograph', render: 'checkbox' },
@@ -223,6 +226,36 @@ export function getFacetOrder(resultType: ResultType): readonly string[] {
   return SEARCH_RESULT_CONFIG[resultType].facets.map((facet) => facet.key);
 }
 
+function facetsOf(resultType: ResultType): readonly SearchFacetConfig[] {
+  return SEARCH_RESULT_CONFIG[resultType].facets;
+}
+
+export function getDefaultVisibleFacets(resultType: ResultType): string[] {
+  return facetsOf(resultType)
+    .filter((facet) => !facet.offByDefault)
+    .map((facet) => facet.key);
+}
+
+export type DateFacet = { key: string; field: string; offByDefault: boolean };
+
+export function getDateFacet(resultType: string | undefined): DateFacet | undefined {
+  if (!(SEARCH_RESULT_TYPES as readonly string[]).includes(resultType ?? '')) return undefined;
+  const facet = facetsOf(resultType as ResultType).find(({ render }) => render === 'range');
+  if (!facet) return undefined;
+  return {
+    key: facet.key,
+    field: facet.dateField ?? 'date',
+    offByDefault: facet.offByDefault ?? false,
+  };
+}
+
+export const DATE_FIELDS: readonly string[] = [
+  'date',
+  ...SEARCH_RESULT_TYPES.flatMap((type) =>
+    facetsOf(type).flatMap(({ dateField }) => (dateField ? [dateField] : []))
+  ),
+];
+
 export function getFacetRenderMap(resultType: ResultType): Record<string, FacetRenderType> {
   return Object.fromEntries(
     SEARCH_RESULT_CONFIG[resultType].facets.map((facet) => [facet.key, facet.render])
@@ -231,6 +264,14 @@ export function getFacetRenderMap(resultType: ResultType): Record<string, FacetR
 
 export function getDefaultVisibleColumns(resultType: ResultType): readonly string[] {
   return SEARCH_RESULT_CONFIG[resultType].defaultVisibleColumns;
+}
+
+const COLUMN_LABELS: Partial<Record<ResultType, Record<string, string>>> = {
+  hands: { Date: 'Hand Date' },
+};
+
+export function getColumnLabel(resultType: ResultType, column: string): string {
+  return COLUMN_LABELS[resultType]?.[column] ?? column;
 }
 
 export const resultTypeItems = SEARCH_RESULT_TYPES.map((value) => ({
