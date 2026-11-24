@@ -8,6 +8,8 @@ function listAt(top: number, scrollMarginTop = '') {
   el.style.scrollMarginTop = scrollMarginTop;
   el.getBoundingClientRect = () => ({ top }) as DOMRect;
   el.scrollIntoView = vi.fn();
+  // Computed style is only defined for an element that is in the document.
+  document.body.appendChild(el);
   return el;
 }
 
@@ -20,6 +22,7 @@ function preferReducedMotion(reduce: boolean) {
 describe('scrollUpToElement', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    document.body.replaceChildren();
   });
 
   it('smoothly scrolls a list whose top has scrolled out of view back to its top', () => {
@@ -64,6 +67,7 @@ function scroller(top: number, height: number, scrollable = true) {
   Object.defineProperty(el, 'clientHeight', { value: height });
   el.getBoundingClientRect = () => ({ top, bottom: top + height }) as DOMRect;
   el.scrollBy = vi.fn();
+  document.body.appendChild(el);
   return el;
 }
 
@@ -77,6 +81,7 @@ function childAt(parent: HTMLElement, top: number, height: number) {
 describe('scrollIntoNearestScroller', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    document.body.replaceChildren();
   });
 
   it('centres an element that sits below the visible part of its scroller', () => {
