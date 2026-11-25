@@ -38,6 +38,7 @@ type DynamicFacetsProps = {
   activeTags: ActiveFacetTag[];
   onRemoveTag?: (item: ActiveFacetTag) => void;
   selectedFacets?: string[];
+  dateParams?: Record<string, string>;
   onClearAllFilters?: () => void;
   onFacetClick?: (arg: string, action?: FacetClickAction) => void;
   baseFacetURL: string;
@@ -61,6 +62,11 @@ type DynamicFacetsProps = {
   keywordInputId?: string;
 };
 
+function yearParam(raw: string | undefined): number | null {
+  const year = Number.parseInt(raw ?? '', 10);
+  return Number.isFinite(year) ? year : null;
+}
+
 export function DynamicFacets({
   facets,
   searchType,
@@ -72,6 +78,7 @@ export function DynamicFacets({
   activeTags,
   onRemoveTag,
   selectedFacets = [],
+  dateParams,
   onClearAllFilters,
   onFacetClick,
   baseFacetURL,
@@ -255,6 +262,7 @@ export function DynamicFacets({
       <div key={searchType} className="space-y-4">
         {renderableFacets.map(({ facetKey, facetValue, type, title }) => {
           if (facetValue.kind === 'range') {
+            const [rangeMin, rangeMax] = facetValue.range;
             return (
               <FacetDateRangePanel
                 key={facetKey}
@@ -262,9 +270,18 @@ export function DynamicFacets({
                 title={title}
                 range={facetValue.range}
                 defaultValue={facetValue.defaultValue}
+                value={[
+                  yearParam(dateParams?.min_date) ?? rangeMin,
+                  yearParam(dateParams?.max_date) ?? rangeMax,
+                ]}
                 onSearch={({ min, max, precision, diff }) => {
+                  const hasPrecision = Boolean(precision) && diff > 0;
+                  if (min <= rangeMin && max >= rangeMax && !hasPrecision) {
+                    onFacetClick?.(baseFacetURL, { type: 'mergeDateParams' });
+                    return;
+                  }
                   let url = `${baseFacetURL}?min_date=${min}&max_date=${max}`;
-                  if (precision && diff > 0) {
+                  if (hasPrecision) {
                     url += `&at_most_or_least=${encodeURIComponent(precision)}&date_diff=${diff}`;
                   }
                   onFacetClick?.(url, { type: 'mergeDateParams' });

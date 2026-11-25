@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createRoot } from 'react-dom/client';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { act } from 'react';
 import { DynamicFacets } from './dynamic-facets';
 import { ModelLabelsProvider } from '@/contexts/model-labels-context';
@@ -382,5 +383,69 @@ describe('DynamicFacets', () => {
       root.unmount();
     });
     container.remove();
+  });
+
+  describe('date range facet', () => {
+    const BASE_URL = 'http://localhost:8000/api/v1/search/item-parts/facets';
+    const facets: FacetData = {
+      text_date: { kind: 'range', range: [1093, 1309], defaultValue: [1093, 1309] },
+    };
+
+    function renderDateFacet(
+      dateParams: Record<string, string>,
+      onFacetClick: (arg: string) => void = () => {}
+    ) {
+      render(
+        withProviders(
+          <DynamicFacets
+            facets={facets}
+            searchType="manuscripts"
+            keyword=""
+            activeTags={[]}
+            onKeywordChange={() => {}}
+            onKeywordSubmit={() => {}}
+            selectedFacets={[]}
+            dateParams={dateParams}
+            onFacetClick={onFacetClick}
+            onClearAllFilters={() => {}}
+            baseFacetURL={BASE_URL}
+          />
+        )
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Expand panel' }));
+    }
+
+    it('puts the thumbs on the window in the query', () => {
+      renderDateFacet({ min_date: '1150', max_date: '1200' });
+
+      expect(
+        screen.getAllByRole('slider').map((thumb) => thumb.getAttribute('aria-valuenow'))
+      ).toEqual(['1150', '1200']);
+    });
+
+    it('filters by a window narrower than the range', () => {
+      const onFacetClick = vi.fn();
+      renderDateFacet({}, onFacetClick);
+
+      fireEvent.change(screen.getByLabelText('Date range (min x max)'), {
+        target: { value: '1150x1200' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+      expect(onFacetClick).toHaveBeenCalledWith(`${BASE_URL}?min_date=1150&max_date=1200`, {
+        type: 'mergeDateParams',
+      });
+    });
+
+    it('drops the date filter when the window is back on the whole range', () => {
+      const onFacetClick = vi.fn();
+      renderDateFacet({ min_date: '1150', max_date: '1200' }, onFacetClick);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+
+      expect(onFacetClick).toHaveBeenCalledWith(BASE_URL, {
+        type: 'mergeDateParams',
+      });
+    });
   });
 });

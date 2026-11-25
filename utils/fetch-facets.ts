@@ -103,6 +103,8 @@ export const searchKeys = {
   resultType: (resultType: ResultType) => [...searchKeys.all, resultType] as const,
   facets: (resultType: ResultType, url: string) =>
     [...searchKeys.resultType(resultType), 'facets', url] as const,
+  dateBounds: (resultType: ResultType) =>
+    [...searchKeys.resultType(resultType), 'date-bounds'] as const,
   globalSuggestions: (resultType: ResultType) =>
     [...searchKeys.all, 'global-suggestions', resultType] as const,
   suggestions: (path: string) => [...searchKeys.all, 'suggestions', path] as const,
@@ -202,6 +204,37 @@ export async function fetchCount(
   } catch {
     return 0;
   }
+}
+
+export type DateBounds = [number, number];
+
+export async function fetchDateBounds(
+  resultType: ResultType,
+  signal?: AbortSignal
+): Promise<DateBounds | null> {
+  const params = new URLSearchParams({
+    limit: '1',
+    facets: 'date_min,date_max',
+    attributes_to_retrieve: 'id',
+  });
+  const res = await fetch(`${getSearchBaseFacetUrl(resultType)}?${params.toString()}`, {
+    cache: 'no-store',
+    signal,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = (await res.json()) as { facetStats?: Record<string, Record<string, number>> };
+  const min = data.facetStats?.date_min?.min;
+  const max = data.facetStats?.date_max?.max;
+  return typeof min === 'number' && typeof max === 'number' ? [min, max] : null;
+}
+
+export function withFixedDateBounds(
+  facets: FacetData,
+  bounds: DateBounds | null,
+  visibleFacets: readonly string[]
+): FacetData {
+  if (!bounds || !visibleFacets.includes('text_date')) return facets;
+  return { ...facets, text_date: { kind: 'range', range: bounds, defaultValue: bounds } };
 }
 
 export async function fetchFacetsAndResults(
